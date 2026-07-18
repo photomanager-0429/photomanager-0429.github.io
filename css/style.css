@@ -1149,3 +1149,42 @@ body.selector-open{overflow:hidden}
   display:block;margin-top:12px;padding:11px 13px;border:1px solid #dca2bc;border-radius:12px;
   background:#fff5f9;color:#a23b68;text-align:center;text-decoration:none;font-size:10px;font-weight:900;
 }
+
+
+/* 公開版 Ver1.00.3：設定系ページの最下部スクロール修正 */
+html{
+  scroll-padding-bottom:calc(170px + env(safe-area-inset-bottom));
+}
+#oshiPage,
+#memberImagesPage,
+#backupPage,
+#helpPage,
+#legalPage,
+#aboutPage{
+  min-height:calc(100dvh - 86px);
+  padding-bottom:calc(170px + env(safe-area-inset-bottom));
+}
+.oshi-settings-panel{
+  margin-bottom:0;
+}
+.member-image-settings-list,
+.oshi-settings-list{
+  padding-bottom:8px;
+}
+.member-image-setting-card:last-child,
+.oshi-setting-card:last-child{
+  scroll-margin-bottom:calc(180px + env(safe-area-inset-bottom));
+}
+.member-image-danger-panel{
+  margin-bottom:0;
+}
+@supports not (height:100dvh){
+  #oshiPage,
+  #memberImagesPage,
+  #backupPage,
+  #helpPage,
+  #legalPage,
+  #aboutPage{min-height:calc(100vh - 86px)}
+}
+
+.settings-page-bottom-space{height:1px;min-height:1px}
