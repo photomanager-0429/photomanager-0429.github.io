@@ -8,7 +8,9 @@
       "favorite": "最推し",
       "oshi": "推し",
       "interest": "気になる"
-    }
+    },
+    "nameContainerStyle": "frameless",
+    "useCardBackgroundForName": true
   },
   "members": [
     {
