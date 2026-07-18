@@ -1,6 +1,6 @@
 {
-  "name": "＝LOVE 生写真管理",
-  "short_name": "生写真管理",
+  "name": "非公式 ＝LOVE 生写真管理",
+  "short_name": "非公式 生写真管理",
   "description": "ファンが個人で制作した、非公式の＝LOVE生写真コレクション管理ツール",
   "start_url": "./",
   "scope": "./",
@@ -23,5 +23,5 @@
       "purpose": "any maskable"
     }
   ],
-  "version": "1.0.0"
+  "version": "1.0.4"
 }

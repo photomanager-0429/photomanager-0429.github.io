@@ -17,6 +17,14 @@
 
 一般的な表示不具合やデータ誤りは、Issueフォームから報告できます。
 
+## 運用上の防御
+
+- GitHubアカウントはパスキーまたは2段階認証で保護します。
+- mainブランチはRulesetで削除・Force push・直接変更を制限します。
+- CodeQL、Secret Protection、Push protectionを有効にします。
+- このOrganizationでは、本アプリ以外のGitHub Pagesサイトを公開しません。
+- 不要なOwner、外部コラボレーター、GitHub Appsへ書き込み権限を付与しません。
+
 ## 対応方針
 
 内容を確認し、再現性と影響範囲を調査します。必要な場合は修正版を作成し、修正前の詳細が不用意に公開されないよう対応します。
