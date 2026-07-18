@@ -1,4 +1,4 @@
-const CACHE_NAME = "equal-love-photo-manager-public-v100";
+const CACHE_NAME = "equal-love-photo-manager-public-v100-clean";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -11,7 +11,7 @@ const APP_SHELL = [
   "./manifest.webmanifest?v=1.0.0",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png",
+  "./icons/apple-touch-icon.png"
 ];
 
 self.addEventListener("install", event => {
