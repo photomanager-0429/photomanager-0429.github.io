@@ -3,16 +3,6 @@
   "releaseDate": "2026-07-18",
   "dataVersion": "2026-07-16.6",
   "newItemCount": 12,
-  "requiredEventFields": [
-    "officialName",
-    "id",
-    "sort",
-    "category",
-    "period",
-    "work",
-    "officialUrl",
-    "addedDate"
-  ],
   "pwaEnabled": true,
   "dataUpdatedAt": "2026-07-16",
   "appName": "＝LOVE 生写真管理",
