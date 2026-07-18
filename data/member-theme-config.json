@@ -1,0 +1,129 @@
+{
+  "ui": {
+    "showNameFlowerMark": false,
+    "showMemberEmoji": true,
+    "nameDisplayStyle": "patternA",
+    "favoriteRibbonStyle": "diagonal",
+    "favoriteRibbonLabels": {
+      "favorite": "最推し",
+      "oshi": "推し",
+      "interest": "気になる"
+    }
+  },
+  "members": [
+    {
+      "id": "emiri",
+      "name": "大谷映美里",
+      "emoji": "🐈",
+      "colors": [
+        "#E5D8F4",
+        "#FFFFFF"
+      ],
+      "colorLabel": "薄紫×白"
+    },
+    {
+      "id": "hana",
+      "name": "大場花菜",
+      "emoji": "💮",
+      "colors": [
+        "#FFD2A8",
+        "#D8E8FF"
+      ],
+      "colorLabel": "オレンジ×青"
+    },
+    {
+      "id": "risa",
+      "name": "音嶋莉沙",
+      "emoji": "💄",
+      "colors": [
+        "#C6EFF8",
+        "#F7CDE0"
+      ],
+      "colorLabel": "水色×濃いピンク"
+    },
+    {
+      "id": "kiara",
+      "name": "齋藤樹愛羅",
+      "emoji": "👼",
+      "colors": [
+        "#F8D5E6"
+      ],
+      "colorLabel": "薄ピンク"
+    },
+    {
+      "id": "maika",
+      "name": "佐々木舞香",
+      "emoji": "🦑",
+      "colors": [
+        "#DADADA"
+      ],
+      "colorLabel": ""
+    },
+    {
+      "id": "hitomi",
+      "name": "髙松瞳",
+      "emoji": "🍨",
+      "colors": [
+        "#F5AAAA"
+      ],
+      "colorLabel": ""
+    },
+    {
+      "id": "shoko",
+      "name": "瀧脇笙古",
+      "emoji": "👌🏻",
+      "colors": [
+        "#F8E36E",
+        "#FFD29B",
+        "#F6C3DD"
+      ],
+      "colorLabel": "黄色×オレンジ×濃いピンク"
+    },
+    {
+      "id": "iori",
+      "name": "野口衣織",
+      "emoji": "🌱",
+      "colors": [
+        "#D6C2EC"
+      ],
+      "colorLabel": "紫（巨峰カラー）"
+    },
+    {
+      "id": "sana",
+      "name": "諸橋沙夏",
+      "emoji": "🥦",
+      "colors": [
+        "#DDF0BF"
+      ],
+      "colorLabel": "黄緑"
+    },
+    {
+      "id": "anna",
+      "name": "山本杏奈",
+      "emoji": "🐼",
+      "colors": [
+        "#AFC9F0",
+        "#F4DD72"
+      ],
+      "colorLabel": "青×黄"
+    },
+    {
+      "id": "nagisa",
+      "name": "齊藤なぎさ",
+      "emoji": "🍓",
+      "colors": [
+        "#F7B4D1"
+      ],
+      "colorLabel": "ピンク"
+    },
+    {
+      "id": "nonno",
+      "name": "佐竹のん乃",
+      "emoji": "🍅",
+      "colors": [
+        "#B9D7F3"
+      ],
+      "colorLabel": "青"
+    }
+  ]
+}
