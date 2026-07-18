@@ -1532,45 +1532,6 @@ function openMember(id){
   function formatBackupDate(date){
     return new Intl.DateTimeFormat("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(date);
   }
-  function validateMasterData(){
-    const issues=[];
-    const required=Array.isArray(APP_CONFIG.requiredEventFields)?APP_CONFIG.requiredEventFields:["officialName","id","sort","category","period","work","officialUrl","addedDate"];
-    const idSeen=new Map(),sortSeen=new Map();
-    EVENTS.forEach((e,index)=>{
-      const row=index+1;
-      required.forEach(field=>{
-        if(e[field]===undefined||e[field]===null||String(e[field]).trim()===""){
-          issues.push({level:field==="officialUrl"?"warning":"error",type:"必須項目抜け",message:`${row}件目：${field} が空です`});
-        }
-      });
-      if(e.id){
-        if(idSeen.has(e.id))issues.push({level:"error",type:"event_id重複",message:`${e.id}（${idSeen.get(e.id)}件目・${row}件目）`});
-        else idSeen.set(e.id,row);
-      }
-      if(e.sort!==undefined&&e.sort!==null&&e.sort!==""){
-        const key=String(e.sort);
-        if(sortSeen.has(key))issues.push({level:"error",type:"sort重複",message:`sort ${key}（${sortSeen.get(key)}件目・${row}件目）`});
-        else sortSeen.set(key,row);
-      }
-      if(e.officialUrl&& !/^https:\/\/.+/i.test(e.officialUrl)){
-        issues.push({level:"warning",type:"URL形式",message:`${e.id}：HTTPSのURLではありません`});
-      }
-      if(e.addedDate&&!/^\d{4}-\d{2}-\d{2}$/.test(e.addedDate)){
-        issues.push({level:"error",type:"追加日形式",message:`${e.id}：addedDateはYYYY-MM-DD形式にしてください`});
-      }
-    });
-    MEMBERS.forEach(m=>{
-      ["includeEventIds","excludeEventIds"].forEach(field=>{
-        const ids=Array.isArray(m[field])?m[field]:[];
-        ids.forEach(id=>{
-          if(!EVENTS.some(e=>e.id===id))issues.push({level:"warning",type:"例外設定",message:`${m.name}：${field}の ${id} がevents.jsonにありません`});
-        });
-      });
-      const overlap=(m.includeEventIds||[]).filter(id=>(m.excludeEventIds||[]).includes(id));
-      overlap.forEach(id=>issues.push({level:"error",type:"例外設定重複",message:`${m.name}：${id} が表示・非表示の両方に設定されています`}));
-    });
-    return issues;
-  }
   let pendingBackup=null;
   function importBackupFile(file){
     if(!file)return;
@@ -1636,10 +1597,6 @@ function openMember(id){
   }
   function renderBackup(){
     const s=backupStats();
-    const issues=validateMasterData();
-    const errors=issues.filter(x=>x.level==="error");
-    const warnings=issues.filter(x=>x.level==="warning");
-    const issueRows=issues.slice(0,50).map(x=>`<li class="${x.level}"><b>${esc(x.type)}</b><span>${esc(x.message)}</span></li>`).join("");
     $("backupPage").innerHTML=`
       <div class="page-head"><h2>💾 バックアップ・復元</h2><p>端末変更やブラウザデータ消去に備えて、定期的に保存してください</p></div>
       <div class="backup-summary">
@@ -1668,13 +1625,6 @@ function openMember(id){
         <p>復元・全削除の直前に、現在の状態を端末内へ最大${APP_CONFIG.maxAutoBackups||3}件保存します。</p>
         <div class="auto-backup-list">${getAutoBackups().length?getAutoBackups().map((item,index)=>`<div class="auto-backup-row"><div><b>${formatBackupDate(new Date(item.exportedAt))}</b><span>${esc(item.reason||"自動保存")}｜所持 ${Object.keys(item.data?.counts||{}).length}件</span></div><button data-restore-history="${index}">復元</button></div>`).join(""):'<div class="empty compact-empty">自動バックアップはまだありません。</div>'}</div>
         <div class="history-actions"><button id="saveHistoryNowButton" class="secondary-action">現在の状態を履歴へ保存</button>${getAutoBackups().length?'<button id="clearHistoryButton" class="text-danger-button">履歴を削除</button>':""}</div>
-      </div>
-      <div class="panel data-check-panel">
-        <div class="data-check-head">
-          <div><h3>🧪 データ不備チェック</h3><p>events.jsonとメンバー例外設定を自動確認します。</p></div>
-          <span class="check-result ${errors.length?"ng":warnings.length?"warning":"ok"}">${errors.length}エラー・${warnings.length}警告</span>
-        </div>
-        ${issues.length?`<ul class="issue-list">${issueRows}</ul>${issues.length>50?`<p class="issue-more">ほか${issues.length-50}件</p>`:""}`:'<div class="check-perfect">✅ 重複・必須項目抜け・URL抜け・例外設定の問題はありません。</div>'}
       </div>
       <div class="panel danger-panel">
         <div class="backup-icon">🗑️</div>
