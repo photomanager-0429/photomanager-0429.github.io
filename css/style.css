@@ -1190,7 +1190,7 @@ html{
 .settings-page-bottom-space{height:1px;min-height:1px}
 
 
-/* 公開版 Ver1.00.8：メンバーカラー背景優先表示 */
+/* 公開版 Ver1.00.9：メンバーカラー背景優先表示 */
 .member-card,
 .member-card:not(.graduated),
 .member-card.graduated{
@@ -1383,7 +1383,7 @@ html{
 }
 
 
-/* 公開版 Ver1.00.8：名前と推しマークの視認性強化 */
+/* 公開版 Ver1.00.9：名前と推しマークの視認性強化 */
 .member-card.has-custom-image .name{
   display:inline-flex;
   align-items:center;
@@ -1461,7 +1461,7 @@ html{
 }
 
 
-/* Ver1.00.8：画像設定カードの情報を名前のみに簡略化 */
+/* Ver1.00.9：画像設定カードの情報を名前のみに簡略化 */
 .member-image-setting-info.name-only{
   padding:10px 12px;
   background:rgba(255,255,255,.74);
@@ -1472,3 +1472,173 @@ html{
 }
 .member-image-setting-info.name-only span,
 .member-image-setting-info.name-only small{display:none !important}
+
+
+/* 公開版 Ver1.00.9：パターンA正式反映 */
+.member-card.pattern-a{
+  position:relative;
+  overflow:hidden;
+}
+.member-card.pattern-a.has-custom-image{
+  min-height:205px;
+  padding:12px;
+  justify-content:flex-end;
+}
+.member-card.pattern-a .emoji,
+.member-card.pattern-a>.name,
+.member-card.pattern-a>.small,
+.member-card.pattern-a>.member-rate-line,
+.member-card.pattern-a>.member-rate-bar,
+.member-card.pattern-a>.oshi-badge{
+  display:none;
+}
+.member-card.pattern-a .member-card-info-panel{
+  position:relative;
+  z-index:3;
+  width:100%;
+  box-sizing:border-box;
+  padding:8px 10px 7px;
+  border:1px solid rgba(255,255,255,.82);
+  border-radius:14px;
+  background:rgba(255,255,255,.78);
+  box-shadow:0 7px 18px rgba(36,20,29,.15);
+  backdrop-filter:blur(9px);
+  -webkit-backdrop-filter:blur(9px);
+  color:#2d2730;
+  text-shadow:none;
+}
+.member-card.pattern-a:not(.has-custom-image) .member-card-info-panel{
+  margin-top:auto;
+  background:rgba(255,255,255,.68);
+}
+.member-card.pattern-a .name{
+  width:auto;
+  max-width:100%;
+  padding:0;
+  margin:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  color:#2d2730;
+  font-size:15px;
+  line-height:1.2;
+  font-weight:950;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.member-card.pattern-a .name>span:last-child{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.member-card.pattern-a .name-emoji{
+  flex:none;
+  font-size:15px;
+  line-height:1;
+}
+.member-card.pattern-a .member-card-meta{
+  margin-top:5px;
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:5px;
+  color:#61565e;
+  font-size:9px;
+  font-weight:750;
+  line-height:1.25;
+}
+.member-card.pattern-a .member-card-meta i{
+  width:1px;
+  height:10px;
+  background:rgba(74,57,66,.25);
+}
+.member-card.pattern-a .graduated-label{
+  padding:2px 5px;
+  border-radius:999px;
+  background:rgba(255,255,255,.78);
+  color:#786c73;
+  font-size:7px;
+}
+.member-card.pattern-a .member-rate-bar{
+  margin-top:6px;
+  height:5px;
+  display:block;
+  border-radius:999px;
+  background:rgba(77,57,67,.14);
+  overflow:hidden;
+}
+.member-card.pattern-a .member-rate-bar i{
+  display:block;
+  height:100%;
+  border-radius:inherit;
+  background:var(--member-strong-bg);
+}
+
+/* 推しランクは右上の斜めリボンだけで明確に表示 */
+.member-card.pattern-a.oshi-card::after{
+  position:absolute;
+  z-index:4;
+  top:14px;
+  right:-31px;
+  width:112px;
+  padding:5px 0;
+  transform:rotate(42deg);
+  background:var(--member-strong-bg);
+  color:#fff;
+  border:1px solid rgba(255,255,255,.42);
+  box-shadow:0 6px 16px rgba(38,19,29,.22);
+  font-size:9px;
+  line-height:1;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-align:center;
+  text-shadow:0 1px 3px rgba(40,18,28,.35);
+  opacity:1;
+}
+.member-card.pattern-a.rank-favorite::after{content:"最推し"}
+.member-card.pattern-a.rank-oshi::after{content:"推し"}
+.member-card.pattern-a.rank-interest::after{content:"気になる"}
+.member-card.pattern-a.rank-favorite{
+  box-shadow:0 13px 30px color-mix(in srgb,var(--member-accent) 29%,transparent);
+}
+.member-card.pattern-a.rank-favorite::after{
+  background:linear-gradient(90deg,#E2B900,#FFCB38);
+  color:#fff;
+}
+.member-card.pattern-a.rank-oshi::after{
+  background:var(--member-strong-bg);
+}
+.member-card.pattern-a.rank-interest::after{
+  background:linear-gradient(90deg,#8C6AB8,#B69AD8);
+}
+
+/* 旧「青×黄」固定表示を完全に無効化 */
+.member-card.dual-member-color::before,
+.member-card.triple-member-color::before{
+  display:none!important;
+  content:none!important;
+}
+
+/* 3色メンバーは枠とバーにも3色を反映 */
+.member-card.triple-member-color{
+  border-color:color-mix(in srgb,var(--member-accent) 35%,var(--member-accent-3))!important;
+}
+
+@media(max-width:390px){
+  .member-card.pattern-a .member-card-info-panel{
+    padding:7px 8px 6px;
+  }
+  .member-card.pattern-a .name{
+    gap:5px;
+    font-size:14px;
+  }
+  .member-card.pattern-a .name-emoji{
+    font-size:14px;
+  }
+  .member-card.pattern-a .member-card-meta{
+    font-size:8px;
+  }
+}
