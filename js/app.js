@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.00.911",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.00.911",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.0.0-orderfix",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.00.911",{cache:"no-store"})
+    fetch("./data/events.json?v=1.00.92",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.00.92",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.00.92",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.00.92",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -1499,7 +1499,7 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.00.9111（正式公開候補）</h3>
+        <h3>公開版Ver1.00.92（正式公開候補）</h3>
         <p>公開前監査の指摘を反映し、バージョン・キャッシュ統一、プライバシー表記、データ補完を行った正式公開候補版です。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
@@ -1963,6 +1963,29 @@ function openMember(id){
   let scrollSaveTimer=0;
   window.addEventListener("scroll",()=>{toggleTopButton();clearTimeout(scrollSaveTimer);scrollSaveTimer=setTimeout(saveScrollPosition,160)},{passive:true});
   window.addEventListener("pagehide",saveScrollPosition);
+
+  const keepFocusedControlVisible=event=>{
+    const target=event.target;
+    if(!(target instanceof HTMLElement)||!target.matches("input,select,textarea,[contenteditable='true']"))return;
+    window.setTimeout(()=>{
+      if(!document.contains(target))return;
+      const viewportHeight=window.visualViewport?.height||window.innerHeight;
+      const rect=target.getBoundingClientRect();
+      const topLimit=96;
+      const bottomLimit=viewportHeight-92;
+      if(rect.top<topLimit||rect.bottom>bottomLimit){
+        target.scrollIntoView({block:"center",inline:"nearest",behavior:"smooth"});
+      }
+    },260);
+  };
+  document.addEventListener("focusin",keepFocusedControlVisible);
+  window.visualViewport?.addEventListener("resize",()=>{
+    const target=document.activeElement;
+    if(target instanceof HTMLElement&&target.matches("input,select,textarea,[contenteditable='true']")){
+      window.setTimeout(()=>target.scrollIntoView({block:"center",inline:"nearest",behavior:"smooth"}),100);
+    }
+  });
+
   toggleTopButton();
 }
 
