@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ef7fad">
-<meta name="application-name" content="=LOVE 生写真管理">
+<meta name="application-name" content="＝LOVE 生写真管理">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="生写真管理">
 <link rel="manifest" href="./manifest.webmanifest?v=1.0.0">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.0.0">
-<title>=LOVE 生写真管理</title>
-<link rel="stylesheet" href="./css/style.css?v=1.00-public2">
+<title>＝LOVE 生写真管理</title>
+<link rel="stylesheet" href="./css/style.css?v=1.00.1">
 </head>
 <body>
 <section id="homeScreen" class="home dashboard-home">
 <div class="wrap dashboard-wrap">
   <button id="openSettingsButton" class="dashboard-settings-button" aria-label="設定を開く">⚙️</button>
   <div class="logo dashboard-logo">
-    <div class="eyebrow">=LOVE</div>
+    <div class="eyebrow">＝LOVE</div>
     <h1>生写真管理</h1>
-    <p>コレクションをかんたん管理</p>
+    <p>非公式の生写真コレクション管理ツール</p>
   </div>
 
   <section class="dashboard-section primary-section">
@@ -68,6 +68,12 @@
   </section>
 
 
+  <section class="public-home-notice" aria-label="非公式サイトの案内">
+    <b>非公式ファン制作ツール</b>
+    <p>本サイトはファンが個人で制作・運営しており、＝LOVEおよび関係各社とは関係ありません。公式写真・メンバー画像は収録していません。</p>
+    <button type="button" onclick="showPage('legal')">利用上の注意を確認</button>
+  </section>
+
   <div id="dataUpdateLabel" class="data-update-label dashboard-update-label">データ更新日：読み込み中</div>
 </div>
 
@@ -85,9 +91,10 @@
       <div class="settings-menu-list">
         <button data-settings-page="memberImages"><span>🖼️</span><div><b>メンバー画像設定</b><small>端末内だけで好きな画像を表示</small></div><i>›</i></button>
         <button data-settings-page="oshi"><span>👑</span><div><b>推し設定</b><small>最推し・推し・気になるを設定</small></div><i>›</i></button>
-        <button data-settings-page="backup"><span>💾</span><div><b>バックアップ・データ管理</b><small>保存・復元・更新ツール</small></div><i>›</i></button>
+        <button data-settings-page="backup"><span>💾</span><div><b>バックアップ・データ管理</b><small>保存・復元・端末内データ管理</small></div><i>›</i></button>
         <button data-settings-page="help"><span>📖</span><div><b>使い方</b><small>操作方法とデータ保護の案内</small></div><i>›</i></button>
-        <button data-settings-page="about"><span>ℹ️</span><div><b>バージョン情報</b><small>アプリとデータの更新情報</small></div><i>›</i></button>
+        <button data-settings-page="legal"><span>🛡️</span><div><b>本サイトについて・利用上の注意</b><small>非公式表記・画像・プライバシー・免責</small></div><i>›</i></button>
+        <button data-settings-page="about"><span>ℹ️</span><div><b>バージョン情報</b><small>サイトとデータの更新情報</small></div><i>›</i></button>
       </div>
     </div>
   </div>
@@ -142,6 +149,7 @@
 <section id="backupPage" class="hidden"></section>
 <section id="helpPage" class="hidden"></section>
 <section id="aboutPage" class="hidden"></section>
+<section id="legalPage" class="hidden"></section>
 </main>
 <nav class="bottom-nav">
 <button data-page="collection" class="active"><span>📚</span>一覧</button>
@@ -250,8 +258,8 @@
   <button id="applyUpdateButton">更新する</button>
 </div>
 <div id="offlineBanner" class="offline-banner hidden">オフラインで表示しています</div>
-<div id="versionLabel" class="version-label">Ver 1.00</div>
-<script src="./js/app.js?v=1.00-public2"></script>
+<div id="versionLabel" class="version-label">Ver 1.00.1</div>
+<script src="./js/app.js?v=1.00.1"></script>
 <script>
 (() => {
   const updateBanner = document.getElementById("updateBanner");
@@ -276,7 +284,7 @@
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.00-public2", {scope: "./"});
+      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.00.1", {scope: "./"});
       const showUpdate = worker => {
         if (!worker) return;
         updateBanner.classList.remove("hidden");

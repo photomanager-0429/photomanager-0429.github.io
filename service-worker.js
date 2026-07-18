@@ -1,17 +1,17 @@
-const CACHE_NAME = "equal-love-photo-manager-public-v100-clean";
+const CACHE_NAME = "equal-love-photo-manager-public-v1001";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=1.00",
-  "./js/app.js?v=1.00",
-  "./data/events.json?v=1.00",
+  "./css/style.css?v=1.00.1",
+  "./js/app.js?v=1.00.1",
+  "./data/events.json?v=1.00.1",
   "./data/members.json?v=1.0.0",
   "./data/positions.json?v=1.0.0-orderfix",
-  "./data/config.json?v=1.00",
+  "./data/config.json?v=1.00.1",
   "./manifest.webmanifest?v=1.0.0",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png"
+  "./icons/apple-touch-icon.png",
 ];
 
 self.addEventListener("install", event => {
