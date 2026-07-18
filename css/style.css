@@ -1190,7 +1190,7 @@ html{
 .settings-page-bottom-space{height:1px;min-height:1px}
 
 
-/* 公開版 Ver1.00.6：メンバーカラー背景優先表示 */
+/* 公開版 Ver1.00.8：メンバーカラー背景優先表示 */
 .member-card,
 .member-card:not(.graduated),
 .member-card.graduated{
@@ -1381,3 +1381,94 @@ html{
   .member-heading.member-color-heading strong{font-size:17px}
   .stats-member-avatar,.stats-all-icon{width:50px;height:50px;font-size:26px}
 }
+
+
+/* 公開版 Ver1.00.8：名前と推しマークの視認性強化 */
+.member-card.has-custom-image .name{
+  display:inline-flex;
+  align-items:center;
+  max-width:calc(100% - 8px);
+  padding:7px 12px;
+  margin:0 0 6px 0;
+  border-radius:14px;
+  background:color-mix(in srgb,var(--member-soft) 82%,white);
+  color:#2d2730;
+  border:1px solid rgba(255,255,255,.84);
+  box-shadow:0 8px 18px rgba(39,22,31,.18);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  text-shadow:none;
+  line-height:1.18;
+}
+.member-card.has-custom-image .small{
+  display:inline-block;
+  width:max-content;
+  max-width:calc(100% - 8px);
+  padding:3px 8px;
+  border-radius:10px;
+  background:rgba(28,18,24,.34);
+  color:#fff;
+  backdrop-filter:blur(4px);
+  -webkit-backdrop-filter:blur(4px);
+}
+.member-card.has-custom-image .member-rate-line{
+  width:max-content;
+  max-width:100%;
+  padding:3px 8px;
+  border-radius:10px;
+  background:rgba(28,18,24,.34);
+  color:#fff;
+  text-shadow:none;
+}
+.member-card.has-custom-image .member-rate-line b{color:#fff}
+.member-card.has-custom-image>.oshi-badge{
+  top:14px;
+  left:14px;
+  padding:5px 12px;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--member-soft) 86%,white);
+  color:#2d2730;
+  border:1px solid rgba(255,255,255,.86);
+  box-shadow:0 8px 18px rgba(38,20,30,.16);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.member-card.has-custom-image>.oshi-badge.rank-favorite{
+  background:linear-gradient(90deg,#fff2a8,#ffe17a);
+  color:#6f5200;
+  border-color:#efd66b;
+}
+.member-card.has-custom-image>.oshi-badge.rank-oshi{
+  background:linear-gradient(90deg,#ffe2ef,#ffd0e5);
+  color:#a43f6a;
+  border-color:#efb0cd;
+}
+.member-card.has-custom-image>.oshi-badge.rank-interest{
+  background:linear-gradient(90deg,#efe6ff,#e2d4ff);
+  color:#6f54a8;
+  border-color:#cdb8f1;
+}
+.member-card.oshi-card::after{
+  right:-22px;
+  top:15px;
+  width:98px;
+  padding:4px 0;
+  background:var(--member-strong-bg);
+  color:#fff;
+  text-shadow:none;
+  opacity:.96;
+  box-shadow:0 6px 16px rgba(40,20,30,.18);
+}
+
+
+/* Ver1.00.8：画像設定カードの情報を名前のみに簡略化 */
+.member-image-setting-info.name-only{
+  padding:10px 12px;
+  background:rgba(255,255,255,.74);
+}
+.member-image-setting-info.name-only b{
+  font-size:18px;
+  line-height:1.25;
+}
+.member-image-setting-info.name-only span,
+.member-image-setting-info.name-only small{display:none !important}
