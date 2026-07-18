@@ -1711,3 +1711,193 @@ html{
   background:#fff5f9;
   color:#a23b68;
 }
+
+
+/* 公開版 Ver1.00.92：名前表示の枠撤廃・全画面スクロール統一 */
+
+/* 名前はカード背景に直接置き、名前専用の囲みを作らない */
+.member-card.pattern-a .member-card-info-panel,
+.member-card.pattern-a:not(.has-custom-image) .member-card-info-panel,
+.selector-member-grid .member-card.pattern-a .member-card-info-panel{
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.member-card.pattern-a .name,
+.member-card.pattern-a:not(.has-custom-image) .name,
+.selector-member-grid .member-card.pattern-a .name{
+  width:auto;
+  max-width:100%;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:#171417;
+  text-shadow:none;
+}
+.member-card.pattern-a .name>span:last-child{color:inherit}
+.member-card.pattern-a.has-custom-image .name,
+.member-card.pattern-a.has-custom-image .name>span:last-child{
+  color:#fff;
+  text-shadow:0 2px 7px rgba(18,10,14,.82);
+}
+.member-card.pattern-a.has-custom-image .member-card-meta{
+  color:rgba(255,255,255,.94);
+  text-shadow:0 2px 5px rgba(18,10,14,.78);
+}
+.member-card.pattern-a.has-custom-image .member-card-meta i{
+  background:rgba(255,255,255,.52);
+}
+.member-card.pattern-a.graduated .name,
+.member-card.pattern-a.graduated .name>span:last-child,
+.graduated-grid .member-card.pattern-a .name,
+.graduated-grid .member-card.pattern-a .name>span:last-child{
+  color:#111!important;
+  text-shadow:0 1px 5px rgba(255,255,255,.72)!important;
+}
+
+/* メンバー画像設定も、絵文字＋名前をカード背景へ直接表示 */
+.member-image-setting-info,
+.member-image-setting-info.name-only{
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.member-image-setting-info b,
+.member-image-setting-info.name-only b{
+  color:#111!important;
+  font-size:17px;
+  line-height:1.3;
+  text-shadow:none;
+}
+
+/* 推し設定・一覧・ヘッダー等の名前専用囲みも撤廃 */
+.oshi-setting-name-text,
+.member-heading.member-color-heading,
+.member-line{
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.oshi-setting-name-text{padding:0!important}
+.member-heading.member-color-heading{padding:0!important}
+.member-line{padding-left:15px;padding-right:15px}
+
+/* 全ページ共通：固定ナビの高さだけを考慮した自然な最下部余白 */
+html,
+body{
+  min-height:100%;
+  scroll-padding-bottom:calc(112px + env(safe-area-inset-bottom));
+}
+#managerScreen .wrap{
+  padding-bottom:calc(108px + env(safe-area-inset-bottom))!important;
+}
+#managerScreen .wrap>section{
+  min-height:auto!important;
+  padding-bottom:0!important;
+}
+.event-list,
+.list-page,
+.missing-member-list,
+.guide-list,
+.legal-stack,
+.member-image-settings-list,
+.oshi-settings-list{
+  padding-bottom:0!important;
+}
+.settings-page-bottom-space{
+  height:1px;
+  min-height:1px;
+}
+#managerScreen .wrap>section:not(.hidden)>:last-child{
+  margin-bottom:0!important;
+}
+
+/* 最下部の入力欄をフォーカスした際も固定UIやキーボードに隠れにくくする */
+input,
+select,
+textarea,
+[contenteditable='true']{
+  scroll-margin-top:110px;
+  scroll-margin-bottom:calc(180px + env(safe-area-inset-bottom));
+}
+
+/* メンバー選択シート：最後の卒業メンバーまで自然にスクロール */
+.member-selector-sheet{
+  display:flex;
+  flex-direction:column;
+  width:min(100%,760px);
+  height:min(92dvh,900px);
+  max-height:92dvh;
+  overflow:hidden;
+}
+.member-selector-handle,
+.member-selector-header{flex:none}
+.member-selector-body{
+  flex:1 1 auto;
+  min-height:0;
+  max-height:none!important;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scroll-padding-bottom:calc(46px + env(safe-area-inset-bottom));
+  padding-bottom:calc(46px + env(safe-area-inset-bottom))!important;
+  -webkit-overflow-scrolling:touch;
+}
+.member-selector-body .selector-member-grid:last-child{
+  margin-bottom:0;
+}
+.member-selector-body .member-card:last-child{
+  scroll-margin-bottom:calc(46px + env(safe-area-inset-bottom));
+}
+
+/* ボトムシート：最終入力・最終選択肢まで必ず操作可能 */
+.utility-sheet{
+  display:flex;
+  flex-direction:column;
+  max-height:min(94dvh,860px)!important;
+  overflow:hidden;
+}
+.utility-sheet-handle,
+.utility-sheet-head,
+.utility-sheet-actions{flex:none}
+.utility-sheet-body{
+  flex:1 1 auto;
+  min-height:0;
+  max-height:none!important;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  scroll-padding-bottom:calc(54px + env(safe-area-inset-bottom));
+  padding-bottom:calc(34px + env(safe-area-inset-bottom))!important;
+  -webkit-overflow-scrolling:touch;
+}
+.utility-sheet-body>:last-child{
+  margin-bottom:0!important;
+  scroll-margin-bottom:calc(54px + env(safe-area-inset-bottom));
+}
+.image-adjust-sheet>.utility-sheet-body{
+  padding-bottom:calc(34px + env(safe-area-inset-bottom))!important;
+}
+
+@media(max-width:420px){
+  #managerScreen .wrap{
+    padding-bottom:calc(102px + env(safe-area-inset-bottom))!important;
+  }
+  .member-selector-sheet{
+    height:94dvh;
+    max-height:94dvh;
+  }
+  .utility-sheet{
+    max-height:96dvh!important;
+  }
+}
