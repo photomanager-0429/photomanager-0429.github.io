@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.00.3",{cache:"no-store"}),
+    fetch("./data/events.json?v=1.00.4",{cache:"no-store"}),
     fetch("./data/members.json?v=1.0.0",{cache:"no-store"}),
     fetch("./data/positions.json?v=1.0.0-orderfix",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.00.3",{cache:"no-store"})
+    fetch("./data/config.json?v=1.00.4",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -1375,8 +1375,10 @@ function openMember(id){
         </section>
         <section class="panel legal-card">
           <h3>保存データとプライバシー</h3>
-          <p>所持枚数、直筆、欲しい、推し設定などは利用者のブラウザ内に保存されます。本公開版には、ログイン、広告、アクセス解析、利用データを外部送信する機能はありません。</p>
+          <p>所持枚数、直筆、欲しい、推し設定などは利用者のブラウザ内に保存されます。本公開版には、ログイン、広告、独自のアクセス解析、所持情報や設定画像を外部送信する機能はありません。</p>
+          <p>本サイトはGitHub Pagesを利用して配信しています。GitHubはサービスの運用・セキュリティ目的で、アクセス時のIPアドレスなどの技術情報を記録・保存する場合があります。本サイト運営者は、利用者の所持情報・推し設定・設定画像を収集または閲覧しません。</p>
           <p>ブラウザのサイトデータ削除、端末変更、URL変更などでデータが消失する場合があります。定期的にバックアップJSONを保存してください。メンバー画像は通常バックアップに含まれません。</p>
+          <p>共有端末での利用は避け、端末ロックをご利用ください。端末内データについて、暗号化保管を保証するものではありません。</p>
         </section>
         <section class="panel legal-card">
           <h3>データと動作の保証</h3>
@@ -1391,6 +1393,7 @@ function openMember(id){
         <section class="panel legal-card legal-security">
           <h3>セキュリティ上の問題</h3>
           <p>脆弱性の詳細を公開Issueへ投稿すると、修正前に第三者へ知られるおそれがあります。GitHubの「Security → Advisories → Report a vulnerability」から非公開で報告してください。</p>
+          <p>本サイトと同じドメイン配下に別のGitHub Pagesサイトを公開しない運用とし、保存データへアクセスできる同一オリジンの範囲を増やさない方針です。</p>
           <a class="legal-contact-link" href="https://github.com/photomanager-0429/photomanager-0429.github.io/security" target="_blank" rel="noopener noreferrer">セキュリティ報告ページを開く</a>
         </section>
       </div>`;
@@ -1412,8 +1415,8 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.00.3</h3>
-        <p>所持・直筆・欲しい・提供可能・未所持・統計・推し設定・端末内画像・バックアップ・PWAに対応した初回一般公開版です。</p>
+        <h3>公開版Ver1.00.4（正式公開候補）</h3>
+        <p>公開前監査の指摘を反映し、バージョン・キャッシュ統一、プライバシー表記、データ補完を行った正式公開候補版です。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
         <h3>非公式サイト</h3>
