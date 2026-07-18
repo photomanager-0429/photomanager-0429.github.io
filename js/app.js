@@ -3,12 +3,26 @@ let MEMBERS = [];
 let POSITIONS = [];
 let APP_CONFIG = {};
 
+const OFFICIAL_LINK_HOSTS = new Set(["equal-love.jp", "sp.equal-love.jp", "store.plusmember.jp"]);
+function safeOfficialUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    if (url.protocol !== "https:" || !OFFICIAL_LINK_HOSTS.has(url.hostname)) return "";
+    url.username = "";
+    url.password = "";
+    return url.href;
+  } catch (error) {
+    return "";
+  }
+}
+
+
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.00.1",{cache:"no-store"}),
+    fetch("./data/events.json?v=1.00.2",{cache:"no-store"}),
     fetch("./data/members.json?v=1.0.0",{cache:"no-store"}),
     fetch("./data/positions.json?v=1.0.0-orderfix",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.00.1",{cache:"no-store"})
+    fetch("./data/config.json?v=1.00.2",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -318,13 +332,25 @@ function initializeApp() {
     return new Promise(resolve=>canvas.toBlob(resolve,type,quality));
   }
 
+  const SAFE_IMAGE_TYPES=new Set(["image/jpeg","image/png","image/webp"]);
+  async function hasSafeRasterSignature(file){
+    const bytes=new Uint8Array(await file.slice(0,16).arrayBuffer());
+    const jpeg=bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff;
+    const png=bytes[0]===0x89&&bytes[1]===0x50&&bytes[2]===0x4e&&bytes[3]===0x47&&bytes[4]===0x0d&&bytes[5]===0x0a&&bytes[6]===0x1a&&bytes[7]===0x0a;
+    const webp=String.fromCharCode(...bytes.slice(0,4))==="RIFF"&&String.fromCharCode(...bytes.slice(8,12))==="WEBP";
+    return jpeg||png||webp;
+  }
+
   async function compressMemberImage(file){
-    if(!file||!String(file.type||"").startsWith("image/"))throw new Error("画像ファイルを選択してください");
-    if(file.size>30*1024*1024)throw new Error("画像が大きすぎます。30MB以下の画像を選択してください");
+    if(!file||!SAFE_IMAGE_TYPES.has(String(file.type||"").toLowerCase()))throw new Error("JPEG・PNG・WebP画像を選択してください");
+    if(file.size<=0||file.size>15*1024*1024)throw new Error("画像は15MB以下にしてください");
+    if(!(await hasSafeRasterSignature(file)))throw new Error("画像の形式を確認できませんでした。SVGなどは使用できません");
     const image=await loadImageElement(file);
-    const maxSide=1400;
     const naturalWidth=image.naturalWidth||image.width;
     const naturalHeight=image.naturalHeight||image.height;
+    if(!Number.isFinite(naturalWidth)||!Number.isFinite(naturalHeight)||naturalWidth<1||naturalHeight<1)throw new Error("画像サイズを確認できませんでした");
+    if(naturalWidth>12000||naturalHeight>12000||naturalWidth*naturalHeight>40000000)throw new Error("画像の解像度が大きすぎます");
+    const maxSide=1400;
     const scale=Math.min(1,maxSide/Math.max(naturalWidth,naturalHeight));
     const width=Math.max(1,Math.round(naturalWidth*scale));
     const height=Math.max(1,Math.round(naturalHeight*scale));
@@ -337,6 +363,7 @@ function initializeApp() {
     context.drawImage(image,0,0,width,height);
     let blob=await canvasToBlob(canvas,"image/webp",0.84);
     if(!blob)blob=await canvasToBlob(canvas,"image/jpeg",0.86);
+    canvas.width=1;canvas.height=1;
     if(!blob)throw new Error("画像を保存用に変換できませんでした");
     return blob;
   }
@@ -346,7 +373,7 @@ function initializeApp() {
     if(!member)return;
     const input=document.createElement("input");
     input.type="file";
-    input.accept="image/*";
+    input.accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
     input.onchange=async()=>{
       const file=input.files?.[0];
       if(!file)return;
@@ -1123,8 +1150,8 @@ function openMember(id){
   function renderPositionRow(e,m,p,compact=false){const row=document.createElement("div");row.className=compact?"mini-pos":"pos-row";row.innerHTML=compact?`<div class="mini-label">${p.name}</div><div class="mini-actions"><button class="minus">−</button><b class="num">${getCount(e.id,m.id,p.id)}</b><button class="plus">＋</button><button class="wide sign ${isSigned(e.id,m.id,p.id)?"on":""}">✍️</button><button class="wide want ${isWanted(e.id,m.id,p.id)?"on":""}">♡</button></div>`:`<span>${p.name}</span><div class="pos-actions"><button class="icon-btn want ${isWanted(e.id,m.id,p.id)?"on":""}">♡</button><button class="icon-btn sign ${isSigned(e.id,m.id,p.id)?"on":""}">✍️</button><div class="counter"><button class="minus">−</button><span class="count num">${getCount(e.id,m.id,p.id)}</span><button class="plus">＋</button></div></div>`;
   row.querySelector(".minus").onclick=()=>{setCount(e.id,m.id,p.id,Math.max(0,getCount(e.id,m.id,p.id)-1));renderCollection()};row.querySelector(".plus").onclick=()=>{setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)+1);renderCollection()};row.querySelector(".sign").onclick=()=>{toggleSign(e.id,m.id,p.id);renderCollection()};row.querySelector(".want").onclick=()=>{toggleWant(e.id,m.id,p.id);renderCollection()};return row}
   function renderMemberCard(e,m){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div></div><div class="badges"><span class="badge">${esc(e.category)}</span>${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}${complete(e,m)?'<span class="badge complete">COMPLETE</span>':''}</div></div></div><div class="member-line">${m.emoji} ${m.name}</div><div class="positions"></div><div class="event-footer"></div>`;
-  POSITIONS.forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${e.officialUrl?`<a href="${e.officialUrl}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;f.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);return card}
-  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e),owned=eligible.reduce((t,m)=>t+POSITIONS.reduce((s,p)=>s+getCount(e.id,m.id,p.id),0),0),want=eligible.reduce((t,m)=>t+POSITIONS.filter(p=>isWanted(e.id,m.id,p.id)).length,0),comp=eligible.filter(m=>complete(e,m)).length;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div><div class="all-summary">所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${e.officialUrl?`<a href="${e.officialUrl}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];renderCollection()};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;POSITIONS.forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
+  POSITIONS.forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${safeOfficialUrl(e.officialUrl)?`<a href="${esc(safeOfficialUrl(e.officialUrl))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;f.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);return card}
+  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e),owned=eligible.reduce((t,m)=>t+POSITIONS.reduce((s,p)=>s+getCount(e.id,m.id,p.id),0),0),want=eligible.reduce((t,m)=>t+POSITIONS.filter(p=>isWanted(e.id,m.id,p.id)).length,0),comp=eligible.filter(m=>complete(e,m)).length;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div><div class="all-summary">所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${safeOfficialUrl(e.officialUrl)?`<a href="${esc(safeOfficialUrl(e.officialUrl))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];renderCollection()};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;POSITIONS.forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
   function renderCollection(){
     renderCollectionFilterUi();
     const list=filtered();
@@ -1355,9 +1382,14 @@ function openMember(id){
           <p>本サイトは、必要に応じて内容の変更、公開の一時停止または終了を行う場合があります。</p>
         </section>
         <section class="panel legal-card">
-          <h3>権利上の問題・修正依頼</h3>
-          <p>権利上の問題、掲載データの誤り、修正・削除のご要望がある場合は、公開リポジトリのGitHub Issuesからご連絡ください。内容を確認し、必要に応じて修正または公開停止などの対応を行います。</p>
+          <h3>不具合・データ修正の連絡</h3>
+          <p>一般的な不具合、掲載データの誤り、権利上の修正・削除要望はGitHub Issuesからご連絡ください。Issuesは公開されるため、バックアップJSON、設定画像、個人情報を含むスクリーンショットは投稿しないでください。</p>
           <a class="legal-contact-link" href="https://github.com/photomanager-0429/photomanager-0429.github.io/issues" target="_blank" rel="noopener noreferrer">GitHub Issuesを開く</a>
+        </section>
+        <section class="panel legal-card legal-security">
+          <h3>セキュリティ上の問題</h3>
+          <p>脆弱性の詳細を公開Issueへ投稿すると、修正前に第三者へ知られるおそれがあります。GitHubの「Security → Advisories → Report a vulnerability」から非公開で報告してください。</p>
+          <a class="legal-contact-link" href="https://github.com/photomanager-0429/photomanager-0429.github.io/security" target="_blank" rel="noopener noreferrer">セキュリティ報告ページを開く</a>
         </section>
       </div>`;
   }
@@ -1378,7 +1410,7 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.00.1</h3>
+        <h3>公開版Ver1.00.2</h3>
         <p>所持・直筆・欲しい・提供可能・未所持・統計・推し設定・端末内画像・バックアップ・PWAに対応した初回一般公開版です。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
@@ -1491,16 +1523,37 @@ function openMember(id){
       location.reload();
     }catch(error){alert(`復元できませんでした：${error.message}`)}
   }
-  function validObject(value){return value&&typeof value==="object"&&!Array.isArray(value)}
-  function validDateString(value){return typeof value==="string"&&!Number.isNaN(Date.parse(value))}
+  const MAX_BACKUP_BYTES=5*1024*1024;
+  const MAX_TEXT_FIELD=160;
+  const DANGEROUS_KEYS=new Set(["__proto__","prototype","constructor"]);
+  function validObject(value){
+    return value!==null&&typeof value==="object"&&!Array.isArray(value);
+  }
+  function validDateString(value){return typeof value==="string"&&value.length<=64&&!Number.isNaN(Date.parse(value))}
+  function cleanShortText(value,fallback="不明"){
+    const text=String(value??fallback).replace(/[\u0000-\u001f\u007f]/g,"").trim();
+    return (text||fallback).slice(0,MAX_TEXT_FIELD);
+  }
+  function validBackupKey(key){
+    if(typeof key!=="string"||key.length<5||key.length>240)return false;
+    const parts=key.split("__");
+    if(parts.length!==3||parts.some(part=>!part||DANGEROUS_KEYS.has(part)))return false;
+    const [eventId,memberId,positionId]=parts;
+    const migrations=APP_CONFIG.eventIdMigrations&&typeof APP_CONFIG.eventIdMigrations==="object"?APP_CONFIG.eventIdMigrations:{};
+    const currentEventId=typeof migrations[eventId]==="string"?migrations[eventId]:eventId;
+    return EVENTS.some(event=>event.id===currentEventId)&&MEMBERS.some(member=>member.id===memberId)&&POSITIONS.some(position=>position.id===positionId);
+  }
   function sanitizeBackupMap(value,type){
     if(!validObject(value))throw new Error(`${type}データがオブジェクトではありません`);
-    const clean={};
-    for(const [key,item] of Object.entries(value)){
-      if(typeof key!=="string"||!key.includes("__"))throw new Error(`${type}データのキー形式が不正です`);
+    const entries=Object.entries(value);
+    const maximum=EVENTS.length*MEMBERS.length*POSITIONS.length;
+    if(entries.length>maximum)throw new Error(`${type}データの件数が多すぎます`);
+    const clean=Object.create(null);
+    for(const [key,item] of entries){
+      if(!validBackupKey(key))throw new Error(`${type}データに不正なキーがあります`);
       if(type==="所持"){
         const n=Number(item);
-        if(!Number.isInteger(n)||n<0||n>999)throw new Error(`${type}データの値が不正です`);
+        if(!Number.isInteger(n)||n<0||n>99)throw new Error(`${type}データの値が不正です`);
         if(n>0)clean[key]=n;
       }else{
         if(item!==true&&item!==false)throw new Error(`${type}データの値が不正です`);
@@ -1508,6 +1561,30 @@ function openMember(id){
       }
     }
     return clean;
+  }
+  function sanitizePreferences(value){
+    if(!validObject(value))return {};
+    const out=Object.create(null);
+    const memberIds=new Set(MEMBERS.map(item=>item.id));
+    const eventIds=new Set(EVENTS.map(item=>item.id));
+    const positionIds=new Set(POSITIONS.map(item=>item.id));
+    const categories=new Set(EVENTS.map(item=>item.category).filter(Boolean));
+    const memberFields=["memberId","pageMemberId","missingMemberId"];
+    memberFields.forEach(key=>{const v=String(value[key]||"");out[key]=memberIds.has(v)?v:""});
+    ["quickEventId","matrixEventId"].forEach(key=>{const v=String(value[key]||"");out[key]=eventIds.has(v)?v:""});
+    out.missingPositionId=positionIds.has(String(value.missingPositionId||""))?String(value.missingPositionId):"";
+    out.category=categories.has(String(value.category||""))?String(value.category):"";
+    ["yearFilter","wishlistYear","tradeYear","missingYear","quickYear","matrixYear"].forEach(key=>{
+      const v=String(value[key]||"");out[key]=/^20\d{2}$/.test(v)?v:"";
+    });
+    ["sort","wishlistOrder","tradeOrder","missingEventOrder","quickOrder","matrixOrder"].forEach(key=>{
+      out[key]=value[key]==="asc"?"asc":"desc";
+    });
+    ["search","missingSearch","quickSearch","matrixSearch"].forEach(key=>{out[key]=cleanShortText(value[key]||"","").slice(0,200)});
+    out.ownership=["","owned","unowned"].includes(value.ownership)?value.ownership:"";
+    out.newFilter=value.newFilter==="new"?"new":"";
+    out.oshiOnly=value.oshiOnly===true;
+    return out;
   }
   function validateBackupPayload(payload){
     if(!validObject(payload))throw new Error("JSONの中身が正しくありません");
@@ -1517,16 +1594,22 @@ function openMember(id){
     if(!Number.isInteger(schemaVersion)||schemaVersion<1||schemaVersion>SCHEMA_VERSION)throw new Error("対応していないデータ形式です");
     if(!validDateString(payload.exportedAt))throw new Error("バックアップ作成日時がありません");
     if(!validObject(payload.data))throw new Error("バックアップデータがありません");
+    const oshis=Object.create(null);
+    if(validObject(payload.data.oshis)){
+      const entries=Object.entries(payload.data.oshis);
+      if(entries.length>MEMBERS.length)throw new Error("推し設定の件数が多すぎます");
+      entries.forEach(([id,rank])=>{if(MEMBERS.some(member=>member.id===id)&&["favorite","oshi","interest"].includes(rank))oshis[id]=rank});
+    }
     return {
       exportedAt:new Date(payload.exportedAt),
       counts:sanitizeBackupMap(payload.data.counts,"所持"),
       signs:sanitizeBackupMap(payload.data.signs,"直筆"),
       wants:sanitizeBackupMap(payload.data.wants,"欲しい"),
-      oshis:validObject(payload.data.oshis)?Object.fromEntries(Object.entries(payload.data.oshis).filter(([id,rank])=>MEMBERS.some(m=>m.id===id)&&["favorite","oshi","interest"].includes(rank))):{},
-      preferences:validObject(payload.data.preferences)?payload.data.preferences:{},
-      sourceVersion:String(payload.sourceVersion||"不明"),
+      oshis,
+      preferences:sanitizePreferences(payload.data.preferences),
+      sourceVersion:cleanShortText(payload.sourceVersion),
       schemaVersion,
-      dataVersion:String(payload.dataVersion||"不明")
+      dataVersion:cleanShortText(payload.dataVersion)
     };
   }
   function formatBackupDate(date){
@@ -1538,6 +1621,17 @@ function openMember(id){
     pendingBackup=null;
     const msg=document.getElementById("backupMessage");
     const preview=document.getElementById("backupPreview");
+    const lowerName=String(file.name||"").toLowerCase();
+    if(file.size<=0||file.size>MAX_BACKUP_BYTES){
+      msg.textContent="読み込みを中止しました：バックアップは5MB以下にしてください。";
+      msg.className="backup-message error";
+      return;
+    }
+    if(!lowerName.endsWith(".json")){
+      msg.textContent="読み込みを中止しました：JSONファイルを選択してください。";
+      msg.className="backup-message error";
+      return;
+    }
     const reader=new FileReader();
     reader.onload=()=>{
       try{
@@ -1545,7 +1639,7 @@ function openMember(id){
         pendingBackup=validateBackupPayload(payload);
         preview.innerHTML=`
           <div class="backup-preview-title">✅ バックアップを確認しました</div>
-          <div class="backup-preview-date">作成日時：${formatBackupDate(pendingBackup.exportedAt)}\n作成元：Ver ${pendingBackup.sourceVersion}\nデータ形式：Schema ${pendingBackup.schemaVersion}\nマスターデータ：${esc(pendingBackup.dataVersion)}</div>
+          <div class="backup-preview-date">作成日時：${formatBackupDate(pendingBackup.exportedAt)}\n作成元：Ver ${esc(pendingBackup.sourceVersion)}\nデータ形式：Schema ${pendingBackup.schemaVersion}\nマスターデータ：${esc(pendingBackup.dataVersion)}</div>
           <div class="backup-preview-counts">
             <span>所持 ${Object.keys(pendingBackup.counts).length}件</span>
             <span>直筆 ${Object.keys(pendingBackup.signs).length}件</span>
@@ -1570,7 +1664,7 @@ function openMember(id){
       msg.textContent="ファイルの読み込みに失敗しました。";
       msg.className="backup-message error";
     };
-    reader.readAsText(file);
+    reader.readAsText(file,"utf-8");
   }
   function restorePendingBackup(){
     if(!pendingBackup)return;
@@ -1762,6 +1856,7 @@ function openMember(id){
   setupUtilitySheetSwipe("bulkSheetOverlay");
   setupUtilitySheetSwipe("settingsSheetOverlay");
   setupUtilitySheetSwipe("imageAdjustSheetOverlay");
+  document.querySelectorAll("[data-home-page]").forEach(button=>button.onclick=()=>showPage(button.dataset.homePage));
   document.querySelectorAll(".bottom-nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
   const topButton=document.createElement("button");
   topButton.id="backToTop";
@@ -1775,7 +1870,6 @@ function openMember(id){
   window.addEventListener("scroll",()=>{toggleTopButton();clearTimeout(scrollSaveTimer);scrollSaveTimer=setTimeout(saveScrollPosition,160)},{passive:true});
   window.addEventListener("pagehide",saveScrollPosition);
   toggleTopButton();
-  window.showPage = showPage;
 }
 
 loadAppData().catch(error => {
@@ -1788,8 +1882,9 @@ loadAppData().catch(error => {
         <h1>${offline?"オフラインデータがありません":"データを読み込めませんでした"}</h1>
         <p>${offline?"最初の1回は通信できる状態でアプリを開いてください。":"通信状態を確認して、もう一度読み込んでください。"}</p>
         <details><summary>詳しい情報</summary><code>${String(error.message||error).replaceAll("<","&lt;")}</code></details>
-        <button onclick="location.reload()">もう一度読み込む</button>
+        <button id="fatalReloadButton">もう一度読み込む</button>
         <a href="./">TOPへ戻る</a>
       </div>
     </main>`;
+  document.getElementById("fatalReloadButton")?.addEventListener("click",()=>location.reload());
 });
