@@ -50,7 +50,14 @@
 - Public URL: https://photomanager-0429.github.io/
 
 
-## Ver1.00.1
+## Ver1.00.2
 - 公開版から開発者向けのデータ不備チェックを削除
 - 設定メニューと各ページが開かなくなる不具合を修正
 - 公開版キャッシュを更新
+
+
+## セキュリティ
+
+公開版Ver1.00.2では、CSP、外部通信制限、バックアップJSONの厳格検証、画像形式・容量・解像度制限、Service Workerのキャッシュ対象制限を追加しています。
+
+脆弱性は公開Issueに詳細を書かず、GitHubのPrivate vulnerability reportingから報告してください。一般的な不具合報告でも、バックアップJSONや個人画像は添付しないでください。詳細は `SECURITY.md` を参照してください。

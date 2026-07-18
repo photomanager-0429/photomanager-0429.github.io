@@ -1,3 +1,15 @@
+## Ver1.00.2 — セキュリティ強化
+
+- Content Security Policyを追加し、JavaScriptと通信先を同一サイトへ限定
+- インラインJavaScriptとインラインイベント属性を廃止
+- バックアップJSONを5MB以下に制限し、キー・値・対象イベント・メンバー・ポジションを厳格検証
+- バックアップ表示文字列のエスケープを強化
+- 画像をJPEG・PNG・WebP、15MB以下、最大解像度以内に限定し、ファイルシグネチャを確認
+- 公式リンクをHTTPSかつ許可済み公式ドメインだけに制限
+- Service WorkerがキャッシュするパスとContent-Typeを制限
+- SECURITY.mdと安全なIssueフォームを追加
+- セキュリティ問題はPrivate vulnerability reportingへ誘導
+
 # CHANGELOG
 
 ## Ver1.00.1 — 設定画面修正

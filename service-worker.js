@@ -1,24 +1,36 @@
-const CACHE_NAME = "equal-love-photo-manager-public-v1001";
+"use strict";
+const CACHE_NAME = "equal-love-photo-manager-public-v1002";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=1.00.1",
-  "./js/app.js?v=1.00.1",
-  "./data/events.json?v=1.00.1",
+  "./css/style.css?v=1.00.2",
+  "./js/app.js?v=1.00.2",
+  "./js/bootstrap.js?v=1.00.2",
+  "./data/events.json?v=1.00.2",
   "./data/members.json?v=1.0.0",
   "./data/positions.json?v=1.0.0-orderfix",
-  "./data/config.json?v=1.00.1",
+  "./data/config.json?v=1.00.2",
   "./manifest.webmanifest?v=1.0.0",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png",
+  "./icons/apple-touch-icon.png"
 ];
+const ALLOWED_PATHS = new Set(APP_SHELL.map(item => new URL(item, self.registration.scope).pathname));
+
+function canCache(request, response) {
+  if (!response || !response.ok || response.type !== "basic") return false;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || !ALLOWED_PATHS.has(url.pathname)) return false;
+  const type = response.headers.get("content-type") || "";
+  if (url.pathname.endsWith(".js")) return type.includes("javascript") || type.includes("text/plain");
+  if (url.pathname.endsWith(".json") || url.pathname.endsWith(".webmanifest")) return type.includes("json") || type.includes("manifest") || type.includes("text/plain");
+  if (url.pathname.endsWith(".css")) return type.includes("text/css") || type.includes("text/plain");
+  if (/\.(png|jpg|jpeg|webp)$/.test(url.pathname)) return type.startsWith("image/");
+  return url.pathname.endsWith("/") || url.pathname.endsWith("index.html") || type.includes("text/html");
+}
 
 self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
 });
 
 self.addEventListener("activate", event => {
@@ -36,15 +48,16 @@ self.addEventListener("message", event => {
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
-  if (url.origin !== location.origin) return;
+  if (url.origin !== self.location.origin) return;
 
-  // Navigation: network first, cached app shell fallback.
   if (event.request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, {cache: "no-store"})
         .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
+          if (canCache(event.request, response)) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put("./index.html", copy));
+          }
           return response;
         })
         .catch(() => caches.match("./index.html"))
@@ -52,12 +65,12 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Config/data/assets: stale-while-revalidate for fast offline use and fresh updates.
+  if (!ALLOWED_PATHS.has(url.pathname)) return;
   event.respondWith(
     caches.match(event.request).then(cached => {
       const network = fetch(event.request)
         .then(response => {
-          if (response.ok) {
+          if (canCache(event.request, response)) {
             const copy = response.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           }

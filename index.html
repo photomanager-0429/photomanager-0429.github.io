@@ -2,6 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; frame-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="index,follow,noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ef7fad">
 <meta name="application-name" content="＝LOVE 生写真管理">
@@ -11,7 +14,7 @@
 <link rel="manifest" href="./manifest.webmanifest?v=1.0.0">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.0.0">
 <title>＝LOVE 生写真管理</title>
-<link rel="stylesheet" href="./css/style.css?v=1.00.1">
+<link rel="stylesheet" href="./css/style.css?v=1.00.2">
 </head>
 <body>
 <section id="homeScreen" class="home dashboard-home">
@@ -60,10 +63,10 @@
       <small>集計・リスト</small>
     </div>
     <div class="dashboard-grid">
-      <button class="dashboard-card" onclick="showPage('stats')"><span>📊</span><b>統計</b></button>
-      <button class="dashboard-card" onclick="showPage('wishlist')"><span>♡</span><b>欲しい一覧</b></button>
-      <button class="dashboard-card" onclick="showPage('trade')"><span>🔄</span><b>提供可能</b></button>
-      <button class="dashboard-card" onclick="showPage('missing')"><span>🔎</span><b>未所持一覧</b></button>
+      <button class="dashboard-card" data-home-page="stats"><span>📊</span><b>統計</b></button>
+      <button class="dashboard-card" data-home-page="wishlist"><span>♡</span><b>欲しい一覧</b></button>
+      <button class="dashboard-card" data-home-page="trade"><span>🔄</span><b>提供可能</b></button>
+      <button class="dashboard-card" data-home-page="missing"><span>🔎</span><b>未所持一覧</b></button>
     </div>
   </section>
 
@@ -71,7 +74,7 @@
   <section class="public-home-notice" aria-label="非公式サイトの案内">
     <b>非公式ファン制作ツール</b>
     <p>本サイトはファンが個人で制作・運営しており、＝LOVEおよび関係各社とは関係ありません。公式写真・メンバー画像は収録していません。</p>
-    <button type="button" onclick="showPage('legal')">利用上の注意を確認</button>
+    <button type="button" data-home-page="legal">利用上の注意を確認</button>
   </section>
 
   <div id="dataUpdateLabel" class="data-update-label dashboard-update-label">データ更新日：読み込み中</div>
@@ -258,51 +261,8 @@
   <button id="applyUpdateButton">更新する</button>
 </div>
 <div id="offlineBanner" class="offline-banner hidden">オフラインで表示しています</div>
-<div id="versionLabel" class="version-label">Ver 1.00.1</div>
-<script src="./js/app.js?v=1.00.1"></script>
-<script>
-(() => {
-  const updateBanner = document.getElementById("updateBanner");
-  const updateButton = document.getElementById("applyUpdateButton");
-  const offlineBanner = document.getElementById("offlineBanner");
-
-  const updateOnlineStatus = () => {
-    offlineBanner.classList.toggle("hidden", navigator.onLine);
-  };
-  window.addEventListener("online", updateOnlineStatus);
-  window.addEventListener("offline", updateOnlineStatus);
-  updateOnlineStatus();
-
-  if (!("serviceWorker" in navigator)) return;
-
-  let refreshing = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (refreshing) return;
-    refreshing = true;
-    location.reload();
-  });
-
-  window.addEventListener("load", async () => {
-    try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.00.1", {scope: "./"});
-      const showUpdate = worker => {
-        if (!worker) return;
-        updateBanner.classList.remove("hidden");
-        updateButton.onclick = () => worker.postMessage({type: "SKIP_WAITING"});
-      };
-      if (registration.waiting) showUpdate(registration.waiting);
-      registration.addEventListener("updatefound", () => {
-        const worker = registration.installing;
-        worker?.addEventListener("statechange", () => {
-          if (worker.state === "installed" && navigator.serviceWorker.controller) showUpdate(worker);
-        });
-      });
-      registration.update();
-    } catch (error) {
-      console.error("Service Worker registration failed:", error);
-    }
-  });
-})();
-</script>
+<div id="versionLabel" class="version-label">Ver 1.00.2</div>
+<script src="./js/app.js?v=1.00.2"></script>
+<script src="./js/bootstrap.js?v=1.00.2"></script>
 </body>
 </html>
