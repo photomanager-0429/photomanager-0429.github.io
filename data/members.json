@@ -36,12 +36,13 @@
     "id": "kiara",
     "name": "齋藤樹愛羅",
     "emoji": "👼",
-    "accent": "#E94F91",
-    "soft": "#F8B8D3",
+    "accent": "#E88AB5",
+    "soft": "#F8D5E6",
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "さいとうきあら"
+    "kana": "さいとうきあら",
+    "colorLabel": "薄ピンク"
   },
   {
     "id": "maika",
@@ -107,32 +108,37 @@
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "やまもとあんな"
+    "kana": "やまもとあんな",
+    "accent2": "#D6AB00",
+    "soft2": "#F4DD72",
+    "colorLabel": "青×黄"
   },
   {
     "id": "nagisa",
     "name": "齊藤なぎさ",
     "emoji": "🍓",
-    "accent": "#707070",
-    "soft": "#D5D5D5",
+    "accent": "#F04F98",
+    "soft": "#F7B4D1",
     "status": "graduated",
     "graduation": "2023年1月卒業",
     "maxSort": 149,
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "さいとうなぎさ"
+    "kana": "さいとうなぎさ",
+    "colorLabel": "ピンク"
   },
   {
     "id": "nonno",
     "name": "佐竹のん乃",
     "emoji": "🍅",
-    "accent": "#707070",
-    "soft": "#D5D5D5",
+    "accent": "#3577C9",
+    "soft": "#B9D7F3",
     "status": "graduated",
     "graduation": "2021年3月卒業",
     "maxSort": 93,
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "さたけのんの"
+    "kana": "さたけのんの",
+    "colorLabel": "青"
   }
 ]
