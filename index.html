@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ef7fad">
+<meta name="application-name" content="＝LOVE 生写真管理">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="生写真管理">
+<link rel="manifest" href="./manifest.webmanifest?v=1.0.0">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.0.0">
+<title>＝LOVE 生写真管理</title>
+<link rel="stylesheet" href="./css/style.css?v=1.00">
+</head>
+<body>
+<section id="homeScreen" class="home dashboard-home">
+<div class="wrap dashboard-wrap">
+  <button id="openSettingsButton" class="dashboard-settings-button" aria-label="設定を開く">⚙️</button>
+  <div class="logo dashboard-logo">
+    <div class="eyebrow">＝LOVE</div>
+    <h1>生写真管理</h1>
+    <p>非公式の生写真コレクション管理ツール</p>
+  </div>
+
+  <section class="dashboard-section primary-section">
+    <div class="dashboard-section-title">
+      <span>生写真を管理する</span>
+      <small>登録・確認はこちら</small>
+    </div>
+    <div class="manage-actions">
+      <button id="openMemberSelectorButton" class="manage-main-button">
+        <span class="manage-icon">👥</span>
+        <span><b>メンバーを選ぶ</b><small>個人別に所持状況を管理</small></span>
+        <i>›</i>
+      </button>
+      <button id="allMembersDashboardButton" class="manage-sub-button">
+        <span>🌈</span>
+        <span><b>全メンバーを見る</b><small>イベントごとにまとめて確認</small></span>
+      </button>
+      <div class="fast-manage-grid">
+        <button id="quickInputDashboardButton" class="fast-manage-button"><span>⚡</span><b>クイック入力</b><small>購入後の登録を高速化</small></button>
+        <button id="eventMatrixDashboardButton" class="fast-manage-button"><span>▦</span><b>イベント表</b><small>全メンバーを一括確認</small></button>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="recentDashboardSection" class="dashboard-section hidden">
+    <div class="dashboard-section-title">
+      <span>最近編集した生写真</span>
+      <small>続きから開く</small>
+    </div>
+    <div id="recentEventList" class="recent-event-list"></div>
+  </section>
+
+  <section class="dashboard-section">
+    <div class="dashboard-section-title">
+      <span>便利機能</span>
+      <small>集計・リスト</small>
+    </div>
+    <div class="dashboard-grid">
+      <button class="dashboard-card" onclick="showPage('stats')"><span>📊</span><b>統計</b></button>
+      <button class="dashboard-card" onclick="showPage('wishlist')"><span>♡</span><b>欲しい一覧</b></button>
+      <button class="dashboard-card" onclick="showPage('trade')"><span>🔄</span><b>提供可能</b></button>
+      <button class="dashboard-card" onclick="showPage('missing')"><span>🔎</span><b>未所持一覧</b></button>
+    </div>
+  </section>
+
+
+  <section class="public-home-notice" aria-label="非公式サイトの案内">
+    <b>非公式ファン制作ツール</b>
+    <p>本サイトはファンが個人で制作・運営しており、＝LOVEおよび関係各社とは関係ありません。公式写真・メンバー画像は収録していません。</p>
+    <button type="button" onclick="showPage('legal')">利用上の注意を確認</button>
+  </section>
+
+  <div id="dataUpdateLabel" class="data-update-label dashboard-update-label">データ更新日：読み込み中</div>
+</div>
+
+</section>
+
+
+<div id="settingsSheetOverlay" class="utility-sheet-overlay hidden" aria-hidden="true">
+  <div class="utility-sheet settings-utility-sheet" role="dialog" aria-modal="true" aria-labelledby="settingsSheetTitle">
+    <div class="utility-sheet-handle"></div>
+    <div class="utility-sheet-head">
+      <div><h2 id="settingsSheetTitle">設定・その他</h2><p>カスタマイズやデータ管理をまとめています</p></div>
+      <button id="closeSettingsSheetButton" class="utility-sheet-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="utility-sheet-body">
+      <div class="settings-menu-list">
+        <button data-settings-page="memberImages"><span>🖼️</span><div><b>メンバー画像設定</b><small>端末内だけで好きな画像を表示</small></div><i>›</i></button>
+        <button data-settings-page="oshi"><span>👑</span><div><b>推し設定</b><small>最推し・推し・気になるを設定</small></div><i>›</i></button>
+        <button data-settings-page="backup"><span>💾</span><div><b>バックアップ・データ管理</b><small>保存・復元・端末内データ管理</small></div><i>›</i></button>
+        <button data-settings-page="help"><span>📖</span><div><b>使い方</b><small>操作方法とデータ保護の案内</small></div><i>›</i></button>
+        <button data-settings-page="legal"><span>🛡️</span><div><b>本サイトについて・利用上の注意</b><small>非公式表記・画像・プライバシー・免責</small></div><i>›</i></button>
+        <button data-settings-page="about"><span>ℹ️</span><div><b>バージョン情報</b><small>サイトとデータの更新情報</small></div><i>›</i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="memberSelectorOverlay" class="member-selector-overlay hidden" aria-hidden="true">
+  <div class="member-selector-sheet" role="dialog" aria-modal="true" aria-labelledby="memberSelectorTitle">
+    <div class="member-selector-handle"></div>
+    <div class="member-selector-header">
+      <div>
+        <h2 id="memberSelectorTitle">メンバーを選ぶ</h2>
+        <p>所持状況を管理するメンバーを選択してください</p>
+      </div>
+      <button id="closeMemberSelectorButton" class="member-selector-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="member-selector-body">
+      <div class="member-selector-label">現役メンバー</div>
+      <div id="memberGrid" class="member-grid selector-member-grid"></div>
+      <div class="member-selector-label graduated-label">卒業メンバー</div>
+      <div id="graduatedMemberGrid" class="member-grid selector-member-grid graduated-grid"></div>
+    </div>
+  </div>
+</div>
+
+<section id="managerScreen" class="hidden">
+<header class="topbar"><div class="top-inner"><div class="top-row"><button id="backButton" class="back">← 戻る</button><div class="member-heading"><strong id="memberTitle"></strong><span id="memberSub"></span></div><button id="quickMemberSwitchButton" class="quick-member-switch" aria-label="メンバーを変更">👥</button></div>
+<div id="managerTools">
+  <div class="searchbox"><span>🔍</span><input id="searchInput" type="search" placeholder="年月・楽曲名・ツアー名・コラボ名で検索"></div>
+  <div class="unified-filter-toolbar">
+    <button id="openCollectionFilterButton" class="filter-action-button"><span>⚙️</span><b>絞り込み</b><i id="collectionFilterCount" class="filter-count hidden">0</i></button>
+    <button id="openCollectionSortButton" class="filter-action-button"><span>↕</span><b id="collectionSortLabel">新しい順</b></button>
+  </div>
+  <div id="collectionFilterChips" class="active-filter-chips"></div>
+  <div class="collection-mode-actions">
+    <button id="openQuickInputButton"><span>⚡</span>クイック入力</button>
+    <button id="openEventMatrixButton"><span>▦</span>イベント表</button>
+  </div>
+</div></div></header>
+<main class="wrap">
+<section id="collectionPage">
+<div class="summary"><div class="summary-card"><b id="ownedTotal">0</b><span>所持枚数</span></div><div class="summary-card"><b id="ownedTypes">0</b><span>所持種類</span></div><div class="summary-card"><b id="signedTotal">0</b><span>直筆あり</span></div></div>
+<div class="notice">所持枚数・直筆・欲しい情報は、このブラウザ内に保存されます。</div><div id="eventList" class="event-list"></div>
+</section>
+<section id="quickPage" class="hidden"></section>
+<section id="matrixPage" class="hidden"></section>
+<section id="statsPage" class="hidden"></section>
+<section id="wishlistPage" class="hidden"></section>
+<section id="tradePage" class="hidden"></section>
+<section id="missingPage" class="hidden"></section>
+<section id="oshiPage" class="hidden"></section>
+<section id="memberImagesPage" class="hidden"></section>
+<section id="backupPage" class="hidden"></section>
+<section id="helpPage" class="hidden"></section>
+<section id="aboutPage" class="hidden"></section>
+<section id="legalPage" class="hidden"></section>
+</main>
+<nav class="bottom-nav">
+<button data-page="collection" class="active"><span>📚</span>一覧</button>
+<button data-page="stats"><span>📊</span>統計</button>
+<button data-page="wishlist"><span>♡</span>欲しい</button>
+<button data-page="trade"><span>🔄</span>提供</button>
+</nav>
+</section>
+
+
+
+<div id="imageAdjustSheetOverlay" class="utility-sheet-overlay hidden" aria-hidden="true">
+  <div class="utility-sheet image-adjust-sheet" role="dialog" aria-modal="true" aria-labelledby="imageAdjustSheetTitle">
+    <div class="utility-sheet-handle"></div>
+    <div class="utility-sheet-head">
+      <div>
+        <h2 id="imageAdjustSheetTitle">画像の表示調整</h2>
+        <p id="imageAdjustMemberName">メンバー画像</p>
+      </div>
+      <button id="closeImageAdjustSheetButton" class="utility-sheet-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="utility-sheet-body">
+      <p class="image-adjust-lead">ドラッグしながら動かすと、実際のメンバーカードに近い表示範囲を確認できます。</p>
+      <div class="image-adjust-preview-grid">
+        <div>
+          <div class="image-adjust-preview-label">メンバーカード表示イメージ</div>
+          <div id="imageAdjustPreviewFrame" class="image-adjust-preview card-preview">
+            <img id="imageAdjustPreview" alt="画像表示位置のプレビュー">
+            <div class="image-adjust-preview-shade"></div>
+            <div id="imageAdjustPreviewName" class="image-adjust-preview-name"></div>
+            <div class="image-adjust-drag-chip">⇅ ドラッグで位置調整</div>
+          </div>
+        </div>
+        <div>
+          <div class="image-adjust-preview-label">丸アイコン表示イメージ</div>
+          <div class="image-adjust-avatar-preview">
+            <img id="imageAdjustAvatarPreview" alt="丸アイコン表示のプレビュー">
+          </div>
+        </div>
+      </div>
+      <div class="image-adjust-controls">
+        <label>
+          <span>左右の位置 <b id="imagePositionXValue">50</b></span>
+          <input id="imagePositionX" type="range" min="0" max="100" step="1" value="50">
+        </label>
+        <label>
+          <span>上下の位置 <b id="imagePositionYValue">50</b></span>
+          <input id="imagePositionY" type="range" min="0" max="100" step="1" value="50">
+        </label>
+        <label>
+          <span>拡大 <b id="imageZoomValue">100%</b></span>
+          <input id="imageZoom" type="range" min="100" max="240" step="1" value="100">
+        </label>
+      </div>
+      <button id="resetImageAdjustButton" class="image-adjust-reset-button">↺ 位置と拡大をリセット</button>
+      <p class="local-image-note">画像はこの端末のブラウザ内だけに保存され、外部へ送信されません。保存ボタンを押すと、書き込み後に設定値を読み直して確認します。</p>
+    </div>
+    <div class="utility-sheet-actions image-adjust-fixed-actions">
+      <button id="cancelImageAdjustButton" class="sheet-clear-button">キャンセル</button>
+      <button id="saveImageAdjustButton" class="sheet-apply-button">設定を保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="filterSheetOverlay" class="utility-sheet-overlay hidden" aria-hidden="true">
+  <div class="utility-sheet" role="dialog" aria-modal="true" aria-labelledby="filterSheetTitle">
+    <div class="utility-sheet-handle"></div>
+    <div class="utility-sheet-head">
+      <div><h2 id="filterSheetTitle">絞り込み</h2><p id="filterSheetDescription">表示する条件を選択してください</p></div>
+      <button id="closeFilterSheetButton" class="utility-sheet-close" aria-label="閉じる">×</button>
+    </div>
+    <div id="filterSheetBody" class="utility-sheet-body"></div>
+    <div class="utility-sheet-actions">
+      <button id="clearFilterSheetButton" class="sheet-clear-button">すべて解除</button>
+      <button id="applyFilterSheetButton" class="sheet-apply-button">適用する</button>
+    </div>
+  </div>
+</div>
+
+<div id="sortSheetOverlay" class="utility-sheet-overlay hidden" aria-hidden="true">
+  <div class="utility-sheet sort-utility-sheet" role="dialog" aria-modal="true" aria-labelledby="sortSheetTitle">
+    <div class="utility-sheet-handle"></div>
+    <div class="utility-sheet-head">
+      <div><h2 id="sortSheetTitle">並び順</h2><p>一覧の表示順を選択してください</p></div>
+      <button id="closeSortSheetButton" class="utility-sheet-close" aria-label="閉じる">×</button>
+    </div>
+    <div id="sortSheetBody" class="utility-sheet-body"></div>
+  </div>
+</div>
+
+
+<div id="bulkSheetOverlay" class="utility-sheet-overlay hidden" aria-hidden="true">
+  <div class="utility-sheet bulk-utility-sheet" role="dialog" aria-modal="true" aria-labelledby="bulkSheetTitle">
+    <div class="utility-sheet-handle"></div>
+    <div class="utility-sheet-head">
+      <div><h2 id="bulkSheetTitle">一括操作</h2><p id="bulkSheetDescription"></p></div>
+      <button id="closeBulkSheetButton" class="utility-sheet-close" aria-label="閉じる">×</button>
+    </div>
+    <div id="bulkSheetBody" class="utility-sheet-body"></div>
+  </div>
+</div>
+<div id="actionToast" class="action-toast hidden" role="status"></div>
+
+<div id="updateBanner" class="update-banner hidden">
+  <div><b>新しいバージョンがあります</b><span>最新版を反映するため再読み込みしてください。</span></div>
+  <button id="applyUpdateButton">更新する</button>
+</div>
+<div id="offlineBanner" class="offline-banner hidden">オフラインで表示しています</div>
+<div id="versionLabel" class="version-label">Ver 1.00</div>
+<script src="./js/app.js?v=1.00"></script>
+<script>
+(() => {
+  const updateBanner = document.getElementById("updateBanner");
+  const updateButton = document.getElementById("applyUpdateButton");
+  const offlineBanner = document.getElementById("offlineBanner");
+
+  const updateOnlineStatus = () => {
+    offlineBanner.classList.toggle("hidden", navigator.onLine);
+  };
+  window.addEventListener("online", updateOnlineStatus);
+  window.addEventListener("offline", updateOnlineStatus);
+  updateOnlineStatus();
+
+  if (!("serviceWorker" in navigator)) return;
+
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    refreshing = true;
+    location.reload();
+  });
+
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.00", {scope: "./"});
+      const showUpdate = worker => {
+        if (!worker) return;
+        updateBanner.classList.remove("hidden");
+        updateButton.onclick = () => worker.postMessage({type: "SKIP_WAITING"});
+      };
+      if (registration.waiting) showUpdate(registration.waiting);
+      registration.addEventListener("updatefound", () => {
+        const worker = registration.installing;
+        worker?.addEventListener("statechange", () => {
+          if (worker.state === "installed" && navigator.serviceWorker.controller) showUpdate(worker);
+        });
+      });
+      registration.update();
+    } catch (error) {
+      console.error("Service Worker registration failed:", error);
+    }
+  });
+})();
+</script>
+</body>
+</html>
