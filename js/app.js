@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.00.92",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.00.92",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.00.92",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.00.92",{cache:"no-store"})
+    fetch("./data/events.json?v=1.00.93",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.00.93",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.00.93",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.00.93",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -359,7 +359,7 @@ function initializeApp() {
   function memberCardPhotoMarkup(member){
     const record=memberImageRecord(member.id),url=memberImageUrl(member.id);
     if(!record||!url)return "";
-    return `<img class="member-card-photo" src="${esc(url)}" alt="" style="${memberImageStyle(record)}"><span class="member-card-photo-shade"></span>`;
+    return `<img class="member-card-photo" src="${esc(url)}" alt="" style="${memberImageStyle(record)}">`;
   }
 
   function memberAvatarMarkup(member,className="member-local-avatar"){
@@ -484,6 +484,7 @@ function initializeApp() {
     imageEditPreviewUrl=URL.createObjectURL(imageEditDraft.blob);
     $("imageAdjustMemberName").textContent=`${member.emoji} ${member.name}`;
     $("imageAdjustPreviewName").textContent=member.name;
+    applyMemberVars($("imageAdjustSheetOverlay"),member);
     $("imageAdjustPreview").src=imageEditPreviewUrl;
     $("imageAdjustAvatarPreview").src=imageEditPreviewUrl;
     $("imagePositionX").value=String(imageEditDraft.positionX);
@@ -752,7 +753,7 @@ function initializeApp() {
   }
   function pageMemberOptions(){
     const active=MEMBERS.filter(m=>!isGraduated(m)).map(m=>`<option value="${m.id}" ${state.pageMemberId===m.id?"selected":""}>${m.emoji} ${m.name}</option>`).join("");
-    const graduated=MEMBERS.filter(isGraduated).map(m=>`<option value="${m.id}" ${state.pageMemberId===m.id?"selected":""}>${m.emoji} ${m.name}（卒業）</option>`).join("");
+    const graduated=MEMBERS.filter(isGraduated).map(m=>`<option value="${m.id}" ${state.pageMemberId===m.id?"selected":""}>${m.emoji} ${m.name}</option>`).join("");
     return `<option value="">全メンバー</option><optgroup label="現役メンバー">${active}</optgroup><optgroup label="卒業メンバー">${graduated}</optgroup>`;
   }
   function bindPageMemberFilter(){
@@ -1321,7 +1322,7 @@ function openMember(id){
 
   function missingMemberOptions(){
     const active=MEMBERS.filter(m=>!isGraduated(m)).map(m=>`<option value="${m.id}" ${state.missingMemberId===m.id?"selected":""}>${m.emoji} ${m.name}</option>`).join("");
-    const graduated=MEMBERS.filter(isGraduated).map(m=>`<option value="${m.id}" ${state.missingMemberId===m.id?"selected":""}>${m.emoji} ${m.name}（卒業）</option>`).join("");
+    const graduated=MEMBERS.filter(isGraduated).map(m=>`<option value="${m.id}" ${state.missingMemberId===m.id?"selected":""}>${m.emoji} ${m.name}</option>`).join("");
     return `<option value="">全メンバー横断</option><optgroup label="現役メンバー">${active}</optgroup><optgroup label="卒業メンバー">${graduated}</optgroup>`;
   }
   function missingPositionOptions(){
@@ -1499,7 +1500,7 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.00.92（正式公開候補）</h3>
+        <h3>公開版Ver1.00.93（正式公開候補）</h3>
         <p>公開前監査の指摘を反映し、バージョン・キャッシュ統一、プライバシー表記、データ補完を行った正式公開候補版です。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
@@ -1840,7 +1841,7 @@ function openMember(id){
     applyMemberVars(b,m);
     b.style.borderColor=`color-mix(in srgb,${m.accent} 48%,white)`;
     const memberStats=statsFor([m]);
-    b.innerHTML=`${memberCardPhotoMarkup(m)}${state.memberId===m.id?'<span class="last-used">前回</span>':''}<div class="member-card-info-panel"><span class="name"><span class="name-emoji" aria-hidden="true">${m.emoji}</span><span>${esc(m.name)}</span></span><span class="member-card-meta">${isGraduated(m)?'<span class="graduated-label">卒業</span>':""}<span>所持 ${memberTotal(m.id)}枚</span><i></i><span>コンプ率 ${memberStats.rate}%</span></span><span class="member-rate-bar"><i style="width:${memberStats.rate}%"></i></span></div>`;
+    b.innerHTML=`${memberCardPhotoMarkup(m)}<div class="member-card-info-panel"><span class="name"><span class="name-emoji" aria-hidden="true">${m.emoji}</span><span>${esc(m.name)}</span></span><span class="member-card-meta"><span>所持 ${memberTotal(m.id)}枚</span><i></i><span>コンプ率 ${memberStats.rate}%</span></span></div>`;
     b.onclick=()=>openMember(m.id);
     return b;
   }
