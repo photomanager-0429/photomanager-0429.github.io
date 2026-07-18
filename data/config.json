@@ -1,5 +1,5 @@
 {
-  "version": "1.00.6",
+  "version": "1.00.8",
   "releaseDate": "2026-07-18",
   "dataVersion": "2026-07-16.6",
   "newItemCount": 12,
@@ -16,5 +16,6 @@
   "adsEnabled": false,
   "securityHardening": "2026-07-18-audit-final",
   "releaseCandidate": true,
-  "memberColorTheme": "background-first-v1"
+  "memberColorTheme": "background-first-v2",
+  "uiTuning": "image-settings-name-only-and-member-colors"
 }
