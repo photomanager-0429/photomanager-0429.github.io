@@ -57,12 +57,13 @@
     "id": "maika",
     "name": "佐々木舞香",
     "emoji": "🦑",
-    "accent": "#686868",
-    "soft": "#DADADA",
+    "accent": "#F2F2F2",
+    "soft": "#FFFFFF",
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "ささきまいか"
+    "kana": "ささきまいか",
+    "colorLabel": "白"
   },
   {
     "id": "hitomi",
