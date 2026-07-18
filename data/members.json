@@ -1,0 +1,138 @@
+[
+  {
+    "id": "emiri",
+    "name": "大谷映美里",
+    "emoji": "🐈",
+    "accent": "#8B50C7",
+    "soft": "#DCC5F2",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "おおたにえみり"
+  },
+  {
+    "id": "hana",
+    "name": "大場花菜",
+    "emoji": "💮",
+    "accent": "#E86F12",
+    "soft": "#FFC98F",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "おおばはな"
+  },
+  {
+    "id": "risa",
+    "name": "音嶋莉沙",
+    "emoji": "💄",
+    "accent": "#239CCB",
+    "soft": "#B7E6F5",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "おとしまりさ"
+  },
+  {
+    "id": "kiara",
+    "name": "齋藤樹愛羅",
+    "emoji": "👼",
+    "accent": "#E94F91",
+    "soft": "#F8B8D3",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "さいとうきあら"
+  },
+  {
+    "id": "maika",
+    "name": "佐々木舞香",
+    "emoji": "🦑",
+    "accent": "#686868",
+    "soft": "#DADADA",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "ささきまいか"
+  },
+  {
+    "id": "hitomi",
+    "name": "髙松瞳",
+    "emoji": "🍨",
+    "accent": "#DC3434",
+    "soft": "#F5AAAA",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "たかまつひとみ"
+  },
+  {
+    "id": "shoko",
+    "name": "瀧脇笙古",
+    "emoji": "👌🏻",
+    "accent": "#B98A00",
+    "soft": "#F5D96E",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "たきわきしょうこ"
+  },
+  {
+    "id": "iori",
+    "name": "野口衣織",
+    "emoji": "🌱",
+    "accent": "#67379F",
+    "soft": "#CAB0E8",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "のぐちいおり"
+  },
+  {
+    "id": "sana",
+    "name": "諸橋沙夏",
+    "emoji": "🥦",
+    "accent": "#2F8C47",
+    "soft": "#AED9B8",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "もろはしさな"
+  },
+  {
+    "id": "anna",
+    "name": "山本杏奈",
+    "emoji": "🐼",
+    "accent": "#2760B8",
+    "soft": "#AFC9F0",
+    "status": "active",
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "やまもとあんな"
+  },
+  {
+    "id": "nagisa",
+    "name": "齊藤なぎさ",
+    "emoji": "🍓",
+    "accent": "#707070",
+    "soft": "#D5D5D5",
+    "status": "graduated",
+    "graduation": "2023年1月卒業",
+    "maxSort": 149,
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "さいとうなぎさ"
+  },
+  {
+    "id": "nonno",
+    "name": "佐竹のん乃",
+    "emoji": "🍅",
+    "accent": "#707070",
+    "soft": "#D5D5D5",
+    "status": "graduated",
+    "graduation": "2021年3月卒業",
+    "maxSort": 93,
+    "includeEventIds": [],
+    "excludeEventIds": [],
+    "kana": "さたけのんの"
+  }
+]
