@@ -1,26 +1,32 @@
 "use strict";
-const CACHE_NAME = "equal-love-photo-manager-public-v1003";
+const CACHE_NAME = "equal-love-photo-manager-public-v1004";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=1.00.3",
-  "./js/app.js?v=1.00.3",
-  "./js/bootstrap.js?v=1.00.3",
-  "./data/events.json?v=1.00.3",
+  "./css/style.css?v=1.00.4",
+  "./js/app.js?v=1.00.4",
+  "./js/bootstrap.js?v=1.00.4",
+  "./data/events.json?v=1.00.4",
   "./data/members.json?v=1.0.0",
   "./data/positions.json?v=1.0.0-orderfix",
-  "./data/config.json?v=1.00.3",
-  "./manifest.webmanifest?v=1.0.0",
+  "./data/config.json?v=1.00.4",
+  "./manifest.webmanifest?v=1.0.4",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png"
 ];
-const ALLOWED_PATHS = new Set(APP_SHELL.map(item => new URL(item, self.registration.scope).pathname));
+const ALLOWED_ASSET_URLS = new Set(
+  APP_SHELL
+    .filter(item => item !== "./" && item !== "./index.html")
+    .map(item => new URL(item, self.registration.scope).href)
+);
 
 function canCache(request, response) {
   if (!response || !response.ok || response.type !== "basic") return false;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || !ALLOWED_PATHS.has(url.pathname)) return false;
+  const isNavigationDocument = request.mode === "navigate" && url.origin === self.location.origin;
+  const isAllowedAsset = ALLOWED_ASSET_URLS.has(url.href);
+  if (!isNavigationDocument && !isAllowedAsset) return false;
   const type = response.headers.get("content-type") || "";
   if (url.pathname.endsWith(".js")) return type.includes("javascript") || type.includes("text/plain");
   if (url.pathname.endsWith(".json") || url.pathname.endsWith(".webmanifest")) return type.includes("json") || type.includes("manifest") || type.includes("text/plain");
@@ -65,7 +71,7 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  if (!ALLOWED_PATHS.has(url.pathname)) return;
+  if (!ALLOWED_ASSET_URLS.has(url.href)) return;
   event.respondWith(
     caches.match(event.request).then(cached => {
       const network = fetch(event.request)
