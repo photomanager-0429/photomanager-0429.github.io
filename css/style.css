@@ -1901,3 +1901,74 @@ textarea,
     max-height:96dvh!important;
   }
 }
+
+
+/* 公開版 Ver1.00.93：メンバーカード表示の最終整理 */
+
+/* 写真上の暗幕・ぼかしを完全に撤廃 */
+.member-card-photo-shade{
+  display:none!important;
+  background:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.member-card.pattern-a .member-card-info-panel,
+.member-card.pattern-a .name,
+.member-card.pattern-a .member-card-meta{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+
+/* 写真カードの枠は複数色ではなく、各メンバーの先頭メンカラ1色 */
+.member-card.pattern-a.has-custom-image{
+  border:3px solid var(--member-accent)!important;
+  box-shadow:0 10px 24px color-mix(in srgb,var(--member-accent) 20%,transparent)!important;
+}
+.member-image-setting-preview.has-photo{
+  border:3px solid var(--member-accent)!important;
+  box-shadow:none!important;
+}
+.image-adjust-preview.card-preview,
+.image-adjust-avatar-preview{
+  border:3px solid var(--member-accent)!important;
+  box-sizing:border-box;
+}
+
+/* 名前表記は現役・卒業で完全に同じルール */
+.member-card.pattern-a .name,
+.member-card.pattern-a .name>span:last-child,
+.member-card.pattern-a.graduated .name,
+.member-card.pattern-a.graduated .name>span:last-child,
+.graduated-grid .member-card.pattern-a .name,
+.graduated-grid .member-card.pattern-a .name>span:last-child{
+  color:#171417!important;
+  text-shadow:none!important;
+}
+.member-card.pattern-a.has-custom-image .name,
+.member-card.pattern-a.has-custom-image .name>span:last-child,
+.member-card.pattern-a.graduated.has-custom-image .name,
+.member-card.pattern-a.graduated.has-custom-image .name>span:last-child,
+.graduated-grid .member-card.pattern-a.has-custom-image .name,
+.graduated-grid .member-card.pattern-a.has-custom-image .name>span:last-child{
+  color:#fff!important;
+  text-shadow:0 2px 7px rgba(18,10,14,.82)!important;
+}
+.member-card.pattern-a.has-custom-image .member-card-meta,
+.member-card.pattern-a.graduated.has-custom-image .member-card-meta{
+  color:#fff!important;
+  text-shadow:0 2px 6px rgba(18,10,14,.82)!important;
+}
+
+/* メンバー選択画面では「前回」とコンプ率下の進捗線を表示しない */
+.selector-member-grid .last-used,
+.selector-member-grid .member-rate-bar{
+  display:none!important;
+}
+
+/* 佐々木舞香の白を濁らせない */
+.member-card.single-member-color[style*="--member-accent:#F2F2F2"]{
+  background:#fff!important;
+}
