@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.00.6",{cache:"no-store"}),
+    fetch("./data/events.json?v=1.00.8",{cache:"no-store"}),
     fetch("./data/members.json?v=1.0.0",{cache:"no-store"}),
     fetch("./data/positions.json?v=1.0.0-orderfix",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.00.6",{cache:"no-store"})
+    fetch("./data/config.json?v=1.00.8",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -603,10 +603,8 @@ function initializeApp() {
         :`<div class="member-image-setting-preview" style="background:${memberBackground(member)}"><span>${member.emoji}</span></div>`;
       return `<article class="member-image-setting-card" style="${memberCssVars(member)}">
         ${preview}
-        <div class="member-image-setting-info">
+        <div class="member-image-setting-info name-only">
           <b>${member.emoji} ${esc(member.name)}</b>
-          <span>${record?`設定済み・左右${Math.round(record.positionX)}／上下${Math.round(record.positionY)}／${Math.round(record.zoom*100)}%・${formatImageBytes(record.blob.size)}`:"画像未設定"}</span>
-          ${isGraduated(member)?'<small>卒業メンバー</small>':""}
         </div>
         <div class="member-image-setting-actions">
           <button data-image-select="${esc(member.id)}">${record?"画像を変更":"画像を選択"}</button>
@@ -1482,7 +1480,7 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.00.6（正式公開候補）</h3>
+        <h3>公開版Ver1.00.8（正式公開候補）</h3>
         <p>公開前監査の指摘を反映し、バージョン・キャッシュ統一、プライバシー表記、データ補完を行った正式公開候補版です。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
