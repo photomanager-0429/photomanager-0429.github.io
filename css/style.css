@@ -1190,7 +1190,7 @@ html{
 .settings-page-bottom-space{height:1px;min-height:1px}
 
 
-/* 公開版 Ver1.00.9：メンバーカラー背景優先表示 */
+/* 公開版 Ver1.00.9111：メンバーカラー背景優先表示 */
 .member-card,
 .member-card:not(.graduated),
 .member-card.graduated{
@@ -1383,7 +1383,7 @@ html{
 }
 
 
-/* 公開版 Ver1.00.9：名前と推しマークの視認性強化 */
+/* 公開版 Ver1.00.9111：名前と推しマークの視認性強化 */
 .member-card.has-custom-image .name{
   display:inline-flex;
   align-items:center;
@@ -1461,7 +1461,7 @@ html{
 }
 
 
-/* Ver1.00.9：画像設定カードの情報を名前のみに簡略化 */
+/* Ver1.00.9111：画像設定カードの情報を名前のみに簡略化 */
 .member-image-setting-info.name-only{
   padding:10px 12px;
   background:rgba(255,255,255,.74);
@@ -1474,7 +1474,7 @@ html{
 .member-image-setting-info.name-only small{display:none !important}
 
 
-/* 公開版 Ver1.00.9：パターンA正式反映 */
+/* 公開版 Ver1.00.9111：パターンA正式反映 */
 .member-card.pattern-a{
   position:relative;
   overflow:hidden;
@@ -1641,4 +1641,73 @@ html{
   .member-card.pattern-a .member-card-meta{
     font-size:8px;
   }
+}
+
+
+/* 公開版 Ver1.00.91111：名前背景・利用上の注意の色統一 */
+
+/* メンバー選択／一覧カード：名前欄は先頭メンカラ1色の半透明 */
+.member-card.pattern-a .member-card-info-panel,
+.member-card.pattern-a:not(.has-custom-image) .member-card-info-panel,
+.selector-member-grid .member-card.pattern-a .member-card-info-panel{
+  background:color-mix(in srgb,var(--member-soft) 78%,transparent)!important;
+  border-color:color-mix(in srgb,var(--member-accent) 25%,rgba(255,255,255,.74));
+  backdrop-filter:blur(9px);
+  -webkit-backdrop-filter:blur(9px);
+}
+
+/* 名前自体もメンカラの半透明背景へ */
+.member-card.pattern-a .name{
+  width:max-content;
+  max-width:100%;
+  padding:3px 7px;
+  border-radius:9px;
+  background:color-mix(in srgb,var(--member-soft) 82%,transparent);
+  color:#171417;
+}
+.member-card.pattern-a .name>span:last-child{color:#171417}
+.member-card.pattern-a.graduated .name,
+.member-card.pattern-a.graduated .name>span:last-child,
+.graduated-grid .member-card.pattern-a .name,
+.graduated-grid .member-card.pattern-a .name>span:last-child{
+  color:#111!important;
+}
+
+/* メンバー画像設定：白背景をメンカラ1色の半透明へ */
+.member-image-setting-info,
+.member-image-setting-info.name-only{
+  background:color-mix(in srgb,var(--member-soft) 78%,transparent)!important;
+  border:1px solid color-mix(in srgb,var(--member-accent) 22%,rgba(255,255,255,.72));
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+.member-image-setting-info b,
+.member-image-setting-info.name-only b{
+  color:#171417;
+}
+
+/* 利用上の注意：すべての項目を同じ色へ統一 */
+.legal-card,
+.legal-card.legal-primary,
+.legal-card.legal-security{
+  border-left-color:#c95f8f!important;
+  border-color:#edc3d5;
+  border-left-width:5px;
+  background:linear-gradient(135deg,#fff2f8,#fff8fb)!important;
+}
+.legal-card h3,
+.legal-card.legal-primary h3,
+.legal-card.legal-security h3{
+  color:#7e3958;
+}
+.legal-card p,
+.legal-card.legal-primary p,
+.legal-card.legal-security p{
+  color:#695861;
+}
+.legal-card .legal-contact-link,
+.legal-card.legal-security .legal-contact-link{
+  border-color:#dca2bc;
+  background:#fff5f9;
+  color:#a23b68;
 }
