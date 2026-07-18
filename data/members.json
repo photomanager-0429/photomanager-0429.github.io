@@ -4,33 +4,42 @@
     "name": "大谷映美里",
     "emoji": "🐈",
     "accent": "#8B50C7",
-    "soft": "#DCC5F2",
+    "soft": "#E6D7F5",
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "おおたにえみり"
+    "kana": "おおたにえみり",
+    "accent2": "#B99BDE",
+    "soft2": "#FFFFFF",
+    "colorLabel": "薄紫×白"
   },
   {
     "id": "hana",
     "name": "大場花菜",
     "emoji": "💮",
     "accent": "#E86F12",
-    "soft": "#FFC98F",
+    "soft": "#FFD0A2",
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "おおばはな"
+    "kana": "おおばはな",
+    "accent2": "#2F71D8",
+    "soft2": "#DCE9FF",
+    "colorLabel": "オレンジ×青"
   },
   {
     "id": "risa",
     "name": "音嶋莉沙",
     "emoji": "💄",
     "accent": "#239CCB",
-    "soft": "#B7E6F5",
+    "soft": "#C6EEF9",
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "おとしまりさ"
+    "kana": "おとしまりさ",
+    "accent2": "#C24585",
+    "soft2": "#F8D1E3",
+    "colorLabel": "水色×濃いピンク"
   },
   {
     "id": "kiara",
@@ -70,34 +79,43 @@
     "id": "shoko",
     "name": "瀧脇笙古",
     "emoji": "👌🏻",
-    "accent": "#B98A00",
-    "soft": "#F5D96E",
+    "accent": "#E08B00",
+    "soft": "#F8E277",
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "たきわきしょうこ"
+    "kana": "たきわきしょうこ",
+    "accent2": "#BF4B88",
+    "soft2": "#FFD5A4",
+    "colorLabel": "黄色×オレンジ×濃いピンク"
   },
   {
     "id": "iori",
     "name": "野口衣織",
     "emoji": "🌱",
-    "accent": "#67379F",
-    "soft": "#CAB0E8",
+    "accent": "#5C2E91",
+    "soft": "#D6C2F0",
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "のぐちいおり"
+    "kana": "のぐちいおり",
+    "accent2": "#7E52B4",
+    "soft2": "#EADBFA",
+    "colorLabel": "紫（巨峰カラー）"
   },
   {
     "id": "sana",
     "name": "諸橋沙夏",
     "emoji": "🥦",
-    "accent": "#2F8C47",
-    "soft": "#AED9B8",
+    "accent": "#6BBE45",
+    "soft": "#D8F2C7",
     "status": "active",
     "includeEventIds": [],
     "excludeEventIds": [],
-    "kana": "もろはしさな"
+    "kana": "もろはしさな",
+    "accent2": "#96D66B",
+    "soft2": "#EEFADD",
+    "colorLabel": "黄緑"
   },
   {
     "id": "anna",
