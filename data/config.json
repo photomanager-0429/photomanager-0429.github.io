@@ -1,5 +1,5 @@
 {
-  "version": "1.00.9",
+  "version": "1.00.91",
   "releaseDate": "2026-07-18",
   "dataVersion": "2026-07-16.6",
   "newItemCount": 12,
@@ -17,5 +17,5 @@
   "securityHardening": "2026-07-18-audit-final",
   "releaseCandidate": true,
   "memberColorTheme": "pattern-a-final",
-  "uiTuning": "compact-name-panel-diagonal-oshi-ribbon"
+  "uiTuning": "transparent-member-color-labels-and-legal-unification"
 }
