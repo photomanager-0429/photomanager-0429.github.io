@@ -1,17 +1,8 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-385XD642LL"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-385XD642LL');
-</script>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; frame-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HXKqMZk2ovenH/t74IptZVd75X6xMz8g60JNka0aYQU=' https://www.googletagmanager.com; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://www.google-analytics.com https://*.google-analytics.com; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; font-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; frame-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="index,follow,noarchive">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -21,10 +12,19 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="非公式 生写真管理">
-<link rel="manifest" href="./manifest.webmanifest?v=1.0.93">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.0.93">
+<link rel="manifest" href="./manifest.webmanifest?v=1.0.94">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.0.94">
 <title>【非公式】＝LOVE 生写真管理</title>
-<link rel="stylesheet" href="./css/style.css?v=1.00.93">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-385XD642LL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-385XD642LL');
+</script>
+<link rel="stylesheet" href="./css/style.css?v=1.00.94">
 </head>
 <body>
 <section id="homeScreen" class="home dashboard-home">
@@ -58,14 +58,6 @@
     </div>
   </section>
 
-
-  <section id="recentDashboardSection" class="dashboard-section hidden">
-    <div class="dashboard-section-title">
-      <span>最近編集した生写真</span>
-      <small>続きから開く</small>
-    </div>
-    <div id="recentEventList" class="recent-event-list"></div>
-  </section>
 
   <section class="dashboard-section">
     <div class="dashboard-section-title">
@@ -104,6 +96,7 @@
       <div class="settings-menu-list">
         <button data-settings-page="memberImages"><span>🖼️</span><div><b>メンバー画像設定</b><small>端末内だけで好きな画像を表示</small></div><i>›</i></button>
         <button data-settings-page="oshi"><span>👑</span><div><b>推し設定</b><small>最推し・推し・気になるを設定</small></div><i>›</i></button>
+        <button data-settings-page="bulkManage"><span>♡</span><div><b>未所持・欲しい一括操作</b><small>未所持一覧の表示や欲しいへの一括追加</small></div><i>›</i></button>
         <button data-settings-page="backup"><span>💾</span><div><b>バックアップ・データ管理</b><small>保存・復元・端末内データ管理</small></div><i>›</i></button>
         <button data-settings-page="help"><span>📖</span><div><b>使い方</b><small>操作方法とデータ保護の案内</small></div><i>›</i></button>
         <button data-settings-page="legal"><span>🛡️</span><div><b>本サイトについて・利用上の注意</b><small>非公式表記・画像・プライバシー・免責</small></div><i>›</i></button>
@@ -159,6 +152,7 @@
 <section id="missingPage" class="hidden"></section>
 <section id="oshiPage" class="hidden"></section>
 <section id="memberImagesPage" class="hidden"></section>
+<section id="bulkManagePage" class="hidden"></section>
 <section id="backupPage" class="hidden"></section>
 <section id="helpPage" class="hidden"></section>
 <section id="aboutPage" class="hidden"></section>
@@ -271,8 +265,8 @@
   <button id="applyUpdateButton">更新する</button>
 </div>
 <div id="offlineBanner" class="offline-banner hidden">オフラインで表示しています</div>
-<div id="versionLabel" class="version-label">Ver 1.00.93</div>
-<script src="./js/app.js?v=1.00.93"></script>
-<script src="./js/bootstrap.js?v=1.00.93"></script>
+<div id="versionLabel" class="version-label">Ver 1.00.94</div>
+<script src="./js/app.js?v=1.00.94"></script>
+<script src="./js/bootstrap.js?v=1.00.94"></script>
 </body>
 </html>
