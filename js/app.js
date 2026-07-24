@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.00.94",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.00.94",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.00.94",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.00.94",{cache:"no-store"})
+    fetch("./data/events.json?v=1.00.95",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.00.95",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.00.95",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.00.95",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -1346,30 +1346,44 @@ function openMember(id){
       return {m,items};
     }).filter(group=>group.items.length);
   }
-  function renderMissing(){
+  function missingResultsHtml(memberGroups){
+    return memberGroups.length?memberGroups.map(group=>`
+      <section class="missing-member-section">
+        <div class="missing-member-head" style="${memberCssVars(group.m)}">
+          <div><b>${group.m.emoji} ${group.m.name}</b>${isGraduated(group.m)?'<span class="mini-graduated">卒業</span>':''}</div>
+          <span>${group.items.reduce((s,x)=>s+x.positions.length,0)}種類</span>
+        </div>
+        <div class="missing-event-list">${group.items.map(x=>`
+          <div class="item missing-event-item">
+            <div class="item-title">${isNewEvent(x.e)?'<span class="inline-new">NEW</span>':''}${esc(x.e.period)}</div>
+            <div class="item-meta">${esc(x.e.work)}｜${esc(x.e.category)}</div>
+            <div class="item-tags">${x.positions.map(p=>`<span class="pill missing-pill">${p.name}</span>`).join("")}</div>
+          </div>`).join("")}
+        </div>
+      </section>`).join(""):'<div class="empty">条件に該当する未所持データはありません。</div>';
+  }
+  function updateMissingResults(){
     const memberGroups=groupedMissingItems();
     const eventCount=memberGroups.reduce((sum,g)=>sum+g.items.length,0);
     const typeCount=memberGroups.reduce((sum,g)=>sum+g.items.reduce((s,x)=>s+x.positions.length,0),0);
+    const summary=$("missingSummary");
+    const list=$("missingMemberList");
+    if(summary)summary.textContent=`${memberGroups.length}人・${eventCount}イベント・${typeCount}種類が未所持です`;
+    if(list)list.innerHTML=missingResultsHtml(memberGroups);
+  }
+  function renderMissing(){
     $("missingPage").innerHTML=`
-      <div class="page-head"><h2>🔎 未所持一覧</h2><p>${memberGroups.length}人・${eventCount}イベント・${typeCount}種類が未所持です</p></div>
+      <div class="page-head"><h2>🔎 未所持一覧</h2><p id="missingSummary"></p></div>
       <div class="searchbox missing-search"><span>🔍</span><input id="missingSearchInput" type="search" value="${esc(state.missingSearch)}" placeholder="年月・楽曲名・ツアー名など"></div>
       ${listToolbarHtml("missing")}
-      <div class="missing-member-list">${memberGroups.length?memberGroups.map(group=>`
-        <section class="missing-member-section">
-          <div class="missing-member-head" style="${memberCssVars(group.m)}">
-            <div><b>${group.m.emoji} ${group.m.name}</b>${isGraduated(group.m)?'<span class="mini-graduated">卒業</span>':''}</div>
-            <span>${group.items.reduce((s,x)=>s+x.positions.length,0)}種類</span>
-          </div>
-          <div class="missing-event-list">${group.items.map(x=>`
-            <div class="item missing-event-item">
-              <div class="item-title">${isNewEvent(x.e)?'<span class="inline-new">NEW</span>':''}${esc(x.e.period)}</div>
-              <div class="item-meta">${esc(x.e.work)}｜${esc(x.e.category)}</div>
-              <div class="item-tags">${x.positions.map(p=>`<span class="pill missing-pill">${p.name}</span>`).join("")}</div>
-            </div>`).join("")}
-          </div>
-        </section>`).join(""):'<div class="empty">条件に該当する未所持データはありません。</div>'}</div>`;
+      <div id="missingMemberList" class="missing-member-list"></div>`;
     bindListToolbar("missing");
-    document.getElementById("missingSearchInput").oninput=e=>{state.missingSearch=e.target.value;savePreferences();renderMissing()};
+    updateMissingResults();
+    $("missingSearchInput").oninput=e=>{
+      state.missingSearch=e.target.value;
+      savePreferences();
+      updateMissingResults();
+    };
   }
 
 
@@ -1582,8 +1596,8 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.00.94</h3>
-        <p>設定に未所持・欲しい一括操作を追加し、TOPの最近編集した生写真を削除しました。Google Analyticsによるアクセス解析にも対応しています。</p>
+        <h3>公開版Ver1.00.95</h3>
+        <p>未所持一覧の検索欄を、入力中に作り直さない方式へ変更しました。複数文字や日本語を連続して入力できます。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
         <h3>非公式サイト</h3>
