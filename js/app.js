@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.00.93",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.00.93",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.00.93",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.00.93",{cache:"no-store"})
+    fetch("./data/events.json?v=1.00.94",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.00.94",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.00.94",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.00.94",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -120,6 +120,7 @@ function initializeApp() {
     matrixSearch:savedPrefs.matrixSearch||"",
     matrixYear:savedPrefs.matrixYear||"",
     matrixOrder:savedPrefs.matrixOrder||"asc",
+    bulkMemberId:savedPrefs.bulkMemberId||"",
     counts:safeStorageObject(COUNT_KEY),
     signs:safeStorageObject(SIGN_KEY),
     wants:safeStorageObject(WANT_KEY),
@@ -153,7 +154,8 @@ function initializeApp() {
       matrixEventId:state.matrixEventId,
       matrixSearch:state.matrixSearch,
       matrixYear:state.matrixYear,
-      matrixOrder:state.matrixOrder
+      matrixOrder:state.matrixOrder,
+      bulkMemberId:state.bulkMemberId
     }));
   }
   const $=id=>document.getElementById(id);
@@ -1064,7 +1066,7 @@ function openMember(id){
   function updateHeader(){
     const m=MEMBERS.find(x=>x.id===state.memberId);
     $("memberTitle").textContent=state.mode==="all"?"🌈 全メンバー":m?`${m.emoji} ${m.name}`:"生写真管理";
-    const labels={collection:"生写真コレクション",quick:"クイック入力",matrix:"イベント別チェック表",stats:"統計・年代別コンプ率",wishlist:"欲しい生写真一覧",trade:"ダブり・提供可能一覧",missing:"未所持一覧",oshi:"推しカスタマイズ",help:"使い方",about:"バージョン情報",legal:"本サイトについて・利用上の注意",backup:"バックアップ・復元"};
+    const labels={collection:"生写真コレクション",quick:"クイック入力",matrix:"イベント別チェック表",stats:"統計・年代別コンプ率",wishlist:"欲しい生写真一覧",trade:"ダブり・提供可能一覧",missing:"未所持一覧",oshi:"推しカスタマイズ",memberImages:"メンバー画像設定",bulkManage:"未所持・欲しい一括操作",help:"使い方",about:"バージョン情報",legal:"本サイトについて・利用上の注意",backup:"バックアップ・復元"};
     const pageLabel=labels[state.page]||"生写真管理";
     $("memberSub").textContent=state.mode==="member"&&m&&isGraduated(m)?`${m.graduation}｜${pageLabel}`:pageLabel;
     const heading=$("memberTitle")?.parentElement;
@@ -1078,7 +1080,7 @@ function openMember(id){
     if(!skipScrollSave)saveScrollPosition();
     if($("homeScreen").classList.contains("hidden")===false){state.mode="all";state.memberId=null;theme(null);$("homeScreen").classList.add("hidden");$("managerScreen").classList.remove("hidden")}
     state.page=page;
-    ["collection","quick","matrix","stats","wishlist","trade","missing","oshi","memberImages","backup","help","legal","about"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
+    ["collection","quick","matrix","stats","wishlist","trade","missing","oshi","memberImages","bulkManage","backup","help","legal","about"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
     $("managerTools").classList.toggle("hidden",page!=="collection");
     document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
     updateHeader();
@@ -1091,6 +1093,7 @@ function openMember(id){
     if(page==="missing")renderMissing();
     if(page==="oshi")renderOshi();
     if(page==="memberImages")renderMemberImages();
+    if(page==="bulkManage")renderBulkManage();
     if(page==="backup")renderBackup();
     if(page==="help")renderHelp();
     if(page==="legal")renderLegal();
@@ -1370,6 +1373,85 @@ function openMember(id){
   }
 
 
+  function bulkManageMembers(){
+    const members=state.bulkMemberId?MEMBERS.filter(m=>m.id===state.bulkMemberId):MEMBERS;
+    return rankedMembers(members);
+  }
+  function bulkManageSummary(){
+    let missing=0,alreadyWanted=0;
+    bulkManageMembers().forEach(member=>eligibleEventsForMember(member).forEach(event=>POSITIONS.forEach(position=>{
+      if(getCount(event.id,member.id,position.id)!==0)return;
+      missing++;
+      if(isWanted(event.id,member.id,position.id))alreadyWanted++;
+    })));
+    return {missing,alreadyWanted,addable:Math.max(0,missing-alreadyWanted)};
+  }
+  function bulkManageMemberOptions(){
+    const active=MEMBERS.filter(m=>!isGraduated(m)).map(m=>`<option value="${m.id}" ${state.bulkMemberId===m.id?"selected":""}>${m.emoji} ${m.name}</option>`).join("");
+    const graduated=MEMBERS.filter(isGraduated).map(m=>`<option value="${m.id}" ${state.bulkMemberId===m.id?"selected":""}>${m.emoji} ${m.name}</option>`).join("");
+    return `<option value="">全メンバー横断</option><optgroup label="現役メンバー">${active}</optgroup><optgroup label="卒業メンバー">${graduated}</optgroup>`;
+  }
+  function openBulkMissingList(){
+    state.missingMemberId=state.bulkMemberId;
+    state.missingPositionId="";
+    state.missingYear="";
+    state.missingSearch="";
+    state.missingEventOrder="desc";
+    state.oshiOnly=false;
+    savePreferences();
+    showPage("missing");
+  }
+  function addBulkMissingToWishlist(){
+    const summary=bulkManageSummary();
+    const member=MEMBERS.find(m=>m.id===state.bulkMemberId);
+    const scopeLabel=member?`${member.emoji} ${member.name}`:"全メンバー";
+    if(summary.addable===0){showActionToast(summary.missing?"未所持はすべて欲しい登録済みです":"未所持データはありません");return}
+    if(!confirm(`${scopeLabel}の未所持 ${summary.missing}種類のうち、未登録の${summary.addable}種類を欲しいリストへ追加しますか？`))return;
+    saveAutoBackup(`未所持の欲しい一括追加直前：${scopeLabel}`);
+    let changed=0;
+    bulkManageMembers().forEach(memberItem=>eligibleEventsForMember(memberItem).forEach(event=>POSITIONS.forEach(position=>{
+      const key=k(event.id,memberItem.id,position.id);
+      if(getCount(event.id,memberItem.id,position.id)===0&&!state.wants[key]){state.wants[key]=true;changed++}
+    })));
+    localStorage.setItem(WANT_KEY,JSON.stringify(state.wants));
+    showActionToast(`${changed}種類を欲しいリストへ追加しました`);
+    renderBulkManage();
+  }
+  function renderBulkManage(){
+    const summary=bulkManageSummary();
+    const member=MEMBERS.find(m=>m.id===state.bulkMemberId);
+    const scopeLabel=member?`${member.emoji} ${member.name}`:"全メンバー横断";
+    $("bulkManagePage").innerHTML=`
+      <div class="page-head"><h2>♡ 未所持・欲しい一括操作</h2><p>対象を選んで、未所持の確認や欲しい登録をまとめて行えます</p></div>
+      <div class="panel backup-panel">
+        <div class="backup-icon">👥</div>
+        <h3>対象メンバー</h3>
+        <p>全メンバー横断、または1人を選択してください。卒業メンバーは在籍期間の登録対象だけを集計します。</p>
+        <select id="bulkManageMemberSelect" class="mode-event-select">${bulkManageMemberOptions()}</select>
+      </div>
+      <div class="backup-summary">
+        <div><b>${summary.missing}</b><span>未所持</span></div>
+        <div><b>${summary.alreadyWanted}</b><span>欲しい登録済み</span></div>
+        <div><b>${summary.addable}</b><span>一括追加対象</span></div>
+      </div>
+      <div class="panel backup-panel">
+        <div class="backup-icon">🔎</div>
+        <h3>未所持を一括表示</h3>
+        <p>${esc(scopeLabel)}の未所持を、イベント・ポジション別の一覧で表示します。</p>
+        <button id="openBulkMissingListButton" class="secondary-action">未所持一覧を表示</button>
+      </div>
+      <div class="panel backup-panel">
+        <div class="backup-icon">♡</div>
+        <h3>未所持を欲しいへ一括追加</h3>
+        <p>所持数が0の種類だけを追加します。すでに欲しい登録済みの項目は重複しません。実行前に自動バックアップを保存します。</p>
+        <button id="addBulkMissingToWishlistButton" class="primary-action" ${summary.addable?"":"disabled"}>${summary.addable?`${summary.addable}種類を欲しいへ追加`:"追加対象はありません"}</button>
+      </div>
+      <div class="settings-page-bottom-space" aria-hidden="true"></div>`;
+    $("bulkManageMemberSelect").onchange=e=>{state.bulkMemberId=e.target.value;savePreferences();renderBulkManage()};
+    $("openBulkMissingListButton").onclick=openBulkMissingList;
+    $("addBulkMissingToWishlistButton").onclick=addBulkMissingToWishlist;
+  }
+
   function memberOshiStats(m){
     const s=statsFor([m]);
     return {...s,missing:Math.max(0,s.possible-s.types)};
@@ -1432,7 +1514,7 @@ function openMember(id){
         <section class="panel guide-card"><span>1</span><div><h3>メンバーを選ぶ</h3><p>TOPからメンバーを選択します。「全メンバー」ではイベント単位でまとめて確認できます。</p></div></section>
         <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>通常一覧のほか、クイック入力とイベント別チェック表が使えます。イベントカードの「一括操作」からコンプ登録や欲しい一括追加もできます。</p></div></section>
         <section class="panel guide-card"><span>3</span><div><h3>一覧を絞り込む</h3><p>検索欄と「絞り込み」「並び順」を使います。選択中の条件はチップで表示され、個別に解除できます。</p></div></section>
-        <section class="panel guide-card"><span>4</span><div><h3>未所持・提供可能を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。2枚目以降は提供可能として表示されます。</p></div></section>
+        <section class="panel guide-card"><span>4</span><div><h3>未所持・提供可能を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。設定の「未所持・欲しい一括操作」から、未所持の一括表示や欲しいへの一括追加もできます。2枚目以降は提供可能として表示されます。</p></div></section>
         <section class="panel guide-card"><span>5</span><div><h3>推しを設定する</h3><p>最推し・推し・気になるの3段階です。メンバーカードの推しバッジや、推しだけの統計・未所持確認に使えます。</p></div></section>
         <section class="panel guide-card"><span>6</span><div><h3>メンバー画像を設定する</h3><p>TOP右上の設定から、端末内の好きな画像をメンバーごとに登録できます。画像は編集画面で表示範囲を確認しながら位置調整でき、外部送信もされません。</p></div></section>
         <section class="panel guide-card important"><span>7</span><div><h3>定期的にバックアップする</h3><p>端末変更、Safariのデータ削除、ブラウザ変更に備えてJSONを保存してください。復元前には日時と件数を確認できます。</p></div></section>
@@ -1460,7 +1542,7 @@ function openMember(id){
         </section>
         <section class="panel legal-card">
           <h3>保存データとプライバシー</h3>
-          <p>所持枚数、直筆、欲しい、推し設定などは利用者のブラウザ内に保存されます。本公開版には、ログイン、広告、独自のアクセス解析、所持情報や設定画像を外部送信する機能はありません。</p>
+          <p>所持枚数、直筆、欲しい、推し設定などは利用者のブラウザ内に保存され、アクセス解析へ送信されません。本公開版にはログインや広告はありません。サイトの利用状況を把握するためGoogle Analyticsを利用し、閲覧ページ、端末・ブラウザ情報などのアクセス情報がGoogleへ送信される場合があります。</p>
           <p>本サイトはGitHub Pagesを利用して配信しています。GitHubはサービスの運用・セキュリティ目的で、アクセス時のIPアドレスなどの技術情報を記録・保存する場合があります。本サイト運営者は、利用者の所持情報・推し設定・設定画像を収集または閲覧しません。</p>
           <p>ブラウザのサイトデータ削除、端末変更、URL変更などでデータが消失する場合があります。定期的にバックアップJSONを保存してください。メンバー画像は通常バックアップに含まれません。</p>
           <p>共有端末での利用は避け、端末ロックをご利用ください。端末内データについて、暗号化保管を保証するものではありません。</p>
@@ -1500,8 +1582,8 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.00.93（正式公開候補）</h3>
-        <p>公開前監査の指摘を反映し、バージョン・キャッシュ統一、プライバシー表記、データ補完を行った正式公開候補版です。</p>
+        <h3>公開版Ver1.00.94</h3>
+        <p>設定に未所持・欲しい一括操作を追加し、TOPの最近編集した生写真を削除しました。Google Analyticsによるアクセス解析にも対応しています。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
         <h3>非公式サイト</h3>
