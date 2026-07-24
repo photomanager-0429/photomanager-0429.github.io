@@ -1,21 +1,21 @@
 {
-  "version": "1.00.93",
-  "releaseDate": "2026-07-18",
+  "version": "1.00.94",
+  "releaseDate": "2026-07-25",
   "dataVersion": "2026-07-16.6",
   "newItemCount": 12,
   "pwaEnabled": true,
   "dataUpdatedAt": "2026-07-16",
   "appName": "＝LOVE 生写真管理",
-  "status": "public-release-candidate",
+  "status": "public-release",
   "schemaVersion": 2,
   "maxAutoBackups": 3,
   "eventIdMigrations": {},
   "publicEdition": true,
   "official": false,
-  "analyticsEnabled": false,
+  "analyticsEnabled": true,
   "adsEnabled": false,
   "securityHardening": "2026-07-18-audit-final",
-  "releaseCandidate": true,
+  "releaseCandidate": false,
   "memberColorTheme": "pattern-a-final",
-  "uiTuning": "clean-photo-names-single-color-frame"
+  "uiTuning": "bulk-missing-wishlist-no-recent-dashboard"
 }
