@@ -1,5 +1,5 @@
 {
-  "version": "1.00.94",
+  "version": "1.00.95",
   "releaseDate": "2026-07-25",
   "dataVersion": "2026-07-16.6",
   "newItemCount": 12,
@@ -17,5 +17,5 @@
   "securityHardening": "2026-07-18-audit-final",
   "releaseCandidate": false,
   "memberColorTheme": "pattern-a-final",
-  "uiTuning": "bulk-missing-wishlist-no-recent-dashboard"
+  "uiTuning": "missing-search-focus-hotfix"
 }
