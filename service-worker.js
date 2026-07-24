@@ -1,17 +1,17 @@
 "use strict";
-const CACHE_NAME = "equal-love-photo-manager-public-v10094";
+const CACHE_NAME = "equal-love-photo-manager-public-v10095";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./css/style.css?v=1.00.94",
-  "./js/app.js?v=1.00.94",
-  "./js/bootstrap.js?v=1.00.94",
-  "./data/events.json?v=1.00.94",
-  "./data/members.json?v=1.00.94",
-  "./data/member-theme-config.json?v=1.00.94",
-  "./data/positions.json?v=1.00.94",
-  "./data/config.json?v=1.00.94",
-  "./manifest.webmanifest?v=1.0.94",
+  "./css/style.css?v=1.00.95",
+  "./js/app.js?v=1.00.95",
+  "./js/bootstrap.js?v=1.00.95",
+  "./data/events.json?v=1.00.95",
+  "./data/members.json?v=1.00.95",
+  "./data/member-theme-config.json?v=1.00.95",
+  "./data/positions.json?v=1.00.95",
+  "./data/config.json?v=1.00.95",
+  "./manifest.webmanifest?v=1.0.95",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png"
