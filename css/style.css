@@ -1980,3 +1980,5 @@ textarea,
   box-shadow:none;
   transform:none;
 }
+
+/* Ver1.00.95：未所持一覧の検索入力フォーカス修正（JSのみ） */
