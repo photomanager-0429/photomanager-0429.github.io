@@ -1972,3 +1972,11 @@ textarea,
 .member-card.single-member-color[style*="--member-accent:#F2F2F2"]{
   background:#fff!important;
 }
+
+/* Ver1.00.94：未所持・欲しい一括操作 */
+#addBulkMissingToWishlistButton:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+  box-shadow:none;
+  transform:none;
+}
