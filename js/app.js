@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.01",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.01",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.01",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.01",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -674,11 +674,27 @@ function initializeApp() {
     list.innerHTML=items.map(item=>`<button class="recent-event-card" data-recent-event="${esc(item.eventId)}" data-recent-member="${esc(item.memberId)}"><span class="recent-member">${item.member.emoji} ${esc(item.member.name)}</span><b>${esc(item.event.period||item.event.officialName)}</b><small>${esc(item.event.work||item.event.category)}</small><i>›</i></button>`).join("");
     list.querySelectorAll("[data-recent-event]").forEach(button=>button.onclick=()=>openRecentEvent(button.dataset.recentEvent,button.dataset.recentMember));
   }
+  function resetCollectionView(options={}){
+    state.category="";
+    state.yearFilter="";
+    state.sort="desc";
+    state.search="";
+    state.ownership="";
+    state.newFilter="";
+    state.oshiOnly=false;
+    state.expanded={};
+    savePreferences();
+    const searchInput=$("searchInput");
+    if(searchInput)searchInput.value="";
+    if(options.scrollTop)window.scrollTo({top:0,behavior:options.smooth?"smooth":"auto"});
+    if(options.render&&state.page==="collection")renderCollection();
+  }
+
   function openRecentEvent(eventId,memberId){
     const member=MEMBERS.find(m=>m.id===memberId);
     if(!member)return;
     state.mode="member";state.memberId=memberId;state.pageMemberId=memberId;
-    state.search="";state.category="";state.yearFilter="";state.ownership="";state.newFilter="";
+    resetCollectionView();
     pendingScrollTarget=eventId;
     savePreferences();theme(member);openManager();
   }
@@ -1047,6 +1063,7 @@ function openMember(id){
     state.mode="member";
     state.memberId=id;
     state.pageMemberId=id;
+    resetCollectionView();
     savePreferences();
     theme(MEMBERS.find(m=>m.id===id));
     openManager(destination);
@@ -1055,7 +1072,7 @@ function openMember(id){
     state.mode="all";
     state.memberId=null;
     state.pageMemberId="";
-    state.oshiOnly=false;
+    resetCollectionView();
     savePreferences();
     theme(null);
     openManager();
@@ -1243,11 +1260,7 @@ function openMember(id){
     $("eventList").innerHTML="";
     if(!list.length){
       $("eventList").innerHTML=`<div class="empty-state"><span>🔍</span><h3>該当するデータがありません</h3><p>検索条件やフィルターを変更してください。</p><button id="resetFiltersButton">条件をリセット</button></div>`;
-      document.getElementById("resetFiltersButton").onclick=()=>{
-        state.category="";state.yearFilter="";state.sort="desc";state.search="";state.ownership="";state.newFilter="";state.oshiOnly=false;savePreferences();
-        $("searchInput").value="";
-        renderCollection();
-      };
+      document.getElementById("resetFiltersButton").onclick=()=>resetCollectionView({render:true,scrollTop:true});
       return;
     }
     const frag=document.createDocumentFragment();
@@ -1596,7 +1609,7 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01</h3>
+        <h3>公開版Ver1.01.01</h3>
         <p>未所持一覧の検索欄を、入力中に作り直さない方式へ変更しました。複数文字や日本語を連続して入力できます。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
@@ -2032,6 +2045,7 @@ function openMember(id){
   $("searchInput").oninput=e=>{state.search=e.target.value;savePreferences();renderCollection()};
   $("openCollectionFilterButton").onclick=()=>openFilterSheet("collection");
   $("openCollectionSortButton").onclick=()=>openSortSheet("collection");
+  $("resetCollectionViewButton").onclick=()=>resetCollectionView({render:true,scrollTop:true,smooth:true});
   $("openQuickInputButton").onclick=openQuickInput;
   $("openEventMatrixButton").onclick=openEventMatrix;
   $("closeFilterSheetButton").onclick=()=>closeUtilitySheet("filterSheetOverlay");
