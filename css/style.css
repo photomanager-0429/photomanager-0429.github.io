@@ -546,6 +546,13 @@ body.selector-open{overflow:hidden}
   gap:9px;
   margin-top:9px;
 }
+.reset-view-button{
+  grid-column:1 / -1;
+  min-height:38px;
+  background:rgba(255,248,251,.96);
+  color:#8f6175;
+  border-style:dashed;
+}
 .filter-action-button{
   position:relative;
   min-height:45px;
