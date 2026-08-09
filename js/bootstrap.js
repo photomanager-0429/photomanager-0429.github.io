@@ -26,7 +26,7 @@
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.00.95", {scope: "./"});
+      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.01", {scope: "./"});
       const showUpdate = worker => {
         if (!worker || !updateBanner || !updateButton) return;
         updateBanner.classList.remove("hidden");

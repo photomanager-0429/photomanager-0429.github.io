@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.00.95",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.00.95",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.00.95",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.00.95",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -1596,7 +1596,7 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.00.95</h3>
+        <h3>公開版Ver1.01</h3>
         <p>未所持一覧の検索欄を、入力中に作り直さない方式へ変更しました。複数文字や日本語を連続して入力できます。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
