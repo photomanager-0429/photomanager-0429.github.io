@@ -1,7 +1,7 @@
 {
-  "version": "1.01",
+  "version": "1.01.01",
   "releaseDate": "2026-08-09",
-  "dataVersion": "2026-08-09.1",
+  "dataVersion": "2026-08-09.2",
   "newItemCount": 12,
   "pwaEnabled": true,
   "dataUpdatedAt": "2026-08-09",
@@ -17,5 +17,5 @@
   "securityHardening": "2026-07-18-audit-final",
   "releaseCandidate": false,
   "memberColorTheme": "pattern-a-final",
-  "uiTuning": "missing-search-focus-hotfix"
+  "uiTuning": "collection-view-reset-and-auto-reset"
 }
