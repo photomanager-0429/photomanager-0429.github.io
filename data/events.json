@@ -866,7 +866,7 @@
     "category": "イベント",
     "period": "2021-tour",
     "work": "振袖アザーカット",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=34806",
+    "officialUrl": "",
     "addedDate": "2026-07-14"
   },
   {
@@ -876,7 +876,7 @@
     "category": "イベント",
     "period": "2021-tourⅡ",
     "work": "8thCW「しゅきぴ」衣装①",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=34807",
+    "officialUrl": "",
     "addedDate": "2026-07-14"
   },
   {
@@ -910,9 +910,29 @@
     "addedDate": "2021-02-02"
   },
   {
+    "officialName": "大谷映美里生誕記念生写真セット",
+    "id": "2021-birthday-otani",
+    "sort": 92,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "大谷映美里生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=36131",
+    "addedDate": "2021-05"
+  },
+  {
+    "officialName": "野口衣織生誕記念生写真セット",
+    "id": "2021-birthday-noguchi",
+    "sort": 93,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "野口衣織生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=36132",
+    "addedDate": "2021-05"
+  },
+  {
     "officialName": "卒業コンサート生写真セット（袴2021）",
     "id": "2021.graduation",
-    "sort": 92,
+    "sort": 94,
     "category": "イベント",
     "period": "2021.graduation",
     "work": "袴2021",
@@ -922,7 +942,7 @@
   {
     "officialName": "佐竹のん乃卒業記念2ショット生写真セット",
     "id": "2021.graduation-02",
-    "sort": 93,
+    "sort": 95,
     "category": "イベント",
     "period": "2021.graduation-Ⅱ",
     "work": "佐竹のん乃卒業記念2ショット生写真セット",
@@ -932,7 +952,7 @@
   {
     "officialName": "2021.March 生写真セット（8thcw「しゅきぴ」MV衣装）",
     "id": "2021-03-01",
-    "sort": 94,
+    "sort": 96,
     "category": "通常",
     "period": "2021.March",
     "work": "8thcw「しゅきぴ」MV衣装",
@@ -942,7 +962,7 @@
   {
     "officialName": "2021.March-Ⅱ 生写真セット（冬ツアー白ニット衣装）",
     "id": "2021-03-02",
-    "sort": 95,
+    "sort": 97,
     "category": "通常",
     "period": "2021.March-II",
     "work": "冬ツアー白ニット衣装",
@@ -952,7 +972,7 @@
   {
     "officialName": "2021.April 生写真セット（冬ツアー白黒衣装）",
     "id": "2021-04-01",
-    "sort": 96,
+    "sort": 98,
     "category": "通常",
     "period": "2021.April",
     "work": "冬ツアー白黒衣装",
@@ -962,7 +982,7 @@
   {
     "officialName": "2021.April-Ⅱ 生写真セット（冬ツアーチェック衣装）",
     "id": "2021-04-02",
-    "sort": 97,
+    "sort": 99,
     "category": "通常",
     "period": "2021.April-II",
     "work": "冬ツアーチェック衣装",
@@ -972,7 +992,7 @@
   {
     "officialName": "全国ツアー生写真セット（「桜の咲く音がした」歌唱衣装A）",
     "id": "2021-tour-3",
-    "sort": 98,
+    "sort": 100,
     "category": "通常",
     "period": "2021-tourⅢ",
     "work": "「桜の咲く音がした」歌唱衣装A",
@@ -982,7 +1002,7 @@
   {
     "officialName": "2021.May 生写真セット（「全部、内緒。」ジャケット衣装）",
     "id": "2021-05-01",
-    "sort": 99,
+    "sort": 101,
     "category": "通常",
     "period": "2021.May",
     "work": "「全部、内緒。」ジャケット衣装",
@@ -992,7 +1012,7 @@
   {
     "officialName": "2021.May-Ⅱ 生写真セット（冬ツアーファイナル衣装①）",
     "id": "2021-05-02",
-    "sort": 100,
+    "sort": 102,
     "category": "通常",
     "period": "2021.May-II",
     "work": "冬ツアーファイナル衣装①",
@@ -1002,7 +1022,7 @@
   {
     "officialName": "全国ツアー限定生写真セット（「桜の咲く音がした」歌唱衣装B）",
     "id": "2021-tour-4",
-    "sort": 101,
+    "sort": 103,
     "category": "イベント",
     "period": "2021-tourⅣ",
     "work": "「桜の咲く音がした」歌唱衣装B",
@@ -1012,7 +1032,7 @@
   {
     "officialName": "2021.June 生写真セット（冬ツアーファイナル衣装②）",
     "id": "2021-06-01",
-    "sort": 102,
+    "sort": 104,
     "category": "通常",
     "period": "2021.June",
     "work": "冬ツアーファイナル衣装②",
@@ -1022,7 +1042,7 @@
   {
     "officialName": "2021.June-Ⅱ 生写真セット（「桜の咲く音がした」歌唱衣装B②）",
     "id": "2021-06-02",
-    "sort": 103,
+    "sort": 105,
     "category": "通常",
     "period": "2021.June-II",
     "work": "「桜の咲く音がした」歌唱衣装B②",
@@ -1032,7 +1052,7 @@
   {
     "officialName": "全国ツアー限定生写真セット（「桜の咲く音がした」MV衣装）",
     "id": "2021-tour-5",
-    "sort": 104,
+    "sort": 106,
     "category": "イベント",
     "period": "2021-tourⅤ",
     "work": "「桜の咲く音がした」MV衣装",
@@ -1040,9 +1060,19 @@
     "addedDate": "2026-07-14"
   },
   {
+    "officialName": "瀧脇 笙古生誕記念生写真セット",
+    "id": "2021-birthday-takiwaki",
+    "sort": 107,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "瀧脇笙古生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=39128",
+    "addedDate": "2021-06"
+  },
+  {
     "officialName": "2021.July 生写真セット（「cinema」衣装）",
     "id": "2021-07-01",
-    "sort": 105,
+    "sort": 108,
     "category": "通常",
     "period": "2021.July",
     "work": "「cinema」衣装",
@@ -1052,7 +1082,7 @@
   {
     "officialName": "2021.July-Ⅱ 生写真セット（「セノビ―インラブ」衣装）",
     "id": "2021-07-02",
-    "sort": 106,
+    "sort": 109,
     "category": "通常",
     "period": "2021.July-II",
     "work": "「セノビ―インラブ」衣装",
@@ -1062,7 +1092,7 @@
   {
     "officialName": "2021.August 生写真セット（「Oh!Darling」衣装）",
     "id": "2021-08-01",
-    "sort": 107,
+    "sort": 110,
     "category": "通常",
     "period": "2021.August",
     "work": "「Oh!Darling」衣装",
@@ -1070,9 +1100,29 @@
     "addedDate": "2021-08-01"
   },
   {
+    "officialName": "音嶋莉沙生誕記念生写真セット",
+    "id": "2021-birthday-otoshima",
+    "sort": 111,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "音嶋莉沙生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=40670",
+    "addedDate": "2021-08"
+  },
+  {
+    "officialName": "諸橋沙夏生誕記念生写真セット",
+    "id": "2021-birthday-morohashi",
+    "sort": 112,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "諸橋沙夏生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=40671",
+    "addedDate": "2021-08"
+  },
+  {
     "officialName": "2021.August-Ⅱ 生写真セット（「お姉さんじゃダメですか?」「24/7」衣装）",
     "id": "2021-08-02",
-    "sort": 108,
+    "sort": 113,
     "category": "通常",
     "period": "2021.August-II",
     "work": "「お姉さんじゃダメですか?」「24/7」衣装",
@@ -1082,7 +1132,7 @@
   {
     "officialName": "2021.September 生写真セット（「ウィークエンドシトロン」歌唱衣装)",
     "id": "2021-09-01",
-    "sort": 109,
+    "sort": 114,
     "category": "通常",
     "period": "2021.September",
     "work": "「ウィークエンドシトロン」歌唱衣装",
@@ -1092,7 +1142,7 @@
   {
     "officialName": "4周年記念コンサート生写真セット(=LOVE 4th ANNIVERSARY PHOTO BOOK)",
     "id": "2021-anniversary-04-photo-book",
-    "sort": 110,
+    "sort": 115,
     "category": "イベント",
     "period": "2021-tourⅥ",
     "work": "=LOVE 4th ANNIVERSARY PHOTO BOOK",
@@ -1102,7 +1152,7 @@
   {
     "officialName": "2021.September-Ⅱ生写真セット（9thcw「夏祭り恋慕う」）",
     "id": "2021-09-02",
-    "sort": 111,
+    "sort": 116,
     "category": "通常",
     "period": "2021.September-II",
     "work": "9thcw「夏祭り恋慕う」",
@@ -1112,7 +1162,7 @@
   {
     "officialName": "イコノイフェス 2021生写真セット（制服衣装）",
     "id": "2021-ikonoifes-uniform",
-    "sort": 112,
+    "sort": 117,
     "category": "イベント",
     "period": "2021-tourⅦ",
     "work": "制服衣装",
@@ -1122,7 +1172,7 @@
   {
     "officialName": "2021.October 生写真セット（「ウィークエンドシトロン」MV衣装）",
     "id": "2021-10-01",
-    "sort": 113,
+    "sort": 118,
     "category": "通常",
     "period": "2021.October",
     "work": "「ウィークエンドシトロン」MV衣装",
@@ -1132,7 +1182,7 @@
   {
     "officialName": "2021.October-Ⅱ 生写真セット（9thcw「祝祭」衣装）",
     "id": "2021-10-02",
-    "sort": 114,
+    "sort": 119,
     "category": "通常",
     "period": "2021.October-II",
     "work": "9thcw「祝祭」衣装",
@@ -1142,7 +1192,7 @@
   {
     "officialName": "2021.November 生写真セット（9thcw「ズッ友案件」衣装）",
     "id": "2021-11-01",
-    "sort": 115,
+    "sort": 120,
     "category": "通常",
     "period": "2021.November",
     "work": "9thcw「ズッ友案件」衣装",
@@ -1152,7 +1202,7 @@
   {
     "officialName": "2021.November-Ⅱ 生写真セット（歌番組衣装）",
     "id": "2021-11-02",
-    "sort": 116,
+    "sort": 121,
     "category": "通常",
     "period": "2021.November-II",
     "work": "歌番組衣装",
@@ -1160,9 +1210,29 @@
     "addedDate": "2021-11-02"
   },
   {
+    "officialName": "齋藤樹愛羅生誕記念生写真セット",
+    "id": "2021-birthday-saito-kiara",
+    "sort": 122,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "齋藤樹愛羅生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=43758",
+    "addedDate": "2021-11"
+  },
+  {
+    "officialName": "山本杏奈生誕記念生写真セット",
+    "id": "2021-birthday-yamamoto",
+    "sort": 123,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "山本杏奈生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=43759",
+    "addedDate": "2021-11"
+  },
+  {
     "officialName": "2021.December 生写真セット（「The 5th」チェック衣装）",
     "id": "2021-12-01",
-    "sort": 117,
+    "sort": 124,
     "category": "通常",
     "period": "2021.December",
     "work": "「The 5th」チェック衣装",
@@ -1172,7 +1242,7 @@
   {
     "officialName": "2021.December-Ⅱ 生写真セット（「The 5th」歌唱衣装）",
     "id": "2021-12-02",
-    "sort": 118,
+    "sort": 125,
     "category": "通常",
     "period": "2021.December-II",
     "work": "「The 5th」歌唱衣装",
@@ -1182,7 +1252,7 @@
   {
     "officialName": "2022 January 生写真セット（振袖2022）",
     "id": "2022-01-01",
-    "sort": 119,
+    "sort": 126,
     "category": "通常",
     "period": "2022.January",
     "work": "振袖2022",
@@ -1190,9 +1260,29 @@
     "addedDate": "2022-01-01"
   },
   {
+    "officialName": "佐々木舞香生誕記念生写真セット",
+    "id": "2022-birthday-sasaki",
+    "sort": 127,
+    "category": "イベント",
+    "period": "2022.birthday",
+    "work": "佐々木舞香生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=45491",
+    "addedDate": "2022-01"
+  },
+  {
+    "officialName": "髙松瞳生誕記念生写真セット",
+    "id": "2022-birthday-takamatsu",
+    "sort": 128,
+    "category": "イベント",
+    "period": "2022.birthday",
+    "work": "髙松瞳生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=45492",
+    "addedDate": "2022-01"
+  },
+  {
     "officialName": "2022 January-Ⅱ 生写真セット（10thcw「お姫様にしてよ!」）",
     "id": "2022-01-02",
-    "sort": 120,
+    "sort": 129,
     "category": "通常",
     "period": "2022.January-II",
     "work": "10thcw「お姫様にしてよ!」",
@@ -1202,7 +1292,7 @@
   {
     "officialName": "2022 February 生写真セット（10thcw「Poison Girl」）",
     "id": "2022-02-01",
-    "sort": 121,
+    "sort": 130,
     "category": "通常",
     "period": "2022.February",
     "work": "10thcw「Poison Girl」",
@@ -1210,9 +1300,19 @@
     "addedDate": "2022-02-01"
   },
   {
+    "officialName": "大場花菜生誕記念生写真セット",
+    "id": "2022-birthday-oba",
+    "sort": 131,
+    "category": "イベント",
+    "period": "2022.birthday",
+    "work": "大場花菜生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=46298",
+    "addedDate": "2022-02"
+  },
+  {
     "officialName": "2022.February-Ⅱ 生写真セット（「イコノイフェス2021」衣装）",
     "id": "2022-02-02",
-    "sort": 122,
+    "sort": 132,
     "category": "通常",
     "period": "2022.February-II",
     "work": "「イコノイフェス2021」衣装",
@@ -1222,7 +1322,7 @@
   {
     "officialName": "2022 March 生写真セット（「The 5th」MV衣装）",
     "id": "2022-03-01",
-    "sort": 123,
+    "sort": 133,
     "category": "通常",
     "period": "2022.March",
     "work": "「The 5th」MV衣装",
@@ -1232,7 +1332,7 @@
   {
     "officialName": "2022 March-Ⅱ 生写真セット（10thcw「Poison Girl」②）",
     "id": "2022-03-02",
-    "sort": 124,
+    "sort": 134,
     "category": "通常",
     "period": "2022.March-II",
     "work": "10thcw「Poison Girl」②",
@@ -1242,7 +1342,7 @@
   {
     "officialName": "=LOVE全国ツアー2022限定生写真セット（「The 5th」歌唱衣装②）",
     "id": "2022-tour-the-5th-costume-02",
-    "sort": 125,
+    "sort": 135,
     "category": "イベント",
     "period": "2022-tour",
     "work": "「The 5th」歌唱衣装②",
@@ -1252,7 +1352,7 @@
   {
     "officialName": "2022 April 生写真セット（シナモロールコラボ2022）",
     "id": "2022-collaboration-cinnamoroll",
-    "sort": 126,
+    "sort": 136,
     "category": "コラボ",
     "period": "2022.シナモロールコラボ2022",
     "work": "シナモロールコラボ2022",
@@ -1262,7 +1362,7 @@
   {
     "officialName": "2022 April-Ⅱ 生写真セット（4周年衣装）",
     "id": "2022-04-02",
-    "sort": 127,
+    "sort": 137,
     "category": "通常",
     "period": "2022.April-II",
     "work": "4周年衣装",
@@ -1272,7 +1372,7 @@
   {
     "officialName": "=LOVE全国ツアー2022限定生写真セット（「あの子コンプレックス」歌唱衣装）",
     "id": "2022-tour-anoko-complex-costume",
-    "sort": 128,
+    "sort": 138,
     "category": "イベント",
     "period": "2022-tour",
     "work": "「あの子コンプレックス」歌唱衣装",
@@ -1282,7 +1382,7 @@
   {
     "officialName": "2022 May 生写真セット（「あの子コンプレックス」ジャケット衣装）",
     "id": "2022-05-01",
-    "sort": 129,
+    "sort": 139,
     "category": "通常",
     "period": "2022.May",
     "work": "「あの子コンプレックス」ジャケット衣装",
@@ -1292,7 +1392,7 @@
   {
     "officialName": "2022 May-Ⅱ 生写真セット（「あの子コンプレックス」MV衣装）",
     "id": "2022-05-02",
-    "sort": 130,
+    "sort": 140,
     "category": "通常",
     "period": "2022.May-II",
     "work": "「あの子コンプレックス」MV衣装",
@@ -1302,7 +1402,7 @@
   {
     "officialName": "2022 June 生写真セット（「あの子コンプレックス」歌唱衣装②）",
     "id": "2022-06-01",
-    "sort": 131,
+    "sort": 141,
     "category": "通常",
     "period": "2022.June",
     "work": "「あの子コンプレックス」歌唱衣装②",
@@ -1312,7 +1412,7 @@
   {
     "officialName": "2022 June-Ⅱ 生写真セット（11thcw「笑顔のレシピ」）",
     "id": "2022-06-02",
-    "sort": 132,
+    "sort": 142,
     "category": "通常",
     "period": "2022.June-II",
     "work": "11thcw「笑顔のレシピ」",
@@ -1322,7 +1422,7 @@
   {
     "officialName": "イコノイジョイ2022生写真セット（浴衣2022）",
     "id": "2022-ikonoijoy-yukata",
-    "sort": 133,
+    "sort": 143,
     "category": "イベント",
     "period": "2022-tour",
     "work": "浴衣2022",
@@ -1332,7 +1432,7 @@
   {
     "officialName": "2022 July 生写真セット（11thcw「笑顔のレシピ」②）",
     "id": "2022-07-01",
-    "sort": 134,
+    "sort": 144,
     "category": "通常",
     "period": "2022.July",
     "work": "11thcw「笑顔のレシピ」②",
@@ -1342,7 +1442,7 @@
   {
     "officialName": "2022 July-Ⅱ 生写真セット（全国ツアー2022衣装）",
     "id": "2022-07-02",
-    "sort": 135,
+    "sort": 145,
     "category": "通常",
     "period": "2022.July-II",
     "work": "全国ツアー2022衣装",
@@ -1352,7 +1452,7 @@
   {
     "officialName": "2022 August 生写真セット（全国ツアー2022衣装②）",
     "id": "2022-08-01",
-    "sort": 136,
+    "sort": 146,
     "category": "通常",
     "period": "2022.August",
     "work": "全国ツアー2022衣装②",
@@ -1362,7 +1462,7 @@
   {
     "officialName": "2022 August-Ⅱ 生写真セット（「イコノイジョイ 2022」衣装）",
     "id": "2022-08-02",
-    "sort": 137,
+    "sort": 147,
     "category": "通常",
     "period": "2022.August-II",
     "work": "「イコノイジョイ 2022」衣装",
@@ -1372,7 +1472,7 @@
   {
     "officialName": "2022 September 生写真セット（「Be Selfish」ジャケット衣装）",
     "id": "2022-09-01",
-    "sort": 138,
+    "sort": 148,
     "category": "通常",
     "period": "2022.September",
     "work": "「Be Selfish」ジャケット衣装",
@@ -1382,7 +1482,7 @@
   {
     "officialName": "5周年コンサート限定生写真セット（「=LOVE 5th ANNIVERSARY PHOTO BOOK」）",
     "id": "2022-anniversary-05-photo-book",
-    "sort": 139,
+    "sort": 149,
     "category": "イベント",
     "period": "2022-tour",
     "work": "「=LOVE 5th ANNIVERSARY PHOTO BOOK」",
@@ -1392,7 +1492,7 @@
   {
     "officialName": "2022 September-Ⅱ 生写真セット（「Be Selfish」歌唱衣装）",
     "id": "2022-09-02",
-    "sort": 140,
+    "sort": 150,
     "category": "通常",
     "period": "2022.September-II",
     "work": "「Be Selfish」歌唱衣装",
@@ -1402,7 +1502,7 @@
   {
     "officialName": "2022 October 生写真セット（「Be Selfish」MV衣装）",
     "id": "2022-10-01",
-    "sort": 141,
+    "sort": 151,
     "category": "通常",
     "period": "2022.October",
     "work": "「Be Selfish」MV衣装",
@@ -1412,7 +1512,7 @@
   {
     "officialName": "イコノイジョイ大運動会2022限定生写真セット(「イコノイジョイ2022」オープニング衣装)",
     "id": "2022-ikonoijoy-sports-opening-costume",
-    "sort": 142,
+    "sort": 152,
     "category": "イベント",
     "period": "2022-tour",
     "work": "「イコノイジョイ2022」オープニング衣装",
@@ -1422,7 +1522,7 @@
   {
     "officialName": "2022 October-Ⅱ 生写真セット（「Be Selfish」MV衣装②）",
     "id": "2022-10-02",
-    "sort": 143,
+    "sort": 153,
     "category": "通常",
     "period": "2022.October-II",
     "work": "「Be Selfish」MV衣装②",
@@ -1432,7 +1532,7 @@
   {
     "officialName": "2022 November 生写真セット（12thcw「好きって、言えなかった」）",
     "id": "2022-11-01",
-    "sort": 144,
+    "sort": 154,
     "category": "通常",
     "period": "2022.November",
     "work": "12thcw「好きって、言えなかった」",
@@ -1442,7 +1542,7 @@
   {
     "officialName": "2022 November-Ⅱ 生写真セット（「Be Selfish」歌唱衣装②）",
     "id": "2022-11-02",
-    "sort": 145,
+    "sort": 155,
     "category": "通常",
     "period": "2022.November-II",
     "work": "「Be Selfish」歌唱衣装②",
@@ -1452,7 +1552,7 @@
   {
     "officialName": "2022 December 生写真セット（12thcw「好きって、言えなかった」②）",
     "id": "2022-12-01",
-    "sort": 146,
+    "sort": 156,
     "category": "通常",
     "period": "2022.December",
     "work": "12thcw「好きって、言えなかった」②",
@@ -1462,7 +1562,7 @@
   {
     "officialName": "2022 December-Ⅱ 生写真セット（5周年コンサート衣装）",
     "id": "2022-12-02",
-    "sort": 147,
+    "sort": 157,
     "category": "通常",
     "period": "2022.December-II",
     "work": "5周年コンサート衣装",
@@ -1472,7 +1572,7 @@
   {
     "officialName": "2023 January 生写真セット（5周年コンサート衣装②）",
     "id": "2023-01-01",
-    "sort": 148,
+    "sort": 158,
     "category": "通常",
     "period": "2023.January",
     "work": "5周年コンサート衣装②",
@@ -1482,7 +1582,7 @@
   {
     "officialName": "齊藤なぎさ卒業記念2ショット生写真セット",
     "id": "2023-graduation",
-    "sort": 149,
+    "sort": 159,
     "category": "イベント",
     "period": "2023-graduation",
     "work": "齊藤なぎさ卒業記念2ショット生写真セット",
@@ -1492,7 +1592,7 @@
   {
     "officialName": "全国ツアー2023限定生写真セット（「この空がトリガー」歌唱衣装）",
     "id": "2023-tour-konosora-trigger-costume",
-    "sort": 150,
+    "sort": 160,
     "category": "イベント",
     "period": "2023-tour",
     "work": "「この空がトリガー」歌唱衣装",
@@ -1502,7 +1602,7 @@
   {
     "officialName": "2023 January-Ⅱ 生写真セット（「この空がトリガー」ジャケット衣装）",
     "id": "2023-01-02",
-    "sort": 151,
+    "sort": 161,
     "category": "通常",
     "period": "2023.January-II",
     "work": "「この空がトリガー」ジャケット衣装",
@@ -1512,7 +1612,7 @@
   {
     "officialName": "2023 February 生写真セット（「この空がトリガー」MV衣装）",
     "id": "2023-02-01",
-    "sort": 152,
+    "sort": 162,
     "category": "通常",
     "period": "2023.February",
     "work": "「この空がトリガー」MV衣装",
@@ -1522,7 +1622,7 @@
   {
     "officialName": "2023 February-Ⅱ 生写真セット（「この空がトリガー」歌唱衣装②）",
     "id": "2023-02-02",
-    "sort": 153,
+    "sort": 163,
     "category": "通常",
     "period": "2023.February-II",
     "work": "「この空がトリガー」歌唱衣装②",
@@ -1532,7 +1632,7 @@
   {
     "officialName": "=LOVE全国ツアー2023限定生写真セット（ツアー衣装）",
     "id": "2023-tour-budokan-costume",
-    "sort": 154,
+    "sort": 164,
     "category": "イベント",
     "period": "2023-tour",
     "work": "=LOVE全国ツアー2023「Today is your Trigger」日本武道館",
@@ -1542,7 +1642,7 @@
   {
     "officialName": "2023 March 生写真セット（13thcw「Junkies」）",
     "id": "2023-03-01",
-    "sort": 155,
+    "sort": 165,
     "category": "通常",
     "period": "2023.March",
     "work": "13thcw「Junkies」",
@@ -1552,7 +1652,7 @@
   {
     "officialName": "2023 April 生写真セット（13thcw「Junkies」②）",
     "id": "2023-04-01",
-    "sort": 156,
+    "sort": 166,
     "category": "通常",
     "period": "2023.April",
     "work": "13thcw「Junkies」②",
@@ -1562,7 +1662,7 @@
   {
     "officialName": "2023 April-Ⅱ 生写真セット（13thcw「ラブクリエイト」）",
     "id": "2023-04-02",
-    "sort": 157,
+    "sort": 167,
     "category": "通常",
     "period": "2023.April-II",
     "work": "13thcw「ラブクリエイト」",
@@ -1572,7 +1672,7 @@
   {
     "officialName": "2023 May 生写真セット（Felicitest）",
     "id": "2023-05-01",
-    "sort": 158,
+    "sort": 168,
     "category": "通常",
     "period": "2023.May",
     "work": "Felicitest",
@@ -1582,7 +1682,7 @@
   {
     "officialName": "2023 May-Ⅱ 生写真セット（全国ツアー2023衣装アザーカット）",
     "id": "2023-05-02",
-    "sort": 159,
+    "sort": 169,
     "category": "通常",
     "period": "2023.May-II",
     "work": "全国ツアー2023衣装アザーカット",
@@ -1592,7 +1692,7 @@
   {
     "officialName": "2023 June 生写真セット（「ナツマトペ」ジャケット衣装）",
     "id": "2023-06-01",
-    "sort": 160,
+    "sort": 170,
     "category": "通常",
     "period": "2023.June",
     "work": "「ナツマトペ」ジャケット衣装",
@@ -1602,7 +1702,7 @@
   {
     "officialName": "2023 June-Ⅱ 生写真セット（「ナツマトペ」MV衣装）",
     "id": "2023-06-02",
-    "sort": 161,
+    "sort": 171,
     "category": "通常",
     "period": "2023.June-II",
     "work": "「ナツマトペ」MV衣装",
@@ -1612,7 +1712,7 @@
   {
     "officialName": "2023 July 生写真セット（「ナツマトぺ」歌唱衣装）",
     "id": "2023-07-01",
-    "sort": 162,
+    "sort": 172,
     "category": "通常",
     "period": "2023.July",
     "work": "「ナツマトペ」歌唱衣装",
@@ -1622,7 +1722,7 @@
   {
     "officialName": "2023 July-Ⅱ 生写真セット（「ナツマトぺ」MV衣装②）",
     "id": "2023-07-02",
-    "sort": 163,
+    "sort": 173,
     "category": "通常",
     "period": "2023.July-II",
     "work": "「ナツマトペ」MV衣装②",
@@ -1632,7 +1732,7 @@
   {
     "officialName": "イコノイジョイ2023生写真セット(浴衣2023)",
     "id": "2023-ikonoijoy-yukata",
-    "sort": 164,
+    "sort": 174,
     "category": "イベント",
     "period": "2023-tour",
     "work": "浴衣2023",
@@ -1642,7 +1742,7 @@
   {
     "officialName": "2023 August 生写真セット（「ナツマトぺ」歌唱衣装②）",
     "id": "2023-08-01",
-    "sort": 165,
+    "sort": 175,
     "category": "通常",
     "period": "2023.August",
     "work": "「ナツマトペ」歌唱衣装②",
@@ -1652,7 +1752,7 @@
   {
     "officialName": "2023 August-Ⅱ 生写真セット（「ナツマトペ」MV衣装③）",
     "id": "2023-08-02",
-    "sort": 166,
+    "sort": 176,
     "category": "通常",
     "period": "2023.August-II",
     "work": "「ナツマトペ」ジャケット衣装②",
@@ -1662,7 +1762,7 @@
   {
     "officialName": "2023 September 生写真セット（14thcw「ヒロインズ」）",
     "id": "2023-09-01",
-    "sort": 167,
+    "sort": 177,
     "category": "通常",
     "period": "2023.September",
     "work": "14thcw「ヒロインズ」",
@@ -1672,7 +1772,7 @@
   {
     "officialName": "2023 September-Ⅱ 生写真セット（14thcw「だからとて」）",
     "id": "2023-09-02",
-    "sort": 168,
+    "sort": 178,
     "category": "通常",
     "period": "2023.September-II",
     "work": "14thcw「だからとて」",
@@ -1682,7 +1782,7 @@
   {
     "officialName": "6周年コンサート限定生写真セット(「=LOVE 6th ANNIVERSARY PHOTO BOOK」)",
     "id": "2023-anniversary-06-photo-book",
-    "sort": 169,
+    "sort": 179,
     "category": "イベント",
     "period": "2023-tour",
     "work": "「=LOVE 6th ANNIVERSARY PHOTO BOOK」",
@@ -1692,7 +1792,7 @@
   {
     "officialName": "生写真セット（「イコノイジョイ2023衣装」）",
     "id": "2023-ikonoijoy-costume",
-    "sort": 170,
+    "sort": 180,
     "category": "イベント",
     "period": "2023-tour",
     "work": "「イコノイジョイ2023衣装」",
@@ -1702,7 +1802,7 @@
   {
     "officialName": "2023 October-Ⅱ（「ラストノートしか知らない」ジャケット衣装）",
     "id": "2023-10-02",
-    "sort": 171,
+    "sort": 181,
     "category": "通常",
     "period": "2023.October-II",
     "work": "「ラストノートしか知らない」ジャケット衣装",
@@ -1712,7 +1812,7 @@
   {
     "officialName": "2023 November（「ラストノートしか知らない」歌唱衣装）",
     "id": "2023-11-01",
-    "sort": 172,
+    "sort": 182,
     "category": "通常",
     "period": "2023.November",
     "work": "「ラストノートしか知らない」歌唱衣装",
@@ -1722,7 +1822,7 @@
   {
     "officialName": "2023 November-Ⅱ（「ラストノートしか知らない」MV衣装）",
     "id": "2023-11-02",
-    "sort": 173,
+    "sort": 183,
     "category": "通常",
     "period": "2023.November-II",
     "work": "「ラストノートしか知らない」MV衣装",
@@ -1732,7 +1832,7 @@
   {
     "officialName": "2023 December（「ラストノートしか知らない」歌唱衣装②）",
     "id": "2023-12-01",
-    "sort": 174,
+    "sort": 184,
     "category": "通常",
     "period": "2023.December",
     "work": "「ラストノートしか知らない」歌唱衣装②",
@@ -1742,7 +1842,7 @@
   {
     "officialName": "2023 December-Ⅱ（15thcw「ドライブ　デート　都内」）",
     "id": "2023-12-02",
-    "sort": 175,
+    "sort": 185,
     "category": "通常",
     "period": "2023.December-II",
     "work": "15thcw「ドライブ　デート　都内」",
@@ -1752,7 +1852,7 @@
   {
     "officialName": "2024 January 生写真セット（6周年コンサート衣装）",
     "id": "2024-01-01",
-    "sort": 176,
+    "sort": 186,
     "category": "通常",
     "period": "2024.January",
     "work": "6周年コンサート衣装",
@@ -1762,7 +1862,7 @@
   {
     "officialName": "生写真セット（イコラブラフォーレコラボ）",
     "id": "2024-collaboration-laforet",
-    "sort": 177,
+    "sort": 187,
     "category": "コラボ",
     "period": "2024.イコラブラフォーレコラボ",
     "work": "イコラブラフォーレコラボ",
@@ -1772,7 +1872,7 @@
   {
     "officialName": "アリーナツアー2024限定生写真セット(6周年コンサート衣装②)",
     "id": "2024-arena-tour-anniversary-06-costume-02",
-    "sort": 178,
+    "sort": 188,
     "category": "イベント",
     "period": "2024.tour",
     "work": "6周年コンサート衣装②",
@@ -1782,7 +1882,7 @@
   {
     "officialName": "2024 February 生写真セット（15thcw「狂想カタストロフィ」）",
     "id": "2024-02-01",
-    "sort": 179,
+    "sort": 189,
     "category": "通常",
     "period": "2024.February",
     "work": "15thcw「狂想カタストロフィ」",
@@ -1792,7 +1892,7 @@
   {
     "officialName": "2024 February-Ⅱ 生写真セット（「呪って呪って」歌唱衣装）",
     "id": "2024-02-02",
-    "sort": 180,
+    "sort": 190,
     "category": "通常",
     "period": "2024.February-II",
     "work": "「呪って呪って」歌唱衣装",
@@ -1802,7 +1902,7 @@
   {
     "officialName": "2024 March 生写真セット（「呪って呪って」歌唱衣装②）",
     "id": "2024-03-01",
-    "sort": 181,
+    "sort": 191,
     "category": "通常",
     "period": "2024.March",
     "work": "「呪って呪って」歌唱衣装②",
@@ -1812,7 +1912,7 @@
   {
     "officialName": "2024 March-Ⅱ 生写真セット（「呪って呪って」ジャケット衣装）",
     "id": "2024-03-02",
-    "sort": 182,
+    "sort": 192,
     "category": "通常",
     "period": "2024.March-II",
     "work": "「呪って呪って」ジャケット衣装",
@@ -1822,7 +1922,7 @@
   {
     "officialName": "2024 April 生写真セット（「呪って呪って」MV衣装）",
     "id": "2024-04-01",
-    "sort": 183,
+    "sort": 193,
     "category": "通常",
     "period": "2024.April",
     "work": "「呪って呪って」MV衣装",
@@ -1832,7 +1932,7 @@
   {
     "officialName": "アリーナツアー2024限定生写真セット(アリーナツアー2024衣装)",
     "id": "2024-arena-tour-costume",
-    "sort": 184,
+    "sort": 194,
     "category": "イベント",
     "period": "2024.tour",
     "work": "アリーナツアー2024衣装",
@@ -1842,7 +1942,7 @@
   {
     "officialName": "2024 April-Ⅱ 生写真セット（16thcw「誰にもバレずに」）",
     "id": "2024-04-02",
-    "sort": 185,
+    "sort": 195,
     "category": "通常",
     "period": "2024.April-II",
     "work": "16thcw「誰にもバレずに」",
@@ -1852,7 +1952,7 @@
   {
     "officialName": "2024 May 生写真セット（アリーナツアー2024衣装②）",
     "id": "2024-05-01",
-    "sort": 186,
+    "sort": 196,
     "category": "通常",
     "period": "2024.May",
     "work": "アリーナツアー2024衣装②",
@@ -1862,7 +1962,7 @@
   {
     "officialName": "2024 May-Ⅱ 生写真セット（16thcw「君の第3ボタン」）",
     "id": "2024-05-02",
-    "sort": 187,
+    "sort": 197,
     "category": "通常",
     "period": "2024.May-II",
     "work": "16thcw「君の第3ボタン」",
@@ -1872,7 +1972,7 @@
   {
     "officialName": "2024 June 生写真セット（16thcw「君の第3ボタン」②）",
     "id": "2024-06-01",
-    "sort": 188,
+    "sort": 198,
     "category": "通常",
     "period": "2024.June",
     "work": "16thcw「君の第3ボタン」②",
@@ -1882,7 +1982,7 @@
   {
     "officialName": "2024 June-Ⅱ 生写真セット（アリーナツアー2024衣装アザーカット）",
     "id": "2024-06-02",
-    "sort": 189,
+    "sort": 199,
     "category": "通常",
     "period": "2024.June-II",
     "work": "アリーナツアー2024衣装アザーカット",
@@ -1892,7 +1992,7 @@
   {
     "officialName": "2024 July 生写真セット（「絶対アイドル辞めないで」ジャケット衣装）",
     "id": "2024-07-01",
-    "sort": 190,
+    "sort": 200,
     "category": "通常",
     "period": "2024.July",
     "work": "「絶対アイドル辞めないで」ジャケット衣装",
@@ -1902,7 +2002,7 @@
   {
     "officialName": "2024 July-Ⅱ 生写真セット（「絶対アイドル辞めないで」MV衣装）",
     "id": "2024-07-02",
-    "sort": 191,
+    "sort": 201,
     "category": "通常",
     "period": "2024.July-II",
     "work": "「絶対アイドル辞めないで」MV衣装",
@@ -1912,7 +2012,7 @@
   {
     "officialName": "2024 August 生写真セット（「絶対アイドル辞めないで」MV衣装②）",
     "id": "2024-08-01",
-    "sort": 192,
+    "sort": 202,
     "category": "通常",
     "period": "2024.August",
     "work": "「絶対アイドル辞めないで」MV衣装②",
@@ -1922,7 +2022,7 @@
   {
     "officialName": "2024 August-Ⅱ生写真セット（17thcw「仲直りシュークリーム」）",
     "id": "2024-08-02",
-    "sort": 193,
+    "sort": 203,
     "category": "通常",
     "period": "2024.August-II",
     "work": "17thcw「仲直りシュークリーム」",
@@ -1932,7 +2032,7 @@
   {
     "officialName": "7周年コンサート生写真セット（「=LOVE 7th ANNIVERSARY PHOTO BOOK」）",
     "id": "2024-7th",
-    "sort": 194,
+    "sort": 204,
     "category": "イベント",
     "period": "2024.7th",
     "work": "「=LOVE 7th ANNIVERSARY PHOTO BOOK」",
@@ -1942,7 +2042,7 @@
   {
     "officialName": "7周年コンサート生写真セット（「絶対アイドル辞めないで」歌唱衣装）",
     "id": "2024-7th-2",
-    "sort": 195,
+    "sort": 205,
     "category": "イベント",
     "period": "2024.7th-Ⅱ",
     "work": "「絶対アイドル辞めないで」歌唱衣装",
@@ -1952,7 +2052,7 @@
   {
     "officialName": "2024 September-Ⅱ生写真セット（17thcw「海とレモンティー」）",
     "id": "2024-09-02",
-    "sort": 196,
+    "sort": 206,
     "category": "通常",
     "period": "2024.September-II",
     "work": "17thcw「海とレモンティー」",
@@ -1962,7 +2062,7 @@
   {
     "officialName": "イコノイジョイ2024生写真セット （「イコノイジョイ2023」オープニング衣装）",
     "id": "2024-ikonoijoy-opening-costume",
-    "sort": 197,
+    "sort": 207,
     "category": "イベント",
     "period": "2024.tour",
     "work": "「イコノイジョイ2023」オープニング衣装",
@@ -1972,7 +2072,7 @@
   {
     "officialName": "2024 October 生写真セット（17thcw「海とレモンティー」②）",
     "id": "2024-10-01",
-    "sort": 198,
+    "sort": 208,
     "category": "通常",
     "period": "2024.October",
     "work": "17thcw「海とレモンティー」②",
@@ -1982,7 +2082,7 @@
   {
     "officialName": "2024 October-Ⅱ 生写真セット（イコラブモーリーファンタジーコラボ）",
     "id": "2024-collaboration-molly-fantasy-01",
-    "sort": 199,
+    "sort": 209,
     "category": "コラボ",
     "period": "2024.イコラブモーリーファンタジーコラボ",
     "work": "イコラブモーリーファンタジーコラボ",
@@ -1992,7 +2092,7 @@
   {
     "officialName": "2024 November 生写真セット(イコラブモーリーファンタジーコラボ②)",
     "id": "2024-collaboration-molly-fantasy-02",
-    "sort": 200,
+    "sort": 210,
     "category": "コラボ",
     "period": "2024.イコラブモーリーファンタジーコラボ②",
     "work": "イコラブモーリーファンタジーコラボ②",
@@ -2002,7 +2102,7 @@
   {
     "officialName": "2024 November-Ⅱ 生写真セット（「絶対アイドル辞めないで」歌唱衣装アザーカット）",
     "id": "2024-11-02",
-    "sort": 201,
+    "sort": 211,
     "category": "通常",
     "period": "2024.November-II",
     "work": "「絶対アイドル辞めないで」歌唱衣装アザーカット",
@@ -2012,7 +2112,7 @@
   {
     "officialName": "2024 December 生写真セット（17thcw「仲直りシュークリーム」アザーカット）",
     "id": "2024-12-01",
-    "sort": 202,
+    "sort": 212,
     "category": "通常",
     "period": "2024.December",
     "work": "17thcw「仲直りシュークリーム」アザーカット",
@@ -2022,7 +2122,7 @@
   {
     "officialName": "2024 December-Ⅱ 生写真セット（サンタ2024衣装）",
     "id": "2024-12-02",
-    "sort": 203,
+    "sort": 213,
     "category": "通常",
     "period": "2024.December-Ⅱ",
     "work": "サンタ2024衣装",
@@ -2032,7 +2132,7 @@
   {
     "officialName": "2025 January 生写真セット(振袖2025)",
     "id": "2025-01-01",
-    "sort": 204,
+    "sort": 214,
     "category": "通常",
     "period": "2025.January",
     "work": "振袖2025",
@@ -2042,7 +2142,7 @@
   {
     "officialName": "2025 January-Ⅱ 生写真セット(7周年コンサート衣装)",
     "id": "2025-01-02",
-    "sort": 205,
+    "sort": 215,
     "category": "通常",
     "period": "2025.January-Ⅱ",
     "work": "7周年コンサート衣装",
@@ -2052,7 +2152,7 @@
   {
     "officialName": "2025 February 生写真セット(「イコノイジョイ2024」衣装)",
     "id": "2025-02-01",
-    "sort": 206,
+    "sort": 216,
     "category": "通常",
     "period": "2025.February",
     "work": "「イコノイジョイ2024」衣装",
@@ -2062,7 +2162,7 @@
   {
     "officialName": "2025 February-Ⅱ 生写真セット(「とくべちゅ、して/恋人以上、好き未満」ジャケット衣装)",
     "id": "2025-02-02",
-    "sort": 207,
+    "sort": 217,
     "category": "通常",
     "period": "2025.February-Ⅱ",
     "work": "「とくべちゅ、して/恋人以上、好き未満」ジャケット衣装",
@@ -2072,9 +2172,9 @@
   {
     "officialName": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」",
     "id": "2025-tour-01",
-    "sort": 208,
+    "sort": 218,
     "category": "イベント",
-    "period": "2025 .tour",
+    "period": "2025.tour",
     "work": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」",
     "officialUrl": "https://sp.equal-love.jp/news/detail/9629",
     "addedDate": "2026-07-16"
@@ -2082,7 +2182,7 @@
   {
     "officialName": "2025 March 生写真セット(「イコノイジョイ2024」衣装②)",
     "id": "2025-03-01",
-    "sort": 209,
+    "sort": 219,
     "category": "通常",
     "period": "2025.March",
     "work": "「イコノイジョイ2024」衣装②",
@@ -2092,7 +2192,7 @@
   {
     "officialName": "2025 March-Ⅱ 生写真セット(「とくべちゅ、して/恋人以上、好き未満」ジャケット衣装②)",
     "id": "2025-03-02",
-    "sort": 210,
+    "sort": 220,
     "category": "通常",
     "period": "2025.March-Ⅱ",
     "work": "「とくべちゅ、して/恋人以上、好き未満」ジャケット衣装②",
@@ -2102,7 +2202,7 @@
   {
     "officialName": "2025 April 生写真セット(「イコノイジョイ2024」衣装③)",
     "id": "2025-04-01",
-    "sort": 211,
+    "sort": 221,
     "category": "通常",
     "period": "2025.April",
     "work": "「イコノイジョイ2024」衣装③",
@@ -2112,7 +2212,7 @@
   {
     "officialName": "生写真セット(アーティストコラボ mikko)",
     "id": "2025-collaboration-mikko",
-    "sort": 212,
+    "sort": 222,
     "category": "コラボ",
     "period": "2025.mikko",
     "work": "アーティストコラボ mikko",
@@ -2122,7 +2222,7 @@
   {
     "officialName": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」②",
     "id": "2025-tour-02",
-    "sort": 213,
+    "sort": 223,
     "category": "イベント",
     "period": "2025.tour",
     "work": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」②",
@@ -2132,7 +2232,7 @@
   {
     "officialName": "2025 May 生写真セット(ぬいぐるみマスコット)",
     "id": "2025-05-01",
-    "sort": 214,
+    "sort": 224,
     "category": "通常",
     "period": "2025.May",
     "work": "ぬいぐるみマスコット",
@@ -2142,7 +2242,7 @@
   {
     "officialName": "2025 May-Ⅱ 生写真セット(「とくべちゅ、して」歌唱衣装)",
     "id": "2025-05-02",
-    "sort": 215,
+    "sort": 225,
     "category": "通常",
     "period": "2025.May-Ⅱ",
     "work": "「とくべちゅ、して」歌唱衣装",
@@ -2152,7 +2252,7 @@
   {
     "officialName": "2025 June 生写真セット(「とくべちゅ、して」MV衣装)",
     "id": "2025-06-01",
-    "sort": 216,
+    "sort": 226,
     "category": "通常",
     "period": "2025.June",
     "work": "「とくべちゅ、して」MV衣装",
@@ -2162,7 +2262,7 @@
   {
     "officialName": "2025 June-Ⅱ 生写真セット(「とくべちゅ、して」歌唱衣装②)",
     "id": "2025-06-02",
-    "sort": 217,
+    "sort": 227,
     "category": "通常",
     "period": "2025.June-Ⅱ",
     "work": "「とくべちゅ、して」歌唱衣装②",
@@ -2171,8 +2271,8 @@
   },
   {
     "officialName": "アリーナツアー2025 生写真セット(アリーナツアー2025衣装)",
-    "id": "2025.tour",
-    "sort": 218,
+    "id": "2025-tour-04",
+    "sort": 228,
     "category": "イベント",
     "period": "2025.tour",
     "work": "アリーナツアー2025衣装",
@@ -2182,7 +2282,7 @@
   {
     "officialName": "2025 July 生写真セット(「とくべちゅ、して」MV衣装②)",
     "id": "2025-07-01",
-    "sort": 219,
+    "sort": 229,
     "category": "通常",
     "period": "2025.July",
     "work": "「とくべちゅ、して」MV衣装②",
@@ -2192,7 +2292,7 @@
   {
     "officialName": "2025 July-Ⅱ 生写真セット(「恋人以上、好き未満」MV衣装)",
     "id": "2025-07-02",
-    "sort": 220,
+    "sort": 230,
     "category": "通常",
     "period": "2025.July-Ⅱ",
     "work": "「恋人以上、好き未満」MV衣装",
@@ -2202,7 +2302,7 @@
   {
     "officialName": "2025 August 生写真セット(18thcw「超特急逃走中」)",
     "id": "2025-08-01",
-    "sort": 221,
+    "sort": 231,
     "category": "通常",
     "period": "2025.August",
     "work": "18thcw「超特急逃走中」",
@@ -2212,7 +2312,7 @@
   {
     "officialName": "2025 August-Ⅱ 生写真セット(18thcw「超特急逃走中」②)",
     "id": "2025-08-02",
-    "sort": 222,
+    "sort": 232,
     "category": "通常",
     "period": "2025.August-Ⅱ",
     "work": "18thcw「超特急逃走中」②",
@@ -2222,7 +2322,7 @@
   {
     "officialName": "アリーナツアー2025 生写真セット(アリーナツアー2025衣装②)",
     "id": "2025-tour-03",
-    "sort": 223,
+    "sort": 233,
     "category": "イベント",
     "period": "2025.tour",
     "work": "アリーナツアー2025衣装②",
@@ -2232,7 +2332,7 @@
   {
     "officialName": "2025 September 生写真セット(「内緒バナシ」衣装)",
     "id": "2025-09-01",
-    "sort": 224,
+    "sort": 234,
     "category": "通常",
     "period": "2025.September",
     "work": "「内緒バナシ」衣装",
@@ -2242,7 +2342,7 @@
   {
     "officialName": "2025 September-Ⅱ 生写真セット(シナモロールコラボ2025)",
     "id": "2025-collaboration-cinnamoroll",
-    "sort": 225,
+    "sort": 235,
     "category": "コラボ",
     "period": "2025.シナモロールコラボ2025",
     "work": "シナモロールコラボ2025",
@@ -2252,7 +2352,7 @@
   {
     "officialName": "2025 October 生写真セット(「ラブソングに襲われる」MV衣装)",
     "id": "2025-10-01",
-    "sort": 226,
+    "sort": 236,
     "category": "通常",
     "period": "2025.October",
     "work": "「ラブソングに襲われる」MV衣装",
@@ -2262,7 +2362,7 @@
   {
     "officialName": "2025 October-Ⅱ 生写真セット(「ラブソングに襲われる」歌唱衣装)",
     "id": "2025-10-02",
-    "sort": 227,
+    "sort": 237,
     "category": "通常",
     "period": "2025.October-Ⅱ",
     "work": "「ラブソングに襲われる」歌唱衣装",
@@ -2272,7 +2372,7 @@
   {
     "officialName": "2025 November 生写真セット(「ラブソングに襲われる」歌唱衣装②)",
     "id": "2025-11-01",
-    "sort": 228,
+    "sort": 238,
     "category": "通常",
     "period": "2025.November",
     "work": "「ラブソングに襲われる」歌唱衣装②",
@@ -2282,7 +2382,7 @@
   {
     "officialName": "2025 November-Ⅱ 生写真セット(19thcw「木漏れ日メゾフォルテ」)",
     "id": "2025-11-02",
-    "sort": 229,
+    "sort": 239,
     "category": "通常",
     "period": "2025.November-Ⅱ",
     "work": "19thcw「木漏れ日メゾフォルテ」",
@@ -2292,7 +2392,7 @@
   {
     "officialName": "2025 December 生写真セット(「ラブソングに襲われる」ジャケット衣装)",
     "id": "2025-12-01",
-    "sort": 230,
+    "sort": 240,
     "category": "通常",
     "period": "2025.December",
     "work": "「ラブソングに襲われる」ジャケット衣装",
@@ -2302,7 +2402,7 @@
   {
     "officialName": "2025 December-Ⅱ 生写真セット(イコラブモーリーファンタジーコラボ③)",
     "id": "2025-collaboration-molly-fantasy-03",
-    "sort": 231,
+    "sort": 241,
     "category": "コラボ",
     "period": "2025.イコラブモーリーファンタジーコラボ③",
     "work": "イコラブモーリーファンタジーコラボ③",
@@ -2312,7 +2412,7 @@
   {
     "officialName": "2026 January 生写真セット(個別ポロシャツ)",
     "id": "2026-01-01",
-    "sort": 232,
+    "sort": 242,
     "category": "通常",
     "period": "2026.January",
     "work": "個別ポロシャツ",
@@ -2322,7 +2422,7 @@
   {
     "officialName": "2026 January-Ⅱ 生写真セット(イコラブモーリーファンタジーコラボ④)",
     "id": "2026-collaboration-molly-fantasy-04",
-    "sort": 233,
+    "sort": 243,
     "category": "コラボ",
     "period": "2026.January-Ⅱ",
     "work": "イコラブモーリーファンタジーコラボ④",
@@ -2332,7 +2432,7 @@
   {
     "officialName": "2026 February 生写真セット(「ラブソングに襲われる」歌唱衣装アザーカット)",
     "id": "2026-02-01",
-    "sort": 234,
+    "sort": 244,
     "category": "通常",
     "period": "2026.February",
     "work": "「ラブソングに襲われる」歌唱衣装アザーカット",
@@ -2342,7 +2442,7 @@
   {
     "officialName": "2026 February-Ⅱ 生写真セット(「ラブソングに襲われる」ジャケット衣装アザーカット)",
     "id": "2026-02-02",
-    "sort": 235,
+    "sort": 245,
     "category": "通常",
     "period": "2026.February-Ⅱ",
     "work": "「ラブソングに襲われる」ジャケット衣装アザーカット",
@@ -2352,7 +2452,7 @@
   {
     "officialName": "2026 March 生写真セット(「劇薬中毒」ジャケット衣装)",
     "id": "2026-03-01",
-    "sort": 236,
+    "sort": 246,
     "category": "通常",
     "period": "2026.March",
     "work": "「劇薬中毒」ジャケット衣装",
@@ -2362,7 +2462,7 @@
   {
     "officialName": "2026 生写真セット（アーティストコラボ MOMOREI）",
     "id": "2026-collaboration-momorei",
-    "sort": 237,
+    "sort": 247,
     "category": "コラボ",
     "period": "2026.MOMOREI",
     "work": "アーティストコラボ MOMOREI",
@@ -2372,7 +2472,7 @@
   {
     "officialName": "2026 April 生写真セット(「劇薬中毒」歌唱衣装)",
     "id": "2026-04-01",
-    "sort": 238,
+    "sort": 248,
     "category": "通常",
     "period": "2026.April",
     "work": "「劇薬中毒」歌唱衣装",
@@ -2382,7 +2482,7 @@
   {
     "officialName": "=LOVE 8周年ツアー生写真セット（8周年ツアー衣装）",
     "id": "2026-tour",
-    "sort": 239,
+    "sort": 249,
     "category": "イベント",
     "period": "2026.tour",
     "work": "8周年ツアー衣装",
@@ -2392,7 +2492,7 @@
   {
     "officialName": "2026 May 生写真セット(「劇薬中毒」MV衣装)",
     "id": "2026-05-01",
-    "sort": 240,
+    "sort": 250,
     "category": "通常",
     "period": "2026.May",
     "work": "「劇薬中毒」MV衣装",
@@ -2402,7 +2502,7 @@
   {
     "officialName": "2026 May-Ⅱ 生写真セット(「劇薬中毒」歌唱衣装②)",
     "id": "2026-05-02",
-    "sort": 241,
+    "sort": 251,
     "category": "通常",
     "period": "2026.May-Ⅱ",
     "work": "「劇薬中毒」歌唱衣装②",
@@ -2412,7 +2512,7 @@
   {
     "officialName": "=LOVE STADIUM LIVE生写真セット（キービジュアル衣装）",
     "id": "2026-kokuritsu",
-    "sort": 242,
+    "sort": 252,
     "category": "イベント",
     "period": "2026.kokuritsu",
     "work": "キービジュアル衣装",
@@ -2422,7 +2522,7 @@
   {
     "officialName": "2026 June 生写真セット(20thcw「モラトリアム」)",
     "id": "2026-06-01",
-    "sort": 243,
+    "sort": 253,
     "category": "通常",
     "period": "2026.June",
     "work": "20thcw「モラトリアム」",
@@ -2430,9 +2530,9 @@
     "addedDate": "2026-06-01"
   },
   {
-    "officialName": "2026 June-Ⅱ 生写真セット(年末歌番組2025衣装)",
+    "officialName": "2026 June-Ⅱ 【FC限定】生写真セット(年末歌番組2025衣装)",
     "id": "2026-06-02",
-    "sort": 244,
+    "sort": 254,
     "category": "通常",
     "period": "2026.June-Ⅱ",
     "work": "年末歌番組2025衣装",
@@ -2442,7 +2542,7 @@
   {
     "officialName": "2026 July =LOVE 8周年ツアー生写真セット（8周年ツアー衣装②）",
     "id": "2026-07-01",
-    "sort": 245,
+    "sort": 255,
     "category": "通常",
     "period": "2026.July",
     "work": "8周年ツアー衣装②",
@@ -2452,7 +2552,7 @@
   {
     "officialName": "2026 July-Ⅱ 生写真セット(20thcw「お姫様の作り方」)",
     "id": "2026-07-02",
-    "sort": 246,
+    "sort": 256,
     "category": "通常",
     "period": "2026.July-Ⅱ",
     "work": "20thcw「お姫様の作り方」",
@@ -2462,7 +2562,7 @@
   {
     "officialName": "2026 August 生写真セット(｢Poison Girl｣リメイク衣装)",
     "id": "2026-08-01",
-    "sort": 247,
+    "sort": 257,
     "category": "通常",
     "period": "2026.August",
     "work": "｢Poison Girl｣リメイク衣装",
@@ -2470,9 +2570,19 @@
     "addedDate": "2026-08-01"
   },
   {
+    "officialName": "2026 September 生写真セット(年末歌番組2025衣装②)",
+    "id": "2026-09-01",
+    "sort": 258,
+    "category": "通常",
+    "period": "2026.September",
+    "work": "年末歌番組2025衣装②",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=114052",
+    "addedDate": "2026-09-01"
+  },
+  {
     "officialName": "2026 August-Ⅱ 生写真セット(20thcw「お姫様の作り方」②)",
     "id": "2026-08-02",
-    "sort": 248,
+    "sort": 259,
     "category": "通常",
     "period": "2026.August-Ⅱ",
     "work": "20thcw「お姫様の作り方」②",
