@@ -1,5 +1,5 @@
 {
-  "version": "1.02.00",
+  "version": "1.02.01",
   "releaseDate": "2026-09-15",
   "dataVersion": "2026-09-15.1",
   "newItemCount": 12,
@@ -19,5 +19,5 @@
   "securityHardening": "2026-07-18-audit-final",
   "releaseCandidate": false,
   "memberColorTheme": "pattern-a-final",
-  "uiTuning": "bonus-item-manager"
+  "uiTuning": "bonus-split-pages-and-backup"
 }
