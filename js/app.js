@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.02",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.02",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.02",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.02",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.04",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.04",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.04",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.04",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -387,7 +387,7 @@ function initializeApp() {
   function memberAvatarMarkup(member,className="member-local-avatar"){
     const record=memberImageRecord(member.id),url=memberImageUrl(member.id);
     if(!record||!url)return `<span class="${className} emoji-fallback">${member.emoji}</span>`;
-    return `<span class="${className} has-photo"><img src="${esc(url)}" alt="" style="${memberImageStyle(record)}"></span>`;
+    return `<span class="${className} has-photo"><img src="${esc(url)}" alt="${esc(member.name)}" loading="lazy" decoding="async" style="${memberImageStyle(record)}"></span>`;
   }
 
   function imageBytesTotal(){
@@ -440,9 +440,26 @@ function initializeApp() {
     canvas.width=width;canvas.height=height;
     const context=canvas.getContext("2d",{alpha:false});
     if(!context)throw new Error("画像の処理に対応していません");
+    context.imageSmoothingEnabled=true;
+    context.imageSmoothingQuality="high";
     context.fillStyle="#ffffff";
     context.fillRect(0,0,width,height);
-    context.drawImage(image,0,0,width,height);
+    let source=image,sourceWidth=naturalWidth,sourceHeight=naturalHeight;
+    while(sourceWidth>width*2&&sourceHeight>height*2){
+      const stepWidth=Math.max(width,Math.round(sourceWidth/2));
+      const stepHeight=Math.max(height,Math.round(sourceHeight/2));
+      const stepCanvas=document.createElement("canvas");
+      stepCanvas.width=stepWidth;stepCanvas.height=stepHeight;
+      const stepContext=stepCanvas.getContext("2d",{alpha:false});
+      if(!stepContext)break;
+      stepContext.imageSmoothingEnabled=true;
+      stepContext.imageSmoothingQuality="high";
+      stepContext.drawImage(source,0,0,stepWidth,stepHeight);
+      if(source!==image){source.width=1;source.height=1}
+      source=stepCanvas;sourceWidth=stepWidth;sourceHeight=stepHeight;
+    }
+    context.drawImage(source,0,0,width,height);
+    if(source!==image){source.width=1;source.height=1}
     let blob=await canvasToBlob(canvas,"image/webp",0.84);
     if(!blob)blob=await canvasToBlob(canvas,"image/jpeg",0.86);
     canvas.width=1;canvas.height=1;
@@ -1294,7 +1311,24 @@ function openMember(id){
     if(state.page==="quick")renderQuick();else if(state.page==="matrix")renderMatrix();else renderCollection();
   }
   let toastTimer=0;
-  function showActionToast(message){const toast=$("actionToast");toast.textContent=message;toast.classList.remove("hidden");clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.add("hidden"),2400)}
+  function showActionToast(message,undo){
+    const toast=$("actionToast");
+    toast.textContent="";
+    const label=document.createElement("span");
+    label.textContent=message;
+    toast.appendChild(label);
+    if(typeof undo==="function"){
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="toast-undo";
+      button.textContent="元に戻す";
+      button.onclick=()=>{toast.classList.add("hidden");clearTimeout(toastTimer);undo()};
+      toast.appendChild(button);
+    }
+    toast.classList.remove("hidden");
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>toast.classList.add("hidden"),undo?5200:2400);
+  }
   function statsFor(ms,evs=EVENTS){
     let total=0,types=0,signed=0,wanted=0,possible=0;
     const counts=state.counts,signs=state.signs,wants=state.wants;
@@ -1316,30 +1350,146 @@ function openMember(id){
     }
     return{total,types,signed,wanted,possible,rate:possible?Math.round(types/possible*100):0};
   }
-  function updateSummary(list){const s=statsFor(scopeMembers());$("ownedTotal").textContent=s.total;$("ownedTypes").textContent=s.types;$("signedTotal").textContent=s.signed}
+  function updateSummary(){
+    const s=statsFor(scopeMembers());
+    const total=$("ownedTotal"),types=$("ownedTypes"),signed=$("signedTotal");
+    if(total)total.textContent=s.total;
+    if(types)types.textContent=s.types;
+    if(signed)signed.textContent=s.signed;
+  }
+  function refreshCardBadges(e,m){
+    const card=$("eventList")?.querySelector(`.event-card[data-event-id="${CSS.escape(e.id)}"]`);
+    if(!card)return;
+    const badges=card.querySelector(".badges");
+    if(badges&&state.mode!=="all"){
+      const has=badges.querySelector(".complete");
+      const done=complete(e,m);
+      if(done&&!has){
+        const badge=document.createElement("span");
+        badge.className="badge complete";
+        badge.textContent="COMPLETE";
+        badges.appendChild(badge);
+      }else if(!done&&has)has.remove();
+    }
+    const summary=card.querySelector(".all-summary");
+    if(summary){
+      const eligible=eligibleMembersForEvent(e);
+      let owned=0,want=0,comp=0;
+      eligible.forEach(member=>{
+        const prefix=`${e.id}__${member.id}__`;
+        POSITIONS.forEach(position=>{
+          owned+=Number(state.counts[prefix+position.id]||0);
+          if(state.wants[prefix+position.id])want++;
+        });
+        if(complete(e,member))comp++;
+      });
+      summary.textContent=`所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人`;
+    }
+  }
   function complete(e,m){
     const prefix=`${e.id}__${m.id}__`;
     return POSITIONS.every(p=>Number(state.counts[prefix+p.id]||0)>0);
   }
   function renderPositionRow(e,m,p,compact=false){const row=document.createElement("div");row.className=compact?"mini-pos":"pos-row";row.innerHTML=compact?`<div class="mini-label">${p.name}</div><div class="mini-actions"><button class="minus">−</button><b class="num">${getCount(e.id,m.id,p.id)}</b><button class="plus">＋</button><button class="wide sign ${isSigned(e.id,m.id,p.id)?"on":""}">✍️</button><button class="wide want ${isWanted(e.id,m.id,p.id)?"on":""}">♡</button></div>`:`<span>${p.name}</span><div class="pos-actions"><button class="icon-btn want ${isWanted(e.id,m.id,p.id)?"on":""}">♡</button><button class="icon-btn sign ${isSigned(e.id,m.id,p.id)?"on":""}">✍️</button><div class="counter"><button class="minus">−</button><span class="count num">${getCount(e.id,m.id,p.id)}</span><button class="plus">＋</button></div></div>`;
-  row.querySelector(".minus").onclick=()=>{setCount(e.id,m.id,p.id,Math.max(0,getCount(e.id,m.id,p.id)-1));renderCollection()};row.querySelector(".plus").onclick=()=>{setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)+1);renderCollection()};row.querySelector(".sign").onclick=()=>{toggleSign(e.id,m.id,p.id);renderCollection()};row.querySelector(".want").onclick=()=>{toggleWant(e.id,m.id,p.id);renderCollection()};return row}
+  const minus=row.querySelector(".minus"),plus=row.querySelector(".plus"),sign=row.querySelector(".sign"),want=row.querySelector(".want");
+  const numberCell=row.querySelector(compact?".num":".count");
+  const label=`${e.period||e.officialName}／${m.name}／${p.name}`;
+  minus.setAttribute("aria-label",`${label} を1枚減らす`);
+  plus.setAttribute("aria-label",`${label} を1枚増やす`);
+  sign.setAttribute("aria-label",`${label} の直筆サインを切り替え`);
+  want.setAttribute("aria-label",`${label} の欲しいを切り替え`);
+  [minus,plus,sign,want].forEach(button=>{button.type="button"});
+  function refresh(){
+    const n=getCount(e.id,m.id,p.id);
+    if(numberCell)numberCell.textContent=n;
+    sign.classList.toggle("on",isSigned(e.id,m.id,p.id));
+    sign.setAttribute("aria-pressed",String(isSigned(e.id,m.id,p.id)));
+    want.classList.toggle("on",isWanted(e.id,m.id,p.id));
+    want.setAttribute("aria-pressed",String(isWanted(e.id,m.id,p.id)));
+    refreshCardBadges(e,m);
+    updateSummary();
+  }
+  const applyCount=next=>{
+    const before=getCount(e.id,m.id,p.id);
+    if(next===before)return;
+    setCount(e.id,m.id,p.id,next);
+    refresh();
+    showActionToast(`${p.name} を ${next}枚 にしました`,()=>{setCount(e.id,m.id,p.id,before);refresh()});
+  };
+  minus.onclick=()=>applyCount(Math.max(0,getCount(e.id,m.id,p.id)-1));
+  plus.onclick=()=>applyCount(getCount(e.id,m.id,p.id)+1);
+  sign.onclick=()=>{
+    toggleSign(e.id,m.id,p.id);refresh();
+    showActionToast(isSigned(e.id,m.id,p.id)?`${p.name} を直筆ありにしました`:`${p.name} の直筆を外しました`,()=>{toggleSign(e.id,m.id,p.id);refresh()});
+  };
+  want.onclick=()=>{
+    toggleWant(e.id,m.id,p.id);refresh();
+    showActionToast(isWanted(e.id,m.id,p.id)?`${p.name} を欲しいに追加しました`:`${p.name} の欲しいを外しました`,()=>{toggleWant(e.id,m.id,p.id);refresh()});
+  };
+  refresh();
+  return row}
   function renderMemberCard(e,m){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div></div><div class="badges"><span class="badge">${esc(e.category)}</span>${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}${complete(e,m)?'<span class="badge complete">COMPLETE</span>':''}</div></div></div><div class="member-line">${m.emoji} ${m.name}</div><div class="positions"></div><div class="event-footer"></div>`;
-  POSITIONS.forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${safeOfficialUrl(e.officialUrl)?`<a href="${esc(safeOfficialUrl(e.officialUrl))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;f.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);return card}
-  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e),owned=eligible.reduce((t,m)=>t+POSITIONS.reduce((s,p)=>s+getCount(e.id,m.id,p.id),0),0),want=eligible.reduce((t,m)=>t+POSITIONS.filter(p=>isWanted(e.id,m.id,p.id)).length,0),comp=eligible.filter(m=>complete(e,m)).length;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div><div class="all-summary">所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${safeOfficialUrl(e.officialUrl)?`<a href="${esc(safeOfficialUrl(e.officialUrl))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];renderCollection()};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;POSITIONS.forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
+  POSITIONS.forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${safeOfficialUrl(e.officialUrl)?`<a href="${esc(safeOfficialUrl(e.officialUrl))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;const bulk=f.querySelector(".card-bulk-button");bulk.type="button";bulk.setAttribute("aria-label",`${e.period||e.officialName} ${m.name} の一括操作`);bulk.onclick=()=>openBulkSheet(e.id,m.id);return card}
+  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e),owned=eligible.reduce((t,m)=>t+POSITIONS.reduce((s,p)=>s+getCount(e.id,m.id,p.id),0),0),want=eligible.reduce((t,m)=>t+POSITIONS.filter(p=>isWanted(e.id,m.id,p.id)).length,0),comp=eligible.filter(m=>complete(e,m)).length;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div><div class="all-summary">所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${safeOfficialUrl(e.officialUrl)?`<a href="${esc(safeOfficialUrl(e.officialUrl))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;const expandButton=card.querySelector(".expand-btn");
+expandButton.type="button";
+expandButton.setAttribute("aria-expanded",String(!!state.expanded[e.id]));
+expandButton.onclick=()=>{
+  state.expanded[e.id]=!state.expanded[e.id];
+  const open=!!state.expanded[e.id];
+  expandButton.setAttribute("aria-expanded",String(open));
+  expandButton.textContent=open?"閉じる":`${eligible.length}人分を開く`;
+  const existing=card.querySelector(".all-members");
+  if(existing)existing.remove();
+  if(open)card.insertBefore(buildAllMembersBox(e,eligible),card.querySelector(".event-footer"));
+};const bulkAll=card.querySelector(".card-bulk-button");bulkAll.type="button";bulkAll.setAttribute("aria-label",`${e.period||e.officialName} の一括操作`);bulkAll.onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id])card.insertBefore(buildAllMembersBox(e,eligible),card.querySelector(".event-footer"));return card}
+  function buildAllMembersBox(e,eligible){
+    const box=document.createElement("div");
+    box.className="all-members";
+    eligible.forEach(m=>{
+      const r=document.createElement("div");
+      r.className="all-row";
+      r.innerHTML=`<div class="all-name">${m.emoji} ${esc(m.name)}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;
+      const grid=r.querySelector(".all-pos-grid");
+      POSITIONS.forEach(p=>grid.appendChild(renderPositionRow(e,m,p,true)));
+      box.appendChild(r);
+    });
+    return box;
+  }
   function renderCollection(){
     renderCollectionFilterUi();
     const list=filtered();
-    updateSummary(list);
+    updateSummary();
     $("eventList").innerHTML="";
     if(!list.length){
       $("eventList").innerHTML=`<div class="empty-state"><span>🔍</span><h3>該当するデータがありません</h3><p>検索条件やフィルターを変更してください。</p><button id="resetFiltersButton">条件をリセット</button></div>`;
       document.getElementById("resetFiltersButton").onclick=()=>resetCollectionView({render:true,scrollTop:true});
       return;
     }
-    const frag=document.createDocumentFragment();
-    if(state.mode==="all")list.forEach(e=>frag.appendChild(renderAllCard(e)));
-    else{const m=MEMBERS.find(x=>x.id===state.memberId);list.forEach(e=>frag.appendChild(renderMemberCard(e,m)))}
-    $("eventList").appendChild(frag);
+    const member=state.mode==="all"?null:MEMBERS.find(x=>x.id===state.memberId);
+    const build=e=>state.mode==="all"?renderAllCard(e):renderMemberCard(e,member);
+    // 復元先が指定されている時は分割せず一度に描く（目的のカードが未描画だと戻れないため）
+    const targetIndex=pendingScrollTarget?list.findIndex(e=>e.id===pendingScrollTarget):-1;
+    const savedTop=Number(getScrollMemory()[scrollContextKey()]||0);
+    const firstChunk=targetIndex>=0?list.length:Math.max(30,savedTop>0?60:30);
+    renderListInChunks($("eventList"),list,build,firstChunk);
+  }
+  let listRenderToken=0;
+  function renderListInChunks(container,list,build,firstChunk=30,chunkSize=30){
+    const token=++listRenderToken;
+    const first=document.createDocumentFragment();
+    list.slice(0,firstChunk).forEach(e=>first.appendChild(build(e)));
+    container.appendChild(first);
+    if(list.length<=firstChunk)return;
+    let index=firstChunk;
+    const step=()=>{
+      if(token!==listRenderToken||!container.isConnected)return;
+      const frag=document.createDocumentFragment();
+      const end=Math.min(index+chunkSize,list.length);
+      for(;index<end;index++)frag.appendChild(build(list[index]));
+      container.appendChild(frag);
+      if(index<list.length)requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
   }
   function renderStats(){
     const ms=scopeMembers(),all=statsFor(ms);
@@ -1684,7 +1834,7 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.02</h3>
+        <h3>公開版Ver1.01.04</h3>
         <p>未所持一覧の検索欄を、入力中に作り直さない方式へ変更しました。複数文字や日本語を連続して入力できます。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
@@ -1697,7 +1847,8 @@ function openMember(id){
     return {
       counts:Object.keys(state.counts).length,
       signs:Object.keys(state.signs).length,
-      wants:Object.keys(state.wants).length
+      wants:Object.keys(state.wants).length,
+      images:memberImageRecords.size
     };
   }
   function backupFileName(){
@@ -1715,6 +1866,34 @@ function openMember(id){
       matrixEventId:state.matrixEventId,matrixSearch:state.matrixSearch,matrixYear:state.matrixYear,matrixOrder:state.matrixOrder
     };
   }
+  async function dataUrlToBlob(dataUrl){
+    const text=String(dataUrl||"");
+    const match=text.match(/^data:(image\/(?:jpeg|png|webp));base64,/);
+    if(!match)throw new Error("対応していない画像形式です");
+    const binary=atob(text.slice(match[0].length));
+    const bytes=new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+    return new Blob([bytes],{type:match[1]});
+  }
+  const MAX_IMAGE_BACKUP_BYTES=12*1024*1024;
+  async function collectImageBackup(){
+    const images=[];
+    let bytes=0;
+    for(const record of memberImageRecords.values()){
+      if(!record?.blob)continue;
+      bytes+=record.blob.size;
+      if(bytes>MAX_IMAGE_BACKUP_BYTES)return {images:[],skipped:true};
+      images.push({
+        memberId:record.memberId,
+        positionX:record.positionX,
+        positionY:record.positionY,
+        zoom:record.zoom,
+        updatedAt:record.updatedAt,
+        dataUrl:await blobToDataUrl(record.blob)
+      });
+    }
+    return {images,skipped:false};
+  }
   function buildBackupPayload(reason="manual"){
     return {
       app:"equal-love-photo-manager",
@@ -1727,8 +1906,16 @@ function openMember(id){
       data:{counts:state.counts,signs:state.signs,wants:state.wants,oshis:state.oshis,preferences:currentPreferences()}
     };
   }
-  function exportBackup(){
+  async function exportBackup(){
     const payload=buildBackupPayload("manual");
+    try{
+      const result=await collectImageBackup();
+      if(result.skipped)showActionToast("画像が大きいため、画像を除いて書き出します");
+      else if(result.images.length)payload.data.images=result.images;
+    }catch(error){
+      console.warn("画像の書き出しに失敗しました",error);
+      showActionToast("画像を書き出せませんでした。他のデータのみ保存します");
+    }
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");
@@ -1793,7 +1980,7 @@ function openMember(id){
       if(!confirm(`自動バックアップ（${formatBackupDate(backup.exportedAt)}）を復元しますか？`))return;
       saveAutoBackup("自動履歴から復元する直前");
       const migrated=applyBackupData(backup);
-      alert(`復元しました。${migrated?`旧event_idを${migrated}件移行しました。`:""}画面を再読み込みします。`);
+      alert(`復元しました。${migrated?`旧event_idを${migrated}件移行しました。`:""}メンバー画像はこの履歴には含まれません。画面を再読み込みします。`);
       location.reload();
     }catch(error){alert(`復元できませんでした：${error.message}`)}
   }
@@ -1881,10 +2068,57 @@ function openMember(id){
       wants:sanitizeBackupMap(payload.data.wants,"欲しい"),
       oshis,
       preferences:sanitizePreferences(payload.data.preferences),
+      images:sanitizeBackupImages(payload.data.images),
       sourceVersion:cleanShortText(payload.sourceVersion),
       schemaVersion,
       dataVersion:cleanShortText(payload.dataVersion)
     };
+  }
+  function sanitizeBackupImages(value){
+    if(!Array.isArray(value))return [];
+    const seen=new Set();
+    const list=[];
+    for(const item of value.slice(0,MEMBERS.length)){
+      if(!validObject(item))continue;
+      const memberId=String(item.memberId||"");
+      if(!MEMBERS.some(member=>member.id===memberId)||seen.has(memberId))continue;
+      const dataUrl=String(item.dataUrl||"");
+      if(!/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(dataUrl))continue;
+      if(dataUrl.length>MAX_IMAGE_BACKUP_BYTES)continue;
+      seen.add(memberId);
+      list.push({
+        memberId,
+        positionX:imageNumber(item.positionX,50,0,100),
+        positionY:imageNumber(item.positionY,50,0,100),
+        zoom:imageNumber(item.zoom,1,1,2.4),
+        updatedAt:validDateString(item.updatedAt)?item.updatedAt:new Date().toISOString(),
+        dataUrl
+      });
+    }
+    return list;
+  }
+  async function applyBackupImages(images){
+    if(!Array.isArray(images)||!images.length)return 0;
+    let restored=0;
+    for(const item of images){
+      try{
+        const blob=await dataUrlToBlob(item.dataUrl);
+        const record=normalizeMemberImageRecord({
+          memberId:item.memberId,
+          blob,
+          dataUrl:item.dataUrl,
+          positionX:item.positionX,
+          positionY:item.positionY,
+          zoom:item.zoom,
+          updatedAt:item.updatedAt
+        });
+        await imageDbRequest("readwrite",store=>store.put(record));
+        restored++;
+      }catch(error){
+        console.warn("画像を復元できませんでした",item.memberId,error);
+      }
+    }
+    return restored;
   }
   function formatBackupDate(date){
     return new Intl.DateTimeFormat("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}).format(date);
@@ -1943,11 +2177,23 @@ function openMember(id){
   function restorePendingBackup(){
     if(!pendingBackup)return;
     const summary=`作成日時：${formatBackupDate(pendingBackup.exportedAt)}\n作成元：Ver ${pendingBackup.sourceVersion}\n所持 ${Object.keys(pendingBackup.counts).length}件\n直筆 ${Object.keys(pendingBackup.signs).length}件\n欲しい ${Object.keys(pendingBackup.wants).length}件\n推し設定 ${Object.keys(pendingBackup.oshis||{}).length}人`;
-    if(!confirm(`現在のデータを上書きします。\n\n${summary}\n\n復元しますか？`))return;
+    const imageCount=(pendingBackup.images||[]).length;
+    const detail=imageCount?`${summary}\nメンバー画像 ${imageCount}件`:summary;
+    if(!confirm(`現在のデータを上書きします。\n\n${detail}\n\n復元しますか？`))return;
     saveAutoBackup("ファイル復元の直前");
     const migrated=applyBackupData(pendingBackup);
-    alert(`復元が完了しました。${migrated?`旧event_idを${migrated}件移行しました。`:""}画面を再読み込みします。`);
-    location.reload();
+    const finish=restoredImages=>{
+      const notes=[];
+      if(migrated)notes.push(`旧event_idを${migrated}件移行しました。`);
+      if(restoredImages)notes.push(`メンバー画像を${restoredImages}件復元しました。`);
+      alert(`復元が完了しました。${notes.join("")}画面を再読み込みします。`);
+      location.reload();
+    };
+    if(!imageCount){finish(0);return}
+    applyBackupImages(pendingBackup.images).then(finish).catch(error=>{
+      console.warn("画像の復元に失敗しました",error);
+      finish(0);
+    });
   }
   function deleteAllUserData(){
     if(!confirm("所持枚数・直筆・欲しい情報・フィルター設定をすべて削除します。\nこの操作は元に戻せません。\n\n続けますか？"))return;
@@ -1971,17 +2217,18 @@ function openMember(id){
         <div><b>${s.counts}</b><span>所持データ</span></div>
         <div><b>${s.signs}</b><span>直筆データ</span></div>
         <div><b>${s.wants}</b><span>欲しいデータ</span></div>
+        <div><b>${s.images}</b><span>メンバー画像</span></div>
       </div>
       <div class="panel backup-panel">
         <div class="backup-icon">📤</div>
         <h3>バックアップを保存</h3>
-        <p>所持枚数・直筆・欲しい・推し・フィルター設定を、1つのJSONファイルに保存します。端末内のメンバー画像は含まれません。</p>
+        <p>所持枚数・直筆・欲しい・推し・フィルター設定に加え、端末内のメンバー画像も1つのJSONファイルに保存します。画像の合計が12MBを超える場合は、画像を除いて保存します。</p>
         <button id="exportBackupButton" class="primary-action">バックアップファイルを保存</button>
       </div>
       <div class="panel backup-panel">
         <div class="backup-icon">📥</div>
         <h3>バックアップから復元</h3>
-        <p>選択したファイルを自動検査し、作成日時と件数を表示してから復元します。</p>
+        <p>選択したファイルを自動検査し、作成日時と件数を表示してから復元します。画像を含むファイルなら、メンバー画像も一緒に戻します。</p>
         <input id="importBackupInput" class="file-input" type="file" accept=".json,application/json">
         <label for="importBackupInput" class="secondary-action">バックアップファイルを選択</label>
         <div id="backupPreview" class="backup-preview"></div>
