@@ -910,29 +910,9 @@
     "addedDate": "2021-02-02"
   },
   {
-    "officialName": "大谷映美里生誕記念生写真セット",
-    "id": "2021-birthday-otani",
-    "sort": 92,
-    "category": "イベント",
-    "period": "2021.birthday",
-    "work": "大谷映美里生誕記念",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=36131",
-    "addedDate": "2021-05"
-  },
-  {
-    "officialName": "野口衣織生誕記念生写真セット",
-    "id": "2021-birthday-noguchi",
-    "sort": 93,
-    "category": "イベント",
-    "period": "2021.birthday",
-    "work": "野口衣織生誕記念",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=36132",
-    "addedDate": "2021-05"
-  },
-  {
     "officialName": "卒業コンサート生写真セット（袴2021）",
     "id": "2021.graduation",
-    "sort": 94,
+    "sort": 92,
     "category": "イベント",
     "period": "2021.graduation",
     "work": "袴2021",
@@ -942,7 +922,7 @@
   {
     "officialName": "佐竹のん乃卒業記念2ショット生写真セット",
     "id": "2021.graduation-02",
-    "sort": 95,
+    "sort": 93,
     "category": "イベント",
     "period": "2021.graduation-Ⅱ",
     "work": "佐竹のん乃卒業記念2ショット生写真セット",
@@ -952,12 +932,32 @@
   {
     "officialName": "2021.March 生写真セット（8thcw「しゅきぴ」MV衣装）",
     "id": "2021-03-01",
-    "sort": 96,
+    "sort": 94,
     "category": "通常",
     "period": "2021.March",
     "work": "8thcw「しゅきぴ」MV衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/3836",
     "addedDate": "2021-03-01"
+  },
+  {
+    "officialName": "野口衣織生誕記念生写真セット",
+    "id": "2021-birthday-noguchi",
+    "sort": 95,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "野口衣織生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=36132",
+    "addedDate": "2021-03"
+  },
+  {
+    "officialName": "大谷映美里生誕記念生写真セット",
+    "id": "2021-birthday-otani",
+    "sort": 96,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "大谷映美里生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=36131",
+    "addedDate": "2021-03"
   },
   {
     "officialName": "2021.March-Ⅱ 生写真セット（冬ツアー白ニット衣装）",
@@ -1100,23 +1100,23 @@
     "addedDate": "2021-08-01"
   },
   {
-    "officialName": "音嶋莉沙生誕記念生写真セット",
-    "id": "2021-birthday-otoshima",
-    "sort": 111,
-    "category": "イベント",
-    "period": "2021.birthday",
-    "work": "音嶋莉沙生誕記念",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=40670",
-    "addedDate": "2021-08"
-  },
-  {
     "officialName": "諸橋沙夏生誕記念生写真セット",
     "id": "2021-birthday-morohashi",
-    "sort": 112,
+    "sort": 111,
     "category": "イベント",
     "period": "2021.birthday",
     "work": "諸橋沙夏生誕記念",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=40671",
+    "addedDate": "2021-08"
+  },
+  {
+    "officialName": "音嶋莉沙生誕記念生写真セット",
+    "id": "2021-birthday-otoshima",
+    "sort": 112,
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "音嶋莉沙生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=40670",
     "addedDate": "2021-08"
   },
   {
@@ -1200,14 +1200,14 @@
     "addedDate": "2021-11-01"
   },
   {
-    "officialName": "2021.November-Ⅱ 生写真セット（歌番組衣装）",
-    "id": "2021-11-02",
+    "officialName": "山本杏奈生誕記念生写真セット",
+    "id": "2021-birthday-yamamoto",
     "sort": 121,
-    "category": "通常",
-    "period": "2021.November-II",
-    "work": "歌番組衣装",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=43432",
-    "addedDate": "2021-11-02"
+    "category": "イベント",
+    "period": "2021.birthday",
+    "work": "山本杏奈生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=43759",
+    "addedDate": "2021-11"
   },
   {
     "officialName": "齋藤樹愛羅生誕記念生写真セット",
@@ -1220,14 +1220,14 @@
     "addedDate": "2021-11"
   },
   {
-    "officialName": "山本杏奈生誕記念生写真セット",
-    "id": "2021-birthday-yamamoto",
+    "officialName": "2021.November-Ⅱ 生写真セット（歌番組衣装）",
+    "id": "2021-11-02",
     "sort": 123,
-    "category": "イベント",
-    "period": "2021.birthday",
-    "work": "山本杏奈生誕記念",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=43759",
-    "addedDate": "2021-11"
+    "category": "通常",
+    "period": "2021.November-II",
+    "work": "歌番組衣装",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=43432",
+    "addedDate": "2021-11-02"
   },
   {
     "officialName": "2021.December 生写真セット（「The 5th」チェック衣装）",
@@ -1260,14 +1260,14 @@
     "addedDate": "2022-01-01"
   },
   {
-    "officialName": "佐々木舞香生誕記念生写真セット",
-    "id": "2022-birthday-sasaki",
+    "officialName": "2022 January-Ⅱ 生写真セット（10thcw「お姫様にしてよ!」）",
+    "id": "2022-01-02",
     "sort": 127,
-    "category": "イベント",
-    "period": "2022.birthday",
-    "work": "佐々木舞香生誕記念",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=45491",
-    "addedDate": "2022-01"
+    "category": "通常",
+    "period": "2022.January-II",
+    "work": "10thcw「お姫様にしてよ!」",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=45493",
+    "addedDate": "2022-01-02"
   },
   {
     "officialName": "髙松瞳生誕記念生写真セット",
@@ -1280,14 +1280,14 @@
     "addedDate": "2022-01"
   },
   {
-    "officialName": "2022 January-Ⅱ 生写真セット（10thcw「お姫様にしてよ!」）",
-    "id": "2022-01-02",
+    "officialName": "佐々木舞香生誕記念生写真セット",
+    "id": "2022-birthday-sasaki",
     "sort": 129,
-    "category": "通常",
-    "period": "2022.January-II",
-    "work": "10thcw「お姫様にしてよ!」",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=45493",
-    "addedDate": "2022-01-02"
+    "category": "イベント",
+    "period": "2022.birthday",
+    "work": "佐々木舞香生誕記念",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=45491",
+    "addedDate": "2022-01"
   },
   {
     "officialName": "2022 February 生写真セット（10thcw「Poison Girl」）",
@@ -2570,23 +2570,23 @@
     "addedDate": "2026-08-01"
   },
   {
-    "officialName": "2026 September 生写真セット(年末歌番組2025衣装②)",
-    "id": "2026-09-01",
-    "sort": 258,
-    "category": "通常",
-    "period": "2026.September",
-    "work": "年末歌番組2025衣装②",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=114052",
-    "addedDate": "2026-09-01"
-  },
-  {
     "officialName": "2026 August-Ⅱ 生写真セット(20thcw「お姫様の作り方」②)",
     "id": "2026-08-02",
-    "sort": 259,
+    "sort": 258,
     "category": "通常",
     "period": "2026.August-Ⅱ",
     "work": "20thcw「お姫様の作り方」②",
     "officialUrl": "https://equal-love.jp/news/detail/11830",
     "addedDate": "2026-08-02"
+  },
+  {
+    "officialName": "2026 September 生写真セット(年末歌番組2025衣装②)",
+    "id": "2026-09-01",
+    "sort": 259,
+    "category": "通常",
+    "period": "2026.September",
+    "work": "年末歌番組2025衣装②",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=114052",
+    "addedDate": "2026-09-01"
   }
 ]
