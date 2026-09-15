@@ -26,9 +26,12 @@
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.01.01", {scope: "./"});
+      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.01.02", {scope: "./"});
       const showUpdate = worker => {
         if (!worker || !updateBanner || !updateButton) return;
+        // app.js のバージョン通知が先に出ている場合は上書きしない
+        if (updateBanner.dataset.owner === "app") return;
+        updateBanner.dataset.owner = "sw";
         updateBanner.classList.remove("hidden");
         updateButton.onclick = () => worker.postMessage({type: "SKIP_WAITING"});
       };
