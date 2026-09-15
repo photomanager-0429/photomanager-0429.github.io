@@ -26,7 +26,7 @@
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.01.04", {scope: "./"});
+      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.02.00", {scope: "./"});
       const showUpdate = worker => {
         if (!worker || !updateBanner || !updateButton) return;
         // app.js のバージョン通知が先に出ている場合は上書きしない

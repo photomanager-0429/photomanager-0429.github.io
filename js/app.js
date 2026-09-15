@@ -19,10 +19,10 @@ function safeOfficialUrl(value) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.04",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.04",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.04",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.04",{cache:"no-store"})
+    fetch("./data/events.json?v=1.02.00",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.02.00",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.02.00",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.02.00",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -1164,7 +1164,7 @@ function openMember(id){
     if(!skipScrollSave)saveScrollPosition();
     if($("homeScreen").classList.contains("hidden")===false){state.mode="all";state.memberId=null;theme(null);$("homeScreen").classList.add("hidden");$("managerScreen").classList.remove("hidden")}
     state.page=page;
-    ["collection","quick","matrix","stats","wishlist","trade","missing","oshi","memberImages","bulkManage","backup","help","legal","about"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
+    ["collection","quick","matrix","stats","wishlist","trade","missing","oshi","bonus","memberImages","bulkManage","backup","help","legal","about"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
     $("managerTools").classList.toggle("hidden",page!=="collection");
     document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
     updateHeader();
@@ -1176,6 +1176,7 @@ function openMember(id){
     if(page==="trade")renderTrade();
     if(page==="missing")renderMissing();
     if(page==="oshi")renderOshi();
+    if(page==="bonus")renderBonus();
     if(page==="memberImages")renderMemberImages();
     if(page==="bulkManage")renderBulkManage();
     if(page==="backup")renderBackup();
@@ -1455,6 +1456,365 @@ expandButton.onclick=()=>{
     });
     return box;
   }
+
+  const BONUS_DB_NAME="equal-love-photo-manager-bonus-items";
+  const BONUS_DB_VERSION=1;
+  const BONUS_STORE="bonusItems";
+  const BONUS_TYPES=["生写真","カード","クリアしおり","ステッカー","その他"];
+  const bonusItems=new Map();
+  const bonusUrls=new Map();
+  let bonusDbPromise=null;
+  let bonusReady=false;
+  let bonusLoadError="";
+  let bonusDraft=null;
+  let bonusDraftUrl="";
+  const bonusFilter={memberId:"",source:"",type:""};
+
+  function openBonusDb(){
+    if(bonusDbPromise)return bonusDbPromise;
+    bonusDbPromise=new Promise((resolve,reject)=>{
+      if(!("indexedDB" in window)){reject(new Error("このブラウザは端末内保存に対応していません"));return}
+      const request=indexedDB.open(BONUS_DB_NAME,BONUS_DB_VERSION);
+      request.onupgradeneeded=()=>{
+        const db=request.result;
+        if(!db.objectStoreNames.contains(BONUS_STORE)){
+          db.createObjectStore(BONUS_STORE,{keyPath:"id",autoIncrement:true});
+        }
+      };
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||new Error("保存領域を開けませんでした"));
+      request.onblocked=()=>reject(new Error("保存領域の更新がブロックされています"));
+    });
+    return bonusDbPromise;
+  }
+  function bonusDbRequest(mode,operation){
+    return openBonusDb().then(db=>new Promise((resolve,reject)=>{
+      const transaction=db.transaction(BONUS_STORE,mode);
+      const store=transaction.objectStore(BONUS_STORE);
+      let request,settled=false,result;
+      const fail=error=>{if(settled)return;settled=true;reject(error||new Error("保存領域の操作に失敗しました"))};
+      try{request=operation(store)}catch(error){fail(error);return}
+      if(request){
+        request.onsuccess=()=>{result=request.result};
+        request.onerror=()=>fail(request.error);
+      }
+      transaction.oncomplete=()=>{if(!settled){settled=true;resolve(result)}};
+      transaction.onerror=()=>fail(transaction.error);
+      transaction.onabort=()=>fail(transaction.error);
+    }));
+  }
+  function normalizeBonusItem(item){
+    const memberId=String(item?.memberId||"");
+    const type=BONUS_TYPES.includes(item?.type)?item.type:BONUS_TYPES[0];
+    return {
+      ...(item?.id!==undefined?{id:item.id}:{}),
+      memberId,
+      source:cleanShortText(item?.source,""),
+      type,
+      label:cleanShortText(item?.label,""),
+      note:cleanShortText(item?.note,""),
+      quantity:Math.min(99,Math.max(1,Math.round(Number(item?.quantity)||1))),
+      orientation:item?.orientation==="landscape"?"landscape":"portrait",
+      positionX:imageNumber(item?.positionX,50,0,100),
+      positionY:imageNumber(item?.positionY,50,0,100),
+      zoom:imageNumber(item?.zoom,1,1,2.4),
+      blob:item?.blob instanceof Blob?item.blob:null,
+      thumbBlob:item?.thumbBlob instanceof Blob?item.thumbBlob:null,
+      updatedAt:String(item?.updatedAt||new Date().toISOString())
+    };
+  }
+  function bonusDisplayUrl(item,thumb=true){
+    const key=`${item.id}:${thumb?"t":"f"}`;
+    if(bonusUrls.has(key))return bonusUrls.get(key);
+    const blob=thumb?(item.thumbBlob||item.blob):(item.blob||item.thumbBlob);
+    if(!(blob instanceof Blob))return "";
+    try{
+      const url=URL.createObjectURL(blob);
+      bonusUrls.set(key,url);
+      return url;
+    }catch(error){
+      console.warn("封入特典の表示URLを作成できませんでした",error);
+      return "";
+    }
+  }
+  function releaseBonusUrls(id){
+    [...bonusUrls.keys()].forEach(key=>{
+      if(id===undefined||key.startsWith(`${id}:`)){
+        const url=bonusUrls.get(key);
+        if(url?.startsWith("blob:"))URL.revokeObjectURL(url);
+        bonusUrls.delete(key);
+      }
+    });
+  }
+  async function loadBonusItems(){
+    try{
+      const rows=await bonusDbRequest("readonly",store=>store.getAll());
+      releaseBonusUrls();
+      bonusItems.clear();
+      (Array.isArray(rows)?rows:[]).forEach(row=>{
+        const item=normalizeBonusItem(row);
+        if(item.id!==undefined)bonusItems.set(item.id,item);
+      });
+      bonusReady=true;
+      bonusLoadError="";
+    }catch(error){
+      bonusReady=false;
+      bonusLoadError=error.message||"読み込みに失敗しました";
+      console.warn("封入特典を読み込めませんでした",error);
+    }
+  }
+  function bonusSources(){
+    return [...new Set([...bonusItems.values()].map(item=>item.source).filter(Boolean))]
+      .sort((a,b)=>a.localeCompare(b,"ja"));
+  }
+  function bonusFilteredItems(){
+    return [...bonusItems.values()]
+      .filter(item=>!bonusFilter.memberId||item.memberId===bonusFilter.memberId)
+      .filter(item=>!bonusFilter.source||item.source===bonusFilter.source)
+      .filter(item=>!bonusFilter.type||item.type===bonusFilter.type)
+      .sort((a,b)=>String(b.updatedAt).localeCompare(String(a.updatedAt)));
+  }
+  async function makeBonusThumbnail(blob){
+    const image=await loadImageElement(blob);
+    const naturalWidth=image.naturalWidth||image.width;
+    const naturalHeight=image.naturalHeight||image.height;
+    const maxSide=320;
+    const scale=Math.min(1,maxSide/Math.max(naturalWidth,naturalHeight));
+    const width=Math.max(1,Math.round(naturalWidth*scale));
+    const height=Math.max(1,Math.round(naturalHeight*scale));
+    const canvas=document.createElement("canvas");
+    canvas.width=width;canvas.height=height;
+    const context=canvas.getContext("2d",{alpha:false});
+    if(!context)return null;
+    context.imageSmoothingEnabled=true;
+    context.imageSmoothingQuality="high";
+    context.fillStyle="#ffffff";
+    context.fillRect(0,0,width,height);
+    context.drawImage(image,0,0,width,height);
+    let thumb=await canvasToBlob(canvas,"image/webp",0.8);
+    if(!thumb)thumb=await canvasToBlob(canvas,"image/jpeg",0.82);
+    canvas.width=1;canvas.height=1;
+    return {thumb,landscape:naturalWidth>naturalHeight};
+  }
+  function chooseBonusPhoto(){
+    const input=document.createElement("input");
+    input.type="file";
+    input.accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
+    input.onchange=async()=>{
+      const file=input.files?.[0];
+      if(!file)return;
+      showActionToast("写真を処理しています…");
+      try{
+        const blob=await compressMemberImage(file);
+        const made=await makeBonusThumbnail(blob);
+        if(bonusDraftUrl)URL.revokeObjectURL(bonusDraftUrl);
+        bonusDraft={
+          ...(bonusDraft||{}),
+          blob,
+          thumbBlob:made?.thumb||null,
+          orientation:made?.landscape?"landscape":"portrait"
+        };
+        bonusDraftUrl=URL.createObjectURL(blob);
+        renderBonus();
+      }catch(error){
+        alert(`写真を設定できませんでした：${error.message}`);
+      }
+    };
+    input.click();
+  }
+  function readBonusForm(){
+    const get=id=>$(id)?.value??"";
+    return {
+      memberId:get("bonusMemberSelect"),
+      source:get("bonusSourceInput").trim(),
+      type:get("bonusTypeSelect"),
+      label:get("bonusLabelInput").trim(),
+      quantity:Number(get("bonusQuantityInput")||1),
+      note:get("bonusNoteInput").trim()
+    };
+  }
+  async function saveBonusDraft(){
+    const form=readBonusForm();
+    const message=$("bonusFormMessage");
+    const fail=text=>{if(message){message.textContent=text;message.className="backup-message error"}};
+    if(!bonusDraft?.blob){fail("写真を選んでください");return}
+    if(!form.memberId){fail("メンバーを選んでください");return}
+    if(!form.source){fail("封入元を入力してください");return}
+    const record=normalizeBonusItem({
+      ...(bonusDraft.id!==undefined?{id:bonusDraft.id}:{}),
+      ...form,
+      orientation:bonusDraft.orientation,
+      positionX:bonusDraft.positionX,
+      positionY:bonusDraft.positionY,
+      zoom:bonusDraft.zoom,
+      blob:bonusDraft.blob,
+      thumbBlob:bonusDraft.thumbBlob,
+      updatedAt:new Date().toISOString()
+    });
+    try{
+      await bonusDbRequest("readwrite",store=>store.put(record));
+      await loadBonusItems();
+      clearBonusDraft();
+      renderBonus();
+      showActionToast(bonusDraft?.id!==undefined?"封入特典を更新しました":"封入特典を登録しました");
+    }catch(error){
+      fail(`保存できませんでした：${error.message}`);
+    }
+  }
+  function clearBonusDraft(){
+    if(bonusDraftUrl)URL.revokeObjectURL(bonusDraftUrl);
+    bonusDraftUrl="";
+    bonusDraft=null;
+  }
+  function editBonusItem(id){
+    const item=bonusItems.get(Number(id));
+    if(!item)return;
+    clearBonusDraft();
+    bonusDraft={...item};
+    if(item.blob instanceof Blob)bonusDraftUrl=URL.createObjectURL(item.blob);
+    renderBonus();
+    $("bonusFormPanel")?.scrollIntoView({block:"start"});
+  }
+  async function deleteBonusItem(id){
+    const item=bonusItems.get(Number(id));
+    if(!item)return;
+    if(!confirm(`${item.source||"この封入特典"}の登録を削除しますか？`))return;
+    try{
+      await bonusDbRequest("readwrite",store=>store.delete(item.id));
+      releaseBonusUrls(item.id);
+      await loadBonusItems();
+      renderBonus();
+      showActionToast("封入特典を削除しました");
+    }catch(error){
+      alert(`削除できませんでした：${error.message}`);
+    }
+  }
+  function bonusCardMarkup(item){
+    const member=MEMBERS.find(m=>m.id===item.memberId);
+    const url=bonusDisplayUrl(item);
+    const frame=item.orientation==="landscape"?"bonus-thumb landscape":"bonus-thumb";
+    const style=`object-position:${item.positionX}% ${item.positionY}%;transform:scale(${item.zoom})`;
+    const photo=url
+      ?`<img src="${esc(url)}" alt="${esc(item.source||"封入特典")}" loading="lazy" decoding="async" style="${style}">`
+      :`<span class="bonus-thumb-empty">画像なし</span>`;
+    return `<article class="bonus-card">
+      <div class="${frame}">${photo}</div>
+      <div class="bonus-card-body">
+        <p class="bonus-source">${esc(item.source||"封入元なし")}</p>
+        <p class="bonus-meta">${esc(item.type)} ・ ${item.quantity}枚</p>
+        <p class="bonus-member">${member?`${member.emoji} ${esc(member.name)}`:"メンバー未設定"}</p>
+        ${item.label?`<p class="bonus-label">${esc(item.label)}</p>`:""}
+        ${item.note?`<p class="bonus-note">${esc(item.note)}</p>`:""}
+        <div class="bonus-card-actions">
+          <button type="button" class="bonus-edit" data-bonus-edit="${item.id}">編集</button>
+          <button type="button" class="bonus-delete" data-bonus-delete="${item.id}">削除</button>
+        </div>
+      </div>
+    </article>`;
+  }
+  function renderBonus(){
+    const page=$("bonusPage");
+    if(!page)return;
+    if(!bonusReady&&!bonusLoadError){
+      page.innerHTML=`<div class="page-head"><h2>🎁 封入特典の管理</h2><p>読み込み中です…</p></div>`;
+      loadBonusItems().then(renderBonus);
+      return;
+    }
+    const items=bonusFilteredItems();
+    const totalSheets=[...bonusItems.values()].reduce((sum,item)=>sum+item.quantity,0);
+    const sources=bonusSources();
+    const draftUrl=bonusDraftUrl;
+    const draftFrame=bonusDraft?.orientation==="landscape"?"bonus-thumb landscape":"bonus-thumb";
+    page.innerHTML=`
+      <div class="page-head"><h2>🎁 封入特典の管理</h2><p>CDやBlu-rayの封入特典を、撮影した写真で管理します</p></div>
+      ${bonusLoadError?`<div class="backup-message error">${esc(bonusLoadError)}</div>`:""}
+      <div class="backup-summary">
+        <div><b>${totalSheets}</b><span>合計枚数</span></div>
+        <div><b>${bonusItems.size}</b><span>登録した絵柄</span></div>
+      </div>
+      <div class="panel" id="bonusFormPanel">
+        <h3>${bonusDraft?.id!==undefined?"登録内容を編集":"登録する"}</h3>
+        <button type="button" id="bonusPhotoButton" class="bonus-photo-picker">
+          ${draftUrl?`<span class="${draftFrame}"><img src="${esc(draftUrl)}" alt="選択中の写真"></span>`:`<span class="bonus-photo-empty">📷 写真を撮る / 選ぶ</span>`}
+        </button>
+        <label class="bonus-label-text" for="bonusMemberSelect">メンバー</label>
+        <select id="bonusMemberSelect">
+          <option value="">選択してください</option>
+          ${MEMBERS.map(m=>`<option value="${esc(m.id)}" ${bonusDraft?.memberId===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}
+        </select>
+        <label class="bonus-label-text" for="bonusSourceInput">封入元</label>
+        <input id="bonusSourceInput" type="text" maxlength="80" placeholder="ラブソングに襲われる 初回限定盤A" value="${esc(bonusDraft?.source||"")}">
+        ${sources.length?`<div class="bonus-source-chips">${sources.slice(0,8).map(source=>`<button type="button" class="bonus-source-chip" data-bonus-source="${esc(source)}">${esc(source)}</button>`).join("")}</div>`:""}
+        <div class="bonus-form-grid">
+          <div>
+            <label class="bonus-label-text" for="bonusTypeSelect">種別</label>
+            <select id="bonusTypeSelect">${BONUS_TYPES.map(type=>`<option value="${esc(type)}" ${bonusDraft?.type===type?"selected":""}>${esc(type)}</option>`).join("")}</select>
+          </div>
+          <div>
+            <label class="bonus-label-text" for="bonusQuantityInput">枚数</label>
+            <input id="bonusQuantityInput" type="number" min="1" max="99" value="${bonusDraft?.quantity||1}">
+          </div>
+        </div>
+        <label class="bonus-label-text" for="bonusLabelInput">絵柄のメモ（任意）</label>
+        <input id="bonusLabelInput" type="text" maxlength="60" placeholder="ピンク衣装・ウインク" value="${esc(bonusDraft?.label||"")}">
+        <label class="bonus-label-text" for="bonusNoteInput">備考（任意）</label>
+        <input id="bonusNoteInput" type="text" maxlength="80" placeholder="トレード用" value="${esc(bonusDraft?.note||"")}">
+        <div class="bonus-orientation-row">
+          <span class="bonus-label-text">向き</span>
+          <button type="button" id="bonusOrientationButton" class="bonus-source-chip">${bonusDraft?.orientation==="landscape"?"よこ（L判）":"たて（L判）"}</button>
+        </div>
+        <div id="bonusFormMessage" class="backup-message"></div>
+        <button type="button" id="bonusSaveButton" class="primary-action">${bonusDraft?.id!==undefined?"変更を保存":"この内容で登録"}</button>
+        ${bonusDraft?`<button type="button" id="bonusCancelButton" class="secondary-action">入力をやめる</button>`:""}
+      </div>
+      <div class="panel">
+        <h3>登録済み（${items.length}件）</h3>
+        <div class="bonus-filter-grid">
+          <select id="bonusMemberFilter">
+            <option value="">すべてのメンバー</option>
+            ${MEMBERS.map(m=>`<option value="${esc(m.id)}" ${bonusFilter.memberId===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}
+          </select>
+          <select id="bonusTypeFilter">
+            <option value="">すべての種別</option>
+            ${BONUS_TYPES.map(type=>`<option value="${esc(type)}" ${bonusFilter.type===type?"selected":""}>${esc(type)}</option>`).join("")}
+          </select>
+        </div>
+        <select id="bonusSourceFilter" class="bonus-source-filter">
+          <option value="">すべての封入元</option>
+          ${sources.map(source=>`<option value="${esc(source)}" ${bonusFilter.source===source?"selected":""}>${esc(source)}</option>`).join("")}
+        </select>
+        ${items.length?`<div class="bonus-grid">${items.map(bonusCardMarkup).join("")}</div>`:`<div class="empty-state"><span>🎁</span><h3>まだ登録がありません</h3><p>上の「写真を撮る / 選ぶ」から登録できます。</p></div>`}
+      </div>`;
+    bindBonusEvents();
+  }
+  function bindBonusEvents(){
+    $("bonusPhotoButton")?.addEventListener("click",chooseBonusPhoto);
+    $("bonusSaveButton")?.addEventListener("click",saveBonusDraft);
+    $("bonusCancelButton")?.addEventListener("click",()=>{clearBonusDraft();renderBonus()});
+    $("bonusOrientationButton")?.addEventListener("click",()=>{
+      bonusDraft=bonusDraft||{};
+      bonusDraft.orientation=bonusDraft.orientation==="landscape"?"portrait":"landscape";
+      const form=readBonusForm();
+      Object.assign(bonusDraft,form);
+      renderBonus();
+    });
+    document.querySelectorAll("[data-bonus-source]").forEach(button=>{
+      button.addEventListener("click",()=>{
+        const input=$("bonusSourceInput");
+        if(input)input.value=button.dataset.bonusSource;
+      });
+    });
+    document.querySelectorAll("[data-bonus-edit]").forEach(button=>{
+      button.addEventListener("click",()=>editBonusItem(button.dataset.bonusEdit));
+    });
+    document.querySelectorAll("[data-bonus-delete]").forEach(button=>{
+      button.addEventListener("click",()=>deleteBonusItem(button.dataset.bonusDelete));
+    });
+    $("bonusMemberFilter")?.addEventListener("change",e=>{bonusFilter.memberId=e.target.value;renderBonus()});
+    $("bonusTypeFilter")?.addEventListener("change",e=>{bonusFilter.type=e.target.value;renderBonus()});
+    $("bonusSourceFilter")?.addEventListener("change",e=>{bonusFilter.source=e.target.value;renderBonus()});
+  }
+
   function renderCollection(){
     renderCollectionFilterUi();
     const list=filtered();
@@ -1834,7 +2194,7 @@ expandButton.onclick=()=>{
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.04</h3>
+        <h3>公開版Ver1.02.00</h3>
         <p>未所持一覧の検索欄を、入力中に作り直さない方式へ変更しました。複数文字や日本語を連続して入力できます。</p>
         <h3>保存について</h3>
         <p>登録内容はこのブラウザ内に保存されます。別端末へ移す場合は、バックアップ画面からJSONファイルを保存してください。画像は再設定が必要です。</p>
