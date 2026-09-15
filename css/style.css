@@ -2032,3 +2032,6 @@ textarea,
 .bonus-filter-grid select,.bonus-source-filter{width:100%;min-height:42px;border:1px solid var(--line);border-radius:13px;padding:8px 11px;background:#fff;color:var(--text)}
 .bonus-source-filter{margin-top:9px}
 .bonus-card-actions button:focus-visible,.bonus-source-chip:focus-visible,.bonus-photo-picker:focus-visible{outline:3px solid #2f6fd0;outline-offset:2px}
+
+.bonus-hint{margin:6px 0 12px;font-size:13px;line-height:1.7;color:#7d7480}
+#bonusAddPage .bonus-photo-picker .bonus-thumb{max-width:210px}
