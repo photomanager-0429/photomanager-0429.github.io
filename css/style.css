@@ -51,7 +51,8 @@ button,input,select{font:inherit}.hidden{display:none!important}.wrap{width:min(
 
 
 /* Ver0.85 バックアップ・復元 */
-.backup-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0}
+.backup-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin:14px 0}
+@media (min-width:520px){.backup-summary{grid-template-columns:repeat(4,1fr)}}
 .backup-summary div{text-align:center;padding:12px 6px;border:1px solid var(--line);border-radius:16px;background:#fff}
 .backup-summary b{display:block;font-size:20px;color:var(--accent)}
 .backup-summary span{display:block;margin-top:2px;font-size:11px;color:var(--muted)}
@@ -1989,3 +1990,14 @@ textarea,
 }
 
 /* Ver1.00.95：未所持一覧の検索入力フォーカス修正（JSのみ） */
+
+/* Ver1.01.03 使用感の改善 */
+.action-toast{display:flex;align-items:center;gap:10px}
+.toast-undo{flex:0 0 auto;min-height:32px;padding:4px 12px;border:1px solid rgba(255,255,255,.6);border-radius:999px;background:rgba(255,255,255,.16);color:inherit;font-weight:900;font-size:13px;cursor:pointer}
+.toast-undo:active{background:rgba(255,255,255,.3)}
+.counter button{min-width:34px;min-height:34px;touch-action:manipulation}
+.icon-btn{min-height:34px;touch-action:manipulation}
+.mini-actions button{min-width:30px;min-height:30px;touch-action:manipulation}
+.expand-btn,.card-bulk-button{min-height:40px;touch-action:manipulation}
+.counter button:focus-visible,.icon-btn:focus-visible,.mini-actions button:focus-visible,.expand-btn:focus-visible,.card-bulk-button:focus-visible,.toast-undo:focus-visible{outline:3px solid #2f6fd0;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001ms !important;transition-duration:.001ms !important}}
