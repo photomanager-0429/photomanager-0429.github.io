@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; frame-src 'none'; media-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ef7fad">
+<title>生写真セット 追加ツール（管理用）</title>
+<style>
+:root{
+  --accent:#ef7fad;--accent-deep:#c8497f;--soft:#fff0f6;--page:#fff8fb;
+  --text:#2d2730;--muted:#817783;--line:#eee5ea;--ok:#3b8a50;--ng:#c7395b;
+  --shadow:0 8px 22px rgba(94,61,79,.10);
+}
+*{box-sizing:border-box}
+body{margin:0;padding:0 0 64px;background:var(--page);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif;
+  font-size:15px;line-height:1.6}
+.wrap{width:min(100%,760px);margin:auto;padding:16px}
+header.tool-head{background:linear-gradient(135deg,#f58fba,#f7a8c8);color:#fff;padding:20px 16px 18px}
+header.tool-head .inner{width:min(100%,760px);margin:auto}
+header.tool-head .tag{display:inline-block;font-size:11px;font-weight:900;letter-spacing:.18em;
+  background:rgba(255,255,255,.25);border-radius:999px;padding:3px 10px}
+header.tool-head h1{margin:8px 0 4px;font-size:22px}
+header.tool-head p{margin:0;font-size:12px;color:rgba(255,255,255,.94)}
+.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;
+  box-shadow:var(--shadow);margin-bottom:14px}
+.panel h2{margin:0 0 4px;font-size:16px}
+.panel h2+.note{margin:0 0 12px}
+.note{color:var(--muted);font-size:12px;margin:0 0 10px}
+.status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 0}
+.status-grid div{background:var(--soft);border-radius:13px;padding:10px 8px;text-align:center}
+.status-grid b{display:block;font-size:19px}
+.status-grid span{font-size:11px;color:var(--muted)}
+.latest{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#fffaf0;
+  border:1px solid #f6e8c3;color:#75623c;font-size:12px}
+label.field,div.field{display:block;margin-bottom:12px}
+label.field>span,div.field>span{display:block;font-size:12px;font-weight:800;margin-bottom:5px}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;min-height:46px;font:inherit;font-size:16px;color:var(--text);
+  border:1px solid var(--line);border-radius:13px;padding:10px 12px;background:#fff}
+textarea{min-height:92px;line-height:1.5;resize:vertical}
+textarea.output{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;min-height:190px}
+.row{display:grid;gap:10px}
+@media(min-width:520px){.row.two{grid-template-columns:1fr 1fr}.row.three{grid-template-columns:1fr 1fr 1fr}}
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg label{flex:1 1 auto;min-width:96px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{display:block;text-align:center;padding:11px 8px;border-radius:13px;
+  border:1px solid var(--line);background:#fff;font-weight:800;font-size:14px}
+.seg input:checked+span{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg input:focus-visible+span{outline:2px solid var(--accent-deep);outline-offset:2px}
+button{font:inherit;font-weight:800;border-radius:13px;min-height:48px;padding:12px 14px;
+  border:1px solid var(--line);background:#fff;color:var(--text)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.wide{width:100%}
+button:disabled{opacity:.5}
+.button-row{display:grid;gap:9px;margin-top:4px}
+@media(min-width:520px){.button-row.two{grid-template-columns:1fr 1fr}}
+.preview{background:var(--soft);border-radius:14px;padding:12px;margin:2px 0 12px}
+.preview dl{margin:0;display:grid;grid-template-columns:86px 1fr;gap:4px 10px;font-size:13px}
+.preview dt{color:var(--muted);font-size:12px}
+.preview dd{margin:0;word-break:break-all}
+.preview .as-shown{margin:10px 0 0;padding:10px 12px;background:#fff;border-radius:11px;
+  border:1px solid var(--line);font-size:13px}
+.preview .as-shown b{display:block;font-size:15px}
+details.manual{margin-bottom:12px}
+details.manual summary{cursor:pointer;font-size:13px;font-weight:800;color:var(--accent-deep);
+  padding:8px 0}
+.member-check{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:8px}
+.member-check label{display:flex;align-items:center;gap:7px;padding:9px 10px;border:1px solid var(--line);
+  border-radius:12px;font-size:13px;background:#fff}
+.member-check input{width:20px;height:20px;flex:none;margin:0}
+.msg{margin:10px 0 0;padding:11px 13px;border-radius:12px;font-size:13px;display:none}
+.msg.show{display:block}
+.msg.ok{background:#effaf2;border:1px solid #a8d9b6;color:var(--ok)}
+.msg.ng{background:#fdf0f3;border:1px solid #f0bccb;color:var(--ng)}
+ul.entry-list{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+ul.entry-list li{border:1px solid var(--line);border-radius:14px;padding:11px 12px;background:#fff}
+ul.entry-list .line1{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+ul.entry-list .chip{font-size:10px;font-weight:900;border-radius:999px;padding:3px 8px;
+  background:var(--soft);color:var(--accent-deep)}
+ul.entry-list .chip.draft{background:#fff4d7;color:#8a6a1d}
+ul.entry-list b{font-size:14px}
+ul.entry-list small{display:block;color:var(--muted);font-size:11px;margin-top:3px;word-break:break-all}
+ul.entry-list button{min-height:38px;padding:7px 12px;font-size:12px;margin-top:9px}
+.steps{counter-reset:step;list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.steps li{counter-increment:step;position:relative;padding-left:34px;font-size:13px}
+.steps li::before{content:counter(step);position:absolute;left:0;top:0;width:24px;height:24px;
+  border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:900;
+  display:flex;align-items:center;justify-content:center}
+.link-back{display:inline-block;margin-top:6px;color:var(--accent-deep);font-size:13px}
+</style>
+</head>
+<body>
+<header class="tool-head">
+  <div class="inner">
+    <span class="tag">管理用</span>
+    <h1>生写真セット 追加ツール</h1>
+    <p>新しく発売されたセットを入力すると、貼り付けるだけのファイル全文を作ります</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="panel">
+    <h2>いまのデータ</h2>
+    <p class="note" id="loadNote">読み込み中…</p>
+    <div class="status-grid">
+      <div><b id="countMaster">-</b><span>マスター</span></div>
+      <div><b id="countAdded">-</b><span>追加分</span></div>
+      <div><b id="countTotal">-</b><span>合計</span></div>
+    </div>
+    <p class="latest" id="latestInfo">最新のセット：読み込み中</p>
+  </section>
+
+  <section class="panel">
+    <h2>公式のお知らせから自動入力</h2>
+    <p class="note">公式サイトのタイトルをそのまま貼り付けると、年月・衣装名を読み取ります。うまくいかない時は下の欄に直接入力してください。</p>
+    <label class="field">
+      <span>タイトルを貼り付け（任意）</span>
+      <textarea id="pasteInput" placeholder="例）2026 September 生写真セット(＝LOVE 9周年衣装)"></textarea>
+    </label>
+    <button type="button" class="wide" id="parseButton">この内容を読み取る</button>
+    <div class="msg" id="parseMessage"></div>
+  </section>
+
+  <section class="panel">
+    <h2>追加するセットの内容</h2>
+    <p class="note">入力するのは基本この3つだけ。id・sort・表示名は自動で作ります。</p>
+
+    <div class="field">
+      <span>カテゴリ</span>
+      <div class="seg">
+        <label><input type="radio" name="category" value="通常" checked><span>通常</span></label>
+        <label><input type="radio" name="category" value="イベント"><span>イベント</span></label>
+        <label><input type="radio" name="category" value="コラボ"><span>コラボ</span></label>
+      </div>
+    </div>
+
+    <div class="row two">
+      <label class="field">
+        <span>年</span>
+        <input type="number" id="yearInput" min="2017" max="2099" step="1" inputmode="numeric">
+      </label>
+      <label class="field" id="monthField">
+        <span>月</span>
+        <select id="monthInput"></select>
+      </label>
+    </div>
+
+    <label class="field" id="ordinalField">
+      <span>この月の何本目か</span>
+      <select id="ordinalInput"></select>
+    </label>
+
+    <label class="field" id="labelField" hidden>
+      <span>期間の呼び名（英語名を入れるとidが分かりやすくなります）</span>
+      <input type="text" id="labelInput" placeholder="例）tour / kokuritsu / cinnamoroll">
+    </label>
+
+    <label class="field">
+      <span>衣装名・楽曲名（必須）</span>
+      <input type="text" id="workInput" placeholder="例）21stcw「タイトル」／9周年衣装">
+    </label>
+
+    <div class="row two">
+      <label class="field">
+        <span>公式URL（任意）</span>
+        <input type="text" id="urlInput" inputmode="url" placeholder="https://equal-love.jp/news/detail/...">
+      </label>
+      <label class="field">
+        <span>発売・追加日</span>
+        <input type="date" id="dateInput">
+      </label>
+    </div>
+
+    <details class="manual">
+      <summary>このセットに含まれないメンバーを指定する</summary>
+      <p class="note">チェックしたメンバーは、このセットの一覧・未所持・コンプ率から外れます。全員入っている時は何も触らなくて大丈夫です。</p>
+      <div class="member-check" id="memberCheckList"></div>
+    </details>
+
+    <details class="manual">
+      <summary>自動で作った値を手で直す</summary>
+      <div class="row two">
+        <label class="field">
+          <span>id（保存データの目印・あとで変更できません）</span>
+          <input type="text" id="idInput">
+        </label>
+        <label class="field">
+          <span>sort（並び順）</span>
+          <input type="number" id="sortInput" step="1" inputmode="numeric">
+        </label>
+      </div>
+      <label class="field">
+        <span>period（一覧に出る表記）</span>
+        <input type="text" id="periodInput">
+      </label>
+      <label class="field">
+        <span>officialName（公式の名称）</span>
+        <input type="text" id="officialNameInput">
+      </label>
+    </details>
+
+    <div class="preview">
+      <dl>
+        <dt>id</dt><dd id="pvId">-</dd>
+        <dt>sort</dt><dd id="pvSort">-</dd>
+        <dt>period</dt><dd id="pvPeriod">-</dd>
+        <dt>公式名</dt><dd id="pvOfficial">-</dd>
+      </dl>
+      <div class="as-shown">
+        <span class="note" style="margin:0">アプリでの表示</span>
+        <b id="pvShownPeriod">-</b>
+        <span id="pvShownWork">-</span>
+      </div>
+    </div>
+
+    <button type="button" class="primary wide" id="addButton">この内容を追加リストへ入れる</button>
+    <div class="msg" id="addMessage"></div>
+  </section>
+
+  <section class="panel">
+    <h2>追加リスト</h2>
+    <p class="note" id="entryNote">まだありません。</p>
+    <ul class="entry-list" id="entryList"></ul>
+  </section>
+
+  <section class="panel">
+    <h2>反映のしかた</h2>
+    <ol class="steps">
+      <li>「ファイル全文をコピー」を押す</li>
+      <li>「GitHubで編集」を開き、中身を全部消して貼り付ける</li>
+      <li>Commit changes を押す（1〜2分でアプリに出ます）</li>
+    </ol>
+    <div class="button-row two" style="margin-top:14px">
+      <button type="button" class="primary" id="copyButton">ファイル全文をコピー</button>
+      <button type="button" id="githubButton">GitHubで編集</button>
+    </div>
+    <div class="button-row" style="margin-top:9px">
+      <button type="button" id="downloadButton">events-add.json を保存</button>
+    </div>
+    <div class="msg" id="outputMessage"></div>
+    <details class="manual" style="margin-top:14px">
+      <summary>コピーがうまくいかない時はここから選んでコピー</summary>
+      <textarea class="output" id="outputText" readonly></textarea>
+    </details>
+    <details class="manual">
+      <summary>GitHubリポジトリの設定</summary>
+      <div class="row two">
+        <label class="field">
+          <span>owner/repo</span>
+          <input type="text" id="repoInput" placeholder="photomanager-0429/photomanager-0429.github.io">
+        </label>
+        <label class="field">
+          <span>ブランチ</span>
+          <input type="text" id="branchInput" placeholder="main">
+        </label>
+      </div>
+      <button type="button" class="wide" id="saveRepoButton">この設定を覚える</button>
+    </details>
+    <a class="link-back" href="../">← アプリへ戻る</a>
+  </section>
+</div>
+
+<script src="./add-event.js"></script>
+</body>
+</html>
