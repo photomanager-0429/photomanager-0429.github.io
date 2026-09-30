@@ -1,0 +1,4 @@
+{
+  "_memo": "新しく発売された生写真セットは、このファイルの events に追加します。tools/add-event.html で入力して作った全文を、このファイルへ貼り付けて保存（コミット）してください。events.json（マスター）は編集しません。手順は HOW_TO_ADD_EVENT.md にあります。",
+  "events": []
+}
