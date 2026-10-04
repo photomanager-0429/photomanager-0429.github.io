@@ -37,7 +37,34 @@
     "period": "2017.キラリナコラボ",
     "work": "キラリナコラボ",
     "officialUrl": "https://sp.equal-love.jp/news/detail/290",
-    "addedDate": "2026-07-14"
+    "addedDate": "2026-07-14",
+    "positions": [
+      {
+        "id": "yori",
+        "name": "ヨリ1",
+        "group": "yori"
+      },
+      {
+        "id": "yori2",
+        "name": "ヨリ2",
+        "group": "yori"
+      },
+      {
+        "id": "yori3",
+        "name": "ヨリ3",
+        "group": "yori"
+      },
+      {
+        "id": "chuu",
+        "name": "チュウ",
+        "group": "chuu"
+      },
+      {
+        "id": "hiki",
+        "name": "ヒキ",
+        "group": "hiki"
+      }
+    ]
   },
   {
     "officialName": "2017.December 2ndMV衣装生写真セット(白ブレザー)",
@@ -127,7 +154,34 @@
     "period": "2018.はなまるうどんコラボ",
     "work": "はなまるうどん",
     "officialUrl": "https://sp.equal-love.jp/news/detail/608",
-    "addedDate": "2026-07-14"
+    "addedDate": "2026-07-14",
+    "positions": [
+      {
+        "id": "yori",
+        "name": "ヨリ1",
+        "group": "yori"
+      },
+      {
+        "id": "yori2",
+        "name": "ヨリ2",
+        "group": "yori"
+      },
+      {
+        "id": "yori3",
+        "name": "ヨリ3",
+        "group": "yori"
+      },
+      {
+        "id": "chuu",
+        "name": "チュウ",
+        "group": "chuu"
+      },
+      {
+        "id": "hiki",
+        "name": "ヒキ",
+        "group": "hiki"
+      }
+    ]
   },
   {
     "officialName": "2018.May 3rdMV生写真セット（パーカー）",
@@ -167,7 +221,34 @@
     "period": "2018.June-II",
     "work": "台湾1",
     "officialUrl": "https://sp.equal-love.jp/news/detail/766",
-    "addedDate": "2018-06-02"
+    "addedDate": "2018-06-02",
+    "positions": [
+      {
+        "id": "yori",
+        "name": "ヨリ1",
+        "group": "yori"
+      },
+      {
+        "id": "yori2",
+        "name": "ヨリ2",
+        "group": "yori"
+      },
+      {
+        "id": "yori3",
+        "name": "ヨリ3",
+        "group": "yori"
+      },
+      {
+        "id": "chuu",
+        "name": "チュウ",
+        "group": "chuu"
+      },
+      {
+        "id": "hiki",
+        "name": "ヒキ",
+        "group": "hiki"
+      }
+    ]
   },
   {
     "officialName": "2018.July 生写真セット（学校）",
