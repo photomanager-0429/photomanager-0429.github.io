@@ -12,8 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="非公式 生写真管理">
-<link rel="manifest" href="./manifest.webmanifest?v=1.01.03">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.01.03">
+<link rel="manifest" href="./manifest.webmanifest?v=1.01.04">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.01.04">
 <title>【非公式】＝LOVE 生写真管理</title>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-385XD642LL"></script>
@@ -24,7 +24,7 @@
 
   gtag('config', 'G-385XD642LL');
 </script>
-<link rel="stylesheet" href="./css/style.css?v=1.01.03">
+<link rel="stylesheet" href="./css/style.css?v=1.01.04">
 </head>
 <body>
 <section id="homeScreen" class="home dashboard-home">
@@ -72,6 +72,15 @@
     </div>
   </section>
 
+
+  <section id="backupReminder" class="backup-reminder hidden" aria-label="バックアップのおすすめ">
+    <b>💾 バックアップのおすすめ</b>
+    <p><span id="backupReminderText"></span>登録した内容はこの端末の中だけにあるため、ブラウザのデータ削除や機種変更で消えることがあります。</p>
+    <div class="backup-reminder-actions">
+      <button type="button" id="backupReminderOpen">バックアップ画面を開く</button>
+      <button type="button" id="backupReminderLater">あとで</button>
+    </div>
+  </section>
 
   <section class="public-home-notice" aria-label="非公式サイトの案内">
     <b>非公式ファン制作ツール</b>
@@ -162,6 +171,7 @@
 <nav class="bottom-nav">
 <button data-page="collection" class="active"><span>📚</span>一覧</button>
 <button data-page="stats"><span>📊</span>統計</button>
+<button data-page="home" class="nav-home" aria-label="ホームへ戻る"><span>🏠</span>ホーム</button>
 <button data-page="wishlist"><span>♡</span>欲しい</button>
 <button data-page="trade"><span>🔄</span>提供</button>
 </nav>
@@ -266,8 +276,8 @@
   <button id="applyUpdateButton">更新する</button>
 </div>
 <div id="offlineBanner" class="offline-banner hidden">オフラインで表示しています</div>
-<div id="versionLabel" class="version-label">Ver 1.01.03</div>
-<script src="./js/app.js?v=1.01.03"></script>
-<script src="./js/bootstrap.js?v=1.01.03"></script>
+<div id="versionLabel" class="version-label">Ver 1.01.04</div>
+<script src="./js/app.js?v=1.01.04"></script>
+<script src="./js/bootstrap.js?v=1.01.04"></script>
 </body>
 </html>
