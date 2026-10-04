@@ -17,16 +17,20 @@
 
   if (!("serviceWorker" in navigator)) return;
 
+  // Ver1.01.04：初めて開いた時はまだ切り替える旧版が無いので、再読み込みしない。
+  // （以前は初回アクセスの直後に必ず1回、画面が勝手に読み込み直されていた）
+  const hadController = !!navigator.serviceWorker.controller;
   let refreshing = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (refreshing) return;
+    if (refreshing || !hadController) return;
     refreshing = true;
     location.reload();
   });
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.01.03", {scope: "./"});
+      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.01.04", {scope: "./"});
+      if (!registration) return;
       const showUpdate = worker => {
         if (!worker || !updateBanner || !updateButton) return;
         updateBanner.classList.remove("hidden");

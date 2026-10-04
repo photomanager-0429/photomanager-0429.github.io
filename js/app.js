@@ -37,6 +37,26 @@ function validAddedDateText(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
 }
 
+// ===== Ver1.01.04：セットごとの種類（ヨリ・チュウ・ヒキ以外の構成）=====
+// events.json の各セットに "positions": [{id, name, group}] を書くと、そのセットだけ種類を変えられる。
+// id は保存データの目印（ヨリ=yori は既存データをそのまま引き継ぐ）、group は未所持一覧の絞り込み用。
+const POSITION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9-]{0,19}$/;
+function cleanPositionList(list) {
+  if (!Array.isArray(list) || !list.length) return null;
+  const seen = new Set();
+  const out = [];
+  list.slice(0, 12).forEach(item => {
+    if (!item || typeof item !== "object") return;
+    const id = String(item.id || "");
+    if (!POSITION_ID_PATTERN.test(id) || seen.has(id)) return;
+    const name = cleanEventText(item.name, 20).replace(/[<>&"']/g, "") || id;
+    const group = POSITION_ID_PATTERN.test(String(item.group || "")) ? String(item.group) : id;
+    seen.add(id);
+    out.push({id, name, group});
+  });
+  return out.length ? out : null;
+}
+
 async function loadEventAdditions() {
   const status = {added: 0, skipped: 0, reasons: [], error: "", loaded: false};
   let payload = null;
@@ -90,6 +110,7 @@ async function loadEventAdditions() {
     const excludeMemberIds = (Array.isArray(item.excludeMemberIds) ? item.excludeMemberIds : [])
       .map(value => cleanEventText(value, 40))
       .filter(value => memberIds.has(value));
+    const positions = cleanPositionList(item.positions);
 
     usedIds.add(id);
     events.push({
@@ -101,7 +122,8 @@ async function loadEventAdditions() {
       work: work || officialName,
       officialUrl: cleanEventText(item.officialUrl, 300),
       addedDate: addedDate || "",
-      excludeMemberIds
+      excludeMemberIds,
+      ...(positions ? {positions} : {})
     });
   });
 
@@ -117,10 +139,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.03",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.03",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.03",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.03",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.04",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.04",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.04",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.04",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -158,21 +180,24 @@ async function loadAppData() {
   }
 
   const VERSION_KEY="equal-love-photo-manager-last-version";
-  const previousVersion=localStorage.getItem(VERSION_KEY);
-  if(previousVersion&&previousVersion!==config.version){
-    const banner=document.getElementById("updateBanner");
-    const button=document.getElementById("applyUpdateButton");
-    if(banner){
-      banner.querySelector("b").textContent=`Ver ${config.version}に更新されました`;
-      banner.querySelector("span").textContent="新機能を反映するため、最新版を読み込みます。";
-      banner.classList.remove("hidden");
-      if(button)button.onclick=()=>{localStorage.setItem(VERSION_KEY,config.version);location.reload()};
-    }
-  }else{
+  let previousVersion="";
+  try{
+    previousVersion=localStorage.getItem(VERSION_KEY)||"";
     localStorage.setItem(VERSION_KEY,config.version);
-  }
+  }catch(error){console.warn("バージョン情報を保存できませんでした",error)}
 
   initializeApp();
+
+  // Ver1.01.04：ここに来た時点で新しい版のプログラムが動いているため、
+  // もう一度再読み込みを求めるバナーは出さず、更新したことだけを知らせる
+  if(previousVersion&&previousVersion!==config.version){
+    const toast=document.getElementById("actionToast");
+    if(toast){
+      toast.textContent=`Ver ${config.version}に更新しました`;
+      toast.classList.remove("hidden");
+      setTimeout(()=>toast.classList.add("hidden"),2800);
+    }
+  }
 }
 
 function initializeApp() {
@@ -233,7 +258,7 @@ function initializeApp() {
     expanded:{}
   };
   function savePreferences(){
-    localStorage.setItem(PREF_KEY,JSON.stringify({
+    writeStorage(PREF_KEY,{
       memberId:state.memberId,
       category:state.category,
       yearFilter:state.yearFilter,
@@ -261,9 +286,61 @@ function initializeApp() {
       matrixYear:state.matrixYear,
       matrixOrder:state.matrixOrder,
       bulkMemberId:state.bulkMemberId
-    }));
+    },{silent:true});
   }
   const $=id=>document.getElementById(id);
+
+  // ===== Ver1.01.04：端末内への保存に失敗した時（容量不足など）に気づけるようにする =====
+  let storageErrorShownAt=0;
+  function writeStorage(key,value,options={}){
+    try{
+      localStorage.setItem(key,JSON.stringify(value));
+      return true;
+    }catch(error){
+      console.error(`保存データ ${key} を書き込めませんでした`,error);
+      const now=Date.now();
+      if(!options.silent&&now-storageErrorShownAt>4000){
+        storageErrorShownAt=now;
+        showActionToast("⚠️ 端末内に保存できませんでした。バックアップを保存してから、自動バックアップ履歴の削除をお試しください");
+      }
+      return false;
+    }
+  }
+
+  // ===== Ver1.01.04：何度も同じ計算をしないための控え（マスターデータは起動後に変わらない） =====
+  const eventDerivedCache=new WeakMap();
+  function eventDerived(e){
+    let derived=eventDerivedCache.get(e);
+    if(!derived){derived={};eventDerivedCache.set(e,derived)}
+    return derived;
+  }
+  function eventOfficialUrl(event){
+    const derived=eventDerived(event);
+    if(derived.officialUrl===undefined)derived.officialUrl=safeOfficialUrl(event.officialUrl);
+    return derived.officialUrl;
+  }
+  let newestSortThresholdCache=null;
+  let yearListCache=null;
+  let eventByIdCache=null;
+  function eventById(id){
+    if(!eventByIdCache)eventByIdCache=new Map(EVENTS.map(e=>[e.id,e]));
+    return eventByIdCache.get(id)||null;
+  }
+
+  // ===== Ver1.01.04：セットごとの種類。指定が無いセットは共通のヨリ・チュウ・ヒキ =====
+  let defaultPositions=null;
+  function eventPositions(e){
+    const derived=eventDerived(e);
+    if(!derived.positions){
+      if(!defaultPositions)defaultPositions=POSITIONS.map(p=>({id:p.id,name:p.name,group:p.id}));
+      derived.positions=cleanPositionList(e.positions)||defaultPositions;
+    }
+    return derived.positions;
+  }
+  function officialLinkHtml(e){
+    const url=eventOfficialUrl(e);
+    return url?`<a class="item-official-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:"";
+  }
 
   const MEMBER_IMAGE_DB_NAME="equal-love-photo-manager-member-images";
   const MEMBER_IMAGE_DB_VERSION=1;
@@ -761,24 +838,8 @@ function initializeApp() {
   }
 
   let pendingScrollTarget="";
-  function recordRecentEdit(eventId,memberId){
-    if(!eventId||!memberId)return;
-    const items=safeStorageArray(RECENT_KEY).filter(item=>!(item.eventId===eventId&&item.memberId===memberId));
-    items.unshift({eventId,memberId,updatedAt:new Date().toISOString()});
-    localStorage.setItem(RECENT_KEY,JSON.stringify(items.slice(0,5)));
-  }
-  function renderRecentEvents(){
-    const section=$("recentDashboardSection"),list=$("recentEventList");
-    if(!section||!list)return;
-    const items=safeStorageArray(RECENT_KEY).map(item=>({
-      ...item,
-      event:EVENTS.find(e=>e.id===item.eventId),
-      member:MEMBERS.find(m=>m.id===item.memberId)
-    })).filter(item=>item.event&&item.member);
-    section.classList.toggle("hidden",!items.length);
-    list.innerHTML=items.map(item=>`<button class="recent-event-card" data-recent-event="${esc(item.eventId)}" data-recent-member="${esc(item.memberId)}"><span class="recent-member">${item.member.emoji} ${esc(item.member.name)}</span><b>${esc(item.event.period||item.event.officialName)}</b><small>${esc(item.event.work||item.event.category)}</small><i>›</i></button>`).join("");
-    list.querySelectorAll("[data-recent-event]").forEach(button=>button.onclick=()=>openRecentEvent(button.dataset.recentEvent,button.dataset.recentMember));
-  }
+  // Ver1.01.04：TOPの「最近編集した生写真」はVer1.00.94で無くなったため、残っていた毎タップの保存処理を撤去
+  try{localStorage.removeItem(RECENT_KEY)}catch(error){}
   function resetCollectionView(options={}){
     state.category="";
     state.yearFilter="";
@@ -795,14 +856,6 @@ function initializeApp() {
     if(options.render&&state.page==="collection")renderCollection();
   }
 
-  function openRecentEvent(eventId,memberId){
-    const member=MEMBERS.find(m=>m.id===memberId);
-    if(!member)return;
-    state.mode="member";state.memberId=memberId;state.pageMemberId=memberId;
-    resetCollectionView();
-    pendingScrollTarget=eventId;
-    savePreferences();theme(member);openManager();
-  }
   function scrollContextKey(){
     return `${state.mode}:${state.memberId||"all"}:${state.page}`;
   }
@@ -827,9 +880,9 @@ function initializeApp() {
     }));
   }
   function k(e,m,p){return `${e}__${m}__${p}`} function getCount(e,m,p){return Number(state.counts[k(e,m,p)]||0)}
-  function setCount(e,m,p,n){const x=k(e,m,p);if(n<=0)delete state.counts[x];else state.counts[x]=n;localStorage.setItem(COUNT_KEY,JSON.stringify(state.counts));recordRecentEdit(e,m)}
-  function isSigned(e,m,p){return !!state.signs[k(e,m,p)]} function toggleSign(e,m,p){const x=k(e,m,p);state.signs[x]?delete state.signs[x]:state.signs[x]=true;localStorage.setItem(SIGN_KEY,JSON.stringify(state.signs));recordRecentEdit(e,m)}
-  function isWanted(e,m,p){return !!state.wants[k(e,m,p)]} function toggleWant(e,m,p){const x=k(e,m,p);state.wants[x]?delete state.wants[x]:state.wants[x]=true;localStorage.setItem(WANT_KEY,JSON.stringify(state.wants));recordRecentEdit(e,m)}
+  function setCount(e,m,p,n){const x=k(e,m,p);if(n<=0)delete state.counts[x];else state.counts[x]=n;writeStorage(COUNT_KEY,state.counts)}
+  function isSigned(e,m,p){return !!state.signs[k(e,m,p)]} function toggleSign(e,m,p){const x=k(e,m,p);state.signs[x]?delete state.signs[x]:state.signs[x]=true;writeStorage(SIGN_KEY,state.signs)}
+  function isWanted(e,m,p){return !!state.wants[k(e,m,p)]} function toggleWant(e,m,p){const x=k(e,m,p);state.wants[x]?delete state.wants[x]:state.wants[x]=true;writeStorage(WANT_KEY,state.wants)}
   const OSHI_RANKS={favorite:{label:"最推し",icon:"👑",weight:3},oshi:{label:"推し",icon:"⭐",weight:2},interest:{label:"気になる",icon:"♡",weight:1}};
   function oshiRank(id){return state.oshis[id]||""}
   function isOshi(id){return !!oshiRank(id)}
@@ -837,25 +890,34 @@ function initializeApp() {
   function setOshiRank(id,rank){
     if(rank==="favorite")Object.keys(state.oshis).forEach(key=>{if(state.oshis[key]==="favorite")delete state.oshis[key]});
     if(rank)state.oshis[id]=rank;else delete state.oshis[id];
-    localStorage.setItem(OSHI_KEY,JSON.stringify(state.oshis));
+    writeStorage(OSHI_KEY,state.oshis);
   }
   function oshiBadge(m){const rank=OSHI_RANKS[oshiRank(m.id)];return rank?`<span class="oshi-badge rank-${oshiRank(m.id)}">${rank.icon} ${rank.label}</span>`:""}
 
   function esc(v){return String(v||"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
-  function yearOf(e){const s=(e.period||e.id||"").match(/20\d{2}/);return s?s[0]:"不明"}
+  function yearOf(e){const derived=eventDerived(e);if(derived.year===undefined){const s=(e.period||e.id||"").match(/20\d{2}/);derived.year=s?s[0]:"不明"}return derived.year}
   function yearOptions(selected="",allLabel="すべての年代"){
-    const years=[...new Set(EVENTS.map(yearOf).filter(y=>y!=="不明"))].sort((a,b)=>Number(b)-Number(a));
+    if(!yearListCache)yearListCache=[...new Set(EVENTS.map(yearOf).filter(y=>y!=="不明"))].sort((a,b)=>Number(b)-Number(a));
+    const years=yearListCache;
     return `<option value="">${allLabel}</option>`+years.map(y=>`<option value="${y}" ${String(selected)===String(y)?"selected":""}>${y}年</option>`).join("");
   }
   function normalizeText(value){return String(value||"").toLowerCase().replace(/[\s　・･「」『』（）()【】\-_.]/g,"")}
   function eventSearchText(e){
-    const parts=String(e.id||"").match(/(20\d{2})-(\d{2})/);
-    const aliases=parts?[`${parts[1]}/${Number(parts[2])}`,`${parts[1]}年${Number(parts[2])}月`,`${parts[1]}${parts[2]}`]:[];
-    return normalizeText([e.period,e.work,e.officialName,e.id,e.category,...aliases].join(" "));
+    const derived=eventDerived(e);
+    if(derived.searchText===undefined){
+      const parts=String(e.id||"").match(/(20\d{2})-(\d{2})/);
+      const aliases=parts?[`${parts[1]}/${Number(parts[2])}`,`${parts[1]}年${Number(parts[2])}月`,`${parts[1]}${parts[2]}`]:[];
+      derived.searchText=normalizeText([e.period,e.work,e.officialName,e.id,e.category,...aliases].join(" "));
+    }
+    return derived.searchText;
   }
   function newestSortThreshold(){
-    const count=Number(APP_CONFIG.newItemCount||12);
-    return [...EVENTS].sort((a,b)=>b.sort-a.sort)[Math.max(0,count-1)]?.sort||Infinity;
+    // 以前はセット1件ごとに全件を並べ替えていたため、結果を1回だけ計算して使い回す
+    if(newestSortThresholdCache===null){
+      const count=Number(APP_CONFIG.newItemCount||12);
+      newestSortThresholdCache=[...EVENTS].sort((a,b)=>b.sort-a.sort)[Math.max(0,count-1)]?.sort||Infinity;
+    }
+    return newestSortThresholdCache;
   }
   function isNewEvent(e){return Number(e.sort)>=newestSortThreshold()}
   function isGraduated(m){return m?.status==="graduated"}
@@ -887,10 +949,10 @@ function initializeApp() {
   }
   function eventOwnershipMatches(e){
     if(!state.ownership||state.mode==="all")return true;
-    const counts=POSITIONS.map(p=>getCount(e.id,state.memberId,p.id));
+    const counts=eventPositions(e).map(p=>getCount(e.id,state.memberId,p.id));
     return state.ownership==="owned"?counts.some(n=>n>0):counts.every(n=>n===0);
   }
-  function memberTotal(id){let t=0;const m=MEMBERS.find(x=>x.id===id);eligibleEventsForMember(m).forEach(e=>POSITIONS.forEach(p=>t+=getCount(e.id,id,p.id)));return t}
+  function memberTotal(id){let t=0;const m=MEMBERS.find(x=>x.id===id);eligibleEventsForMember(m).forEach(e=>eventPositions(e).forEach(p=>t+=getCount(e.id,id,p.id)));return t}
   function collectionFilterEntries(){
     const entries=[];
     if(state.yearFilter)entries.push({key:"year",label:`${state.yearFilter}年`});
@@ -943,6 +1005,7 @@ function initializeApp() {
       <div class="unified-filter-toolbar">
         <button class="filter-action-button" data-open-filter="${page}"><span>⚙️</span><b>絞り込み</b>${entries.length?`<i class="filter-count">${entries.length}</i>`:""}</button>
         <button class="filter-action-button" data-open-sort="${page}"><span>↕</span><b>${sortLabel(page)}</b></button>
+        ${page==="wishlist"||page==="trade"?`<button class="filter-action-button copy-list-button" data-copy-list="${page}"><span>📋</span><b>この一覧をテキストでコピー</b></button>`:""}
       </div>
       <div class="active-filter-chips">${filterChipsHtml(entries,page)}</div>
     </div>`;
@@ -958,7 +1021,41 @@ function initializeApp() {
   function bindListToolbar(page){
     document.querySelectorAll(`[data-open-filter="${page}"]`).forEach(button=>button.onclick=()=>openFilterSheet(page));
     document.querySelectorAll(`[data-open-sort="${page}"]`).forEach(button=>button.onclick=()=>openSortSheet(page));
+    document.querySelectorAll(`[data-copy-list="${page}"]`).forEach(button=>button.onclick=()=>copyListText(page));
     bindFilterChipButtons();
+  }
+  // Ver1.01.04：いま表示している欲しい一覧・提供可能一覧を、メンバーごとの文章にしてコピーする
+  function listCopyText(page){
+    const groups=page==="wishlist"?groupedWantedItems():groupedTradeItems();
+    const byMember=new Map();
+    groups.forEach(x=>{
+      if(!byMember.has(x.m.id))byMember.set(x.m.id,{m:x.m,lines:[]});
+      const detail=page==="wishlist"
+        ?x.positions.map(v=>v.p.name).join("・")
+        :x.positions.map(v=>`${v.p.name}×${v.extra}`).join("・");
+      const title=String(x.e.period||"").includes(x.e.work)?x.e.period:`${x.e.period} ${x.e.work}`;
+      byMember.get(x.m.id).lines.push(`・${title}：${detail}`);
+    });
+    const head=page==="wishlist"?"【欲しい】":"【提供できます】";
+    const text=[...byMember.values()].map(group=>`${head}${group.m.name}\n${group.lines.join("\n")}`).join("\n\n");
+    return {text,count:groups.length};
+  }
+  async function copyListText(page){
+    const {text,count}=listCopyText(page);
+    if(!count){showActionToast("コピーする項目がありません");return}
+    let copied=false;
+    try{await navigator.clipboard.writeText(text);copied=true}
+    catch(error){
+      // 古い端末向け：見えない入力欄に入れて選択し、コピーする
+      const area=document.createElement("textarea");
+      area.value=text;area.setAttribute("readonly","");
+      area.style.position="fixed";area.style.left="-9999px";area.style.top="0";
+      document.body.appendChild(area);
+      area.select();area.setSelectionRange(0,text.length);
+      try{copied=document.execCommand("copy")}catch(fallbackError){copied=false}
+      area.remove();
+    }
+    showActionToast(copied?`${count}件をコピーしました`:"コピーできませんでした");
   }
   function bindFilterChipButtons(){
     document.querySelectorAll("[data-filter-page][data-filter-key]").forEach(button=>{
@@ -991,6 +1088,15 @@ function initializeApp() {
       if(key==="oshi")state.oshiOnly=false;
       savePreferences();renderMissing();
     }
+  }
+  // ===== Ver1.01.04：検索は入力が落ち着いてから反映し、日本語の変換中（未確定）は検索しない =====
+  function bindDeferredSearch(input,apply,delay=200){
+    if(!input)return;
+    let timer=0,composing=false;
+    const schedule=()=>{clearTimeout(timer);timer=setTimeout(()=>{timer=0;apply(input.value)},delay)};
+    input.addEventListener("compositionstart",()=>{composing=true;clearTimeout(timer)});
+    input.addEventListener("compositionend",()=>{composing=false;schedule()});
+    input.addEventListener("input",event=>{if(composing||event.isComposing)return;schedule()});
   }
   let activeFilterPage="collection";
   function filterSheetField(label,content){return `<label class="sheet-field"><span>${label}</span>${content}</label>`}
@@ -1128,10 +1234,18 @@ function initializeApp() {
         return b.sort-a.sort;
       });
   }
+  // Ver1.01.04：白に近いメンバーカラーは、文字・ボタン用の色だけ濃いグレーに置き換える（背景の白はそのまま）
+  function readableAccent(color){
+    const match=/^#([0-9a-f]{6})$/i.exec(String(color||""));
+    if(!match)return color;
+    const value=parseInt(match[1],16);
+    const brightness=(0.2126*(value>>16&255)+0.7152*(value>>8&255)+0.0722*(value&255))/255;
+    return brightness>0.85?"#77737f":color;
+  }
   function theme(m){
     const root=document.documentElement;
-    root.style.setProperty("--accent",m?.accent||"#ef7fad");
-    root.style.setProperty("--accent-2",memberAccent2(m));
+    root.style.setProperty("--accent",readableAccent(m?.accent||"#ef7fad"));
+    root.style.setProperty("--accent-2",readableAccent(memberAccent2(m)));
     root.style.setProperty("--soft",m?.soft||"#fff0f6");
     root.style.setProperty("--soft-2",memberSoft2(m));
     root.style.setProperty("--page",m?.soft||"#fff8fb");
@@ -1140,6 +1254,7 @@ function initializeApp() {
   }
     let pendingMemberDestination="collection";
   function openMemberSelector(destination="collection"){
+    renderHomeMembers(); // Ver1.01.04：登録して戻った時に「所持◯枚・コンプ率」が古いままにならないようにする
     pendingMemberDestination=destination||"collection";
     const quick=pendingMemberDestination==="quick";
     $("memberSelectorTitle").textContent=quick?"クイック入力するメンバー":"メンバーを選ぶ";
@@ -1208,7 +1323,7 @@ function openMember(id){
     $("managerTools").classList.toggle("hidden",page!=="collection");
     document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
     updateHeader();
-    if(page==="collection")renderCollection();
+    if(page==="collection"){collectionEntering=true;renderCollection()}
     if(page==="quick")renderQuick();
     if(page==="matrix")renderMatrix();
     if(page==="stats")renderStats();
@@ -1242,9 +1357,8 @@ function openMember(id){
     return list.find(e=>e.id===state[key])||list[0];
   }
   function eventSelectOptions(list,selected){return list.map(e=>`<option value="${esc(e.id)}" ${e.id===selected?"selected":""}>${esc(e.period)}｜${esc(e.work||e.officialName)}</option>`).join("")}
-  function focusSearchAfterRender(id,position){requestAnimationFrame(()=>{const input=$(id);if(input){input.focus();try{input.setSelectionRange(position,position)}catch(error){}}})}
   function openQuickInput(){
-    if(state.mode!=="member"||!state.memberId){renderHomeMembers();openMemberSelector("quick");return}
+    if(state.mode!=="member"||!state.memberId){openMemberSelector("quick");return}
     showPage("quick");
   }
   function openEventMatrix(){
@@ -1254,61 +1368,89 @@ function openMember(id){
     const list=modeEventList(kind),key=kind==="quick"?"quickEventId":"matrixEventId";
     const index=Math.max(0,list.findIndex(e=>e.id===state[key]));
     const next=Math.min(list.length-1,Math.max(0,index+direction));
-    if(list[next]){state[key]=list[next].id;savePreferences();kind==="quick"?renderQuick():renderMatrix()}
+    if(list[next]){state[key]=list[next].id;savePreferences();kind==="quick"?renderQuickBody():renderMatrixBody()}
   }
   function renderQuick(){
     const member=MEMBERS.find(m=>m.id===state.memberId);
     if(!member){openMemberSelector("quick");return}
-    const list=modeEventList("quick"),event=ensureSelectedEvent("quick",list),index=event?list.findIndex(e=>e.id===event.id):-1;
     $("quickPage").innerHTML=`<div class="page-head mode-page-head"><div><h2>⚡ クイック入力</h2><p>${member.emoji} ${esc(member.name)}｜購入後の登録を素早く行えます</p></div><button id="quickBackToList" class="mode-back-button">一覧へ</button></div>
       <div class="mode-filter-grid mode-filter-grid-with-sort"><div class="searchbox"><span>🔍</span><input id="quickSearchInput" type="search" value="${esc(state.quickSearch)}" placeholder="イベント名を検索"></div><select id="quickYearFilter">${yearOptions(state.quickYear)}</select><button id="quickSortButton" class="mode-sort-button"><span>↕</span>${sortLabel("quick")}</button></div>
-      ${list.length?`<select id="quickEventSelect" class="mode-event-select">${eventSelectOptions(list,event.id)}</select>
+      <div id="quickBody"></div>`;
+    $("quickBackToList").onclick=()=>showPage("collection");
+    bindDeferredSearch($("quickSearchInput"),value=>{state.quickSearch=value;savePreferences();renderQuickBody()});
+    $("quickYearFilter").onchange=e=>{state.quickYear=e.target.value;savePreferences();renderQuickBody()};
+    $("quickSortButton").onclick=()=>openSortSheet("quick");
+    renderQuickBody();
+  }
+  // Ver1.01.04：検索欄は作り直さず、選択中のセットの部分だけを更新する（日本語入力が途切れない）
+  function renderQuickBody(){
+    const body=$("quickBody"),member=MEMBERS.find(m=>m.id===state.memberId);
+    if(!body||!member)return;
+    const list=modeEventList("quick"),event=ensureSelectedEvent("quick",list),index=event?list.findIndex(e=>e.id===event.id):-1;
+    body.innerHTML=list.length?`<select id="quickEventSelect" class="mode-event-select">${eventSelectOptions(list,event.id)}</select>
       <article id="quickSwipeCard" class="quick-input-card">
         <div class="quick-event-head"><div><span>${esc(event.period)}</span><h3>${esc(event.work||event.officialName)}</h3><small>${esc(event.category)}｜${index+1}/${list.length}</small></div><button id="quickBulkButton" class="card-bulk-button">⋯ 一括操作</button></div>
         <div id="quickPositionList" class="quick-position-list"></div>
         <div class="quick-nav-row"><button id="quickPreviousButton" ${index<=0?"disabled":""}>← 前へ</button><button id="quickNextButton" ${index>=list.length-1?"disabled":""}>次へ →</button></div>
-      </article>`:'<div class="empty-state"><span>🔍</span><h3>該当するイベントがありません</h3><p>検索語または年代を変更してください。</p></div>'}`;
-    $("quickBackToList").onclick=()=>showPage("collection");
-    const search=$("quickSearchInput");search.oninput=e=>{state.quickSearch=e.target.value;savePreferences();const pos=e.target.selectionStart;renderQuick();focusSearchAfterRender("quickSearchInput",pos)};
-    $("quickYearFilter").onchange=e=>{state.quickYear=e.target.value;savePreferences();renderQuick()};
-    $("quickSortButton").onclick=()=>openSortSheet("quick");
+      </article>`:'<div class="empty-state"><span>🔍</span><h3>該当するイベントがありません</h3><p>検索語または年代を変更してください。</p></div>';
     if(!event)return;
-    $("quickEventSelect").onchange=e=>{state.quickEventId=e.target.value;savePreferences();renderQuick()};
-    const positionList=$("quickPositionList");
-    POSITIONS.forEach(p=>{
-      const row=document.createElement("div");row.className="quick-position-row";
-      row.innerHTML=`<div class="quick-position-title"><b>${esc(p.name)}</b><small>${getCount(event.id,member.id,p.id)>0?"所持済み":"未所持"}</small></div><div class="quick-stepper"><button class="minus">−</button><strong>${getCount(event.id,member.id,p.id)}</strong><button class="plus">＋</button></div><button class="quick-toggle want ${isWanted(event.id,member.id,p.id)?"on":""}">♡</button><button class="quick-toggle sign ${isSigned(event.id,member.id,p.id)?"on":""}">✍️</button>`;
-      row.querySelector(".minus").onclick=()=>{setCount(event.id,member.id,p.id,Math.max(0,getCount(event.id,member.id,p.id)-1));renderQuick()};
-      row.querySelector(".plus").onclick=()=>{setCount(event.id,member.id,p.id,getCount(event.id,member.id,p.id)+1);renderQuick()};
-      row.querySelector(".want").onclick=()=>{toggleWant(event.id,member.id,p.id);renderQuick()};
-      row.querySelector(".sign").onclick=()=>{toggleSign(event.id,member.id,p.id);renderQuick()};
-      positionList.appendChild(row);
-    });
+    $("quickEventSelect").onchange=e=>{state.quickEventId=e.target.value;savePreferences();renderQuickBody()};
+    fillQuickPositions(event,member);
     $("quickPreviousButton").onclick=()=>moveModeEvent("quick",-1);$("quickNextButton").onclick=()=>moveModeEvent("quick",1);
     $("quickBulkButton").onclick=()=>openBulkSheet(event.id,member.id);
     const card=$("quickSwipeCard");let startX=0,startY=0;
     card.addEventListener("touchstart",e=>{if(e.touches.length===1){startX=e.touches[0].clientX;startY=e.touches[0].clientY}},{passive:true});
     card.addEventListener("touchend",e=>{const t=e.changedTouches?.[0];if(!t)return;const dx=t.clientX-startX,dy=Math.abs(t.clientY-startY);if(Math.abs(dx)>75&&Math.abs(dx)>dy*1.3)moveModeEvent("quick",dx<0?1:-1)},{passive:true});
   }
+  function fillQuickPositions(event,member){
+    const positionList=$("quickPositionList");
+    if(!positionList)return;
+    positionList.innerHTML="";
+    eventPositions(event).forEach(p=>{
+      const row=document.createElement("div");row.className="quick-position-row";
+      row.innerHTML=`<div class="quick-position-title"><b>${esc(p.name)}</b><small>${getCount(event.id,member.id,p.id)>0?"所持済み":"未所持"}</small></div><div class="quick-stepper"><button class="minus">−</button><strong>${getCount(event.id,member.id,p.id)}</strong><button class="plus">＋</button></div><button class="quick-toggle want ${isWanted(event.id,member.id,p.id)?"on":""}">♡</button><button class="quick-toggle sign ${isSigned(event.id,member.id,p.id)?"on":""}">✍️</button>`;
+      row.querySelector(".minus").onclick=()=>{setCount(event.id,member.id,p.id,Math.max(0,getCount(event.id,member.id,p.id)-1));fillQuickPositions(event,member)};
+      row.querySelector(".plus").onclick=()=>{setCount(event.id,member.id,p.id,getCount(event.id,member.id,p.id)+1);fillQuickPositions(event,member)};
+      row.querySelector(".want").onclick=()=>{toggleWant(event.id,member.id,p.id);fillQuickPositions(event,member)};
+      row.querySelector(".sign").onclick=()=>{toggleSign(event.id,member.id,p.id);fillQuickPositions(event,member)};
+      positionList.appendChild(row);
+    });
+  }
   function matrixMembersForEvent(event){return rankedMembers(MEMBERS.filter(m=>eventAvailableForMember(event,m)))}
   function renderMatrix(){
-    const list=modeEventList("matrix"),event=ensureSelectedEvent("matrix",list),members=event?matrixMembersForEvent(event):[];
     $("matrixPage").innerHTML=`<div class="page-head mode-page-head"><div><h2>▦ イベント別チェック表</h2><p>全メンバーのヨリ・チュウ・ヒキを1画面で登録</p></div><button id="matrixBackToList" class="mode-back-button">一覧へ</button></div>
       <div class="mode-filter-grid mode-filter-grid-with-sort"><div class="searchbox"><span>🔍</span><input id="matrixSearchInput" type="search" value="${esc(state.matrixSearch)}" placeholder="イベント名を検索"></div><select id="matrixYearFilter">${yearOptions(state.matrixYear)}</select><button id="matrixSortButton" class="mode-sort-button"><span>↕</span>${sortLabel("matrix")}</button></div>
-      ${list.length?`<select id="matrixEventSelect" class="mode-event-select">${eventSelectOptions(list,event.id)}</select>
-      <div class="matrix-event-summary"><div><b>${esc(event.period)}</b><span>${esc(event.work||event.officialName)}</span></div><button id="matrixBulkButton" class="card-bulk-button">⋯ イベント一括操作</button></div>
-      <div class="matrix-help">＋／−で枚数を変更。「3種」はそのメンバーの未所持だけを1枚にします。</div>
-      <div class="matrix-table-wrap"><table class="matrix-table"><thead><tr><th>メンバー</th>${POSITIONS.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>${members.map(m=>`<tr><th><span>${m.emoji} ${esc(m.name)}</span>${isGraduated(m)?'<small>卒業</small>':''}<button data-matrix-complete="${esc(m.id)}">3種</button></th>${POSITIONS.map(p=>`<td><div class="matrix-stepper count-${Math.min(2,getCount(event.id,m.id,p.id))}"><button class="matrix-minus" data-member="${esc(m.id)}" data-position="${esc(p.id)}">−</button><b>${getCount(event.id,m.id,p.id)}</b><button class="matrix-plus" data-member="${esc(m.id)}" data-position="${esc(p.id)}">＋</button></div></td>`).join("")}</tr>`).join("")}</tbody></table></div>`:'<div class="empty-state"><span>🔍</span><h3>該当するイベントがありません</h3><p>検索語または年代を変更してください。</p></div>'}`;
+      <div id="matrixBody"></div>`;
     $("matrixBackToList").onclick=()=>showPage("collection");
-    const search=$("matrixSearchInput");search.oninput=e=>{state.matrixSearch=e.target.value;savePreferences();const pos=e.target.selectionStart;renderMatrix();focusSearchAfterRender("matrixSearchInput",pos)};
-    $("matrixYearFilter").onchange=e=>{state.matrixYear=e.target.value;savePreferences();renderMatrix()};
+    bindDeferredSearch($("matrixSearchInput"),value=>{state.matrixSearch=value;savePreferences();renderMatrixBody()});
+    $("matrixYearFilter").onchange=e=>{state.matrixYear=e.target.value;savePreferences();renderMatrixBody()};
     $("matrixSortButton").onclick=()=>openSortSheet("matrix");
+    renderMatrixBody();
+  }
+  // Ver1.01.04：検索欄は作り直さず、表の部分だけを更新する
+  function renderMatrixBody(){
+    const body=$("matrixBody");
+    if(!body)return;
+    const list=modeEventList("matrix"),event=ensureSelectedEvent("matrix",list),members=event?matrixMembersForEvent(event):[];
+    const positions=event?eventPositions(event):[];
+    body.innerHTML=list.length?`<select id="matrixEventSelect" class="mode-event-select">${eventSelectOptions(list,event.id)}</select>
+      <div class="matrix-event-summary"><div><b>${esc(event.period)}</b><span>${esc(event.work||event.officialName)}</span></div><button id="matrixBulkButton" class="card-bulk-button">⋯ イベント一括操作</button></div>
+      <div class="matrix-help">＋／−で枚数を変更。「${positions.length}種」はそのメンバーの未所持だけを1枚にします。</div>
+      <div class="matrix-table-wrap"><table class="matrix-table"${positions.length>3?` style="min-width:${104+positions.length*86}px"`:""}><thead><tr><th>メンバー</th>${positions.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>${members.map(m=>`<tr><th><span>${m.emoji} ${esc(m.name)}</span>${isGraduated(m)?'<small>卒業</small>':''}<button data-matrix-complete="${esc(m.id)}">${positions.length}種</button></th>${positions.map(p=>`<td><div class="matrix-stepper count-${Math.min(2,getCount(event.id,m.id,p.id))}"><button class="matrix-minus" data-member="${esc(m.id)}" data-position="${esc(p.id)}">−</button><b>${getCount(event.id,m.id,p.id)}</b><button class="matrix-plus" data-member="${esc(m.id)}" data-position="${esc(p.id)}">＋</button></div></td>`).join("")}</tr>`).join("")}</tbody></table></div>`:'<div class="empty-state"><span>🔍</span><h3>該当するイベントがありません</h3><p>検索語または年代を変更してください。</p></div>';
     if(!event)return;
-    $("matrixEventSelect").onchange=e=>{state.matrixEventId=e.target.value;savePreferences();renderMatrix()};
+    $("matrixEventSelect").onchange=e=>{state.matrixEventId=e.target.value;savePreferences();renderMatrixBody()};
     $("matrixBulkButton").onclick=()=>openBulkSheet(event.id,"");
-    document.querySelectorAll(".matrix-minus").forEach(button=>button.onclick=()=>{setCount(event.id,button.dataset.member,button.dataset.position,Math.max(0,getCount(event.id,button.dataset.member,button.dataset.position)-1));renderMatrix()});
-    document.querySelectorAll(".matrix-plus").forEach(button=>button.onclick=()=>{setCount(event.id,button.dataset.member,button.dataset.position,getCount(event.id,button.dataset.member,button.dataset.position)+1);renderMatrix()});
-    document.querySelectorAll("[data-matrix-complete]").forEach(button=>button.onclick=()=>applyBulkAction("complete",event.id,button.dataset.matrixComplete,true));
+    body.querySelectorAll(".matrix-minus").forEach(button=>button.onclick=()=>{setCount(event.id,button.dataset.member,button.dataset.position,Math.max(0,getCount(event.id,button.dataset.member,button.dataset.position)-1));refreshMatrixStepper(button,event.id)});
+    body.querySelectorAll(".matrix-plus").forEach(button=>button.onclick=()=>{setCount(event.id,button.dataset.member,button.dataset.position,getCount(event.id,button.dataset.member,button.dataset.position)+1);refreshMatrixStepper(button,event.id)});
+    body.querySelectorAll("[data-matrix-complete]").forEach(button=>button.onclick=()=>applyBulkAction("complete",event.id,button.dataset.matrixComplete,true));
+  }
+  function refreshMatrixStepper(button,eventId){
+    const stepper=button.closest(".matrix-stepper");
+    if(!stepper)return;
+    const count=getCount(eventId,button.dataset.member,button.dataset.position);
+    stepper.className=`matrix-stepper count-${Math.min(2,count)}`;
+    const value=stepper.querySelector("b");
+    if(value)value.textContent=count;
   }
   let bulkTarget={eventId:"",memberId:""};
   function openBulkSheet(eventId,memberId=""){
@@ -1319,7 +1461,7 @@ function openMember(id){
     $("bulkSheetDescription").textContent=`${event.period}｜${event.work||event.officialName}`;
     const scope=member?"このメンバー":"対象メンバー全員";
     $("bulkSheetBody").innerHTML=`<div class="bulk-action-list">
-      <button data-bulk-action="complete"><span>✅</span><div><b>3種を所持済みにする</b><small>${scope}の未所持だけを1枚にします</small></div><i>›</i></button>
+      <button data-bulk-action="complete"><span>✅</span><div><b>${eventPositions(event).length}種を所持済みにする</b><small>${scope}の未所持だけを1枚にします</small></div><i>›</i></button>
       <button data-bulk-action="wantMissing"><span>♡</span><div><b>未所持を欲しいへ追加</b><small>${scope}の未所持だけを欲しい登録します</small></div><i>›</i></button>
       <button data-bulk-action="clearWants"><span>◇</span><div><b>欲しいをすべて解除</b><small>${scope}の欲しい登録を解除します</small></div><i>›</i></button>
       <button data-bulk-action="resetCounts" class="danger"><span>🗑️</span><div><b>所持数をすべて0にする</b><small>${scope}の枚数をリセットします</small></div><i>›</i></button>
@@ -1333,47 +1475,140 @@ function openMember(id){
     const destructive=action==="clearWants"||action==="resetCounts";
     const broad=!memberId;
     if((destructive||broad)&&!confirm(`${broad?"対象メンバー全員":"このメンバー"}へ一括操作を実行しますか？`))return;
-    saveAutoBackup(`一括操作の直前：${event.period}`);
+    if(!ensureAutoBackup(`一括操作の直前：${event.period}`))return;
     let changed=0;
     members.forEach(member=>{
-      POSITIONS.forEach(position=>{
+      eventPositions(event).forEach(position=>{
         const key=k(event.id,member.id,position.id),count=getCount(event.id,member.id,position.id);
         if(action==="complete"&&count===0){state.counts[key]=1;changed++}
         if(action==="wantMissing"&&count===0&&!state.wants[key]){state.wants[key]=true;changed++}
         if(action==="clearWants"&&state.wants[key]){delete state.wants[key];changed++}
         if(action==="resetCounts"&&count>0){delete state.counts[key];changed++}
       });
-      if(changed)recordRecentEdit(event.id,member.id);
     });
-    localStorage.setItem(COUNT_KEY,JSON.stringify(state.counts));localStorage.setItem(WANT_KEY,JSON.stringify(state.wants));
+    writeStorage(COUNT_KEY,state.counts);writeStorage(WANT_KEY,state.wants);
     if(!skipSheet)closeUtilitySheet("bulkSheetOverlay");
     showActionToast(changed?`${changed}件を更新しました`:`変更対象はありませんでした`);
     if(state.page==="quick")renderQuick();else if(state.page==="matrix")renderMatrix();else renderCollection();
   }
   let toastTimer=0;
   function showActionToast(message){const toast=$("actionToast");toast.textContent=message;toast.classList.remove("hidden");clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.add("hidden"),2400)}
-  function statsFor(ms,evs=EVENTS){let total=0,types=0,signed=0,wanted=0,possible=0;ms.forEach(m=>evs.filter(e=>eventAvailableForMember(e,m)).forEach(e=>POSITIONS.forEach(p=>{possible++;const n=getCount(e.id,m.id,p.id);total+=n;if(n>0)types++;if(isSigned(e.id,m.id,p.id))signed++;if(isWanted(e.id,m.id,p.id))wanted++})));return{total,types,signed,wanted,possible,rate:possible?Math.round(types/possible*100):0}}
+  function statsFor(ms,evs=EVENTS){
+    let total=0,types=0,signed=0,wanted=0,possible=0;
+    ms.forEach(m=>evs.forEach(e=>{
+      if(!eventAvailableForMember(e,m))return;
+      eventPositions(e).forEach(p=>{
+        possible++;
+        const key=k(e.id,m.id,p.id),n=Number(state.counts[key]||0);
+        total+=n;
+        if(n>0)types++;
+        if(state.signs[key])signed++;
+        if(state.wants[key])wanted++;
+      });
+    }));
+    return{total,types,signed,wanted,possible,rate:possible?Math.round(types/possible*100):0};
+  }
   function updateSummary(list){const s=statsFor(scopeMembers());$("ownedTotal").textContent=s.total;$("ownedTypes").textContent=s.types;$("signedTotal").textContent=s.signed}
-  function complete(e,m){return POSITIONS.every(p=>getCount(e.id,m.id,p.id)>0)}
+  function complete(e,m){return eventPositions(e).every(p=>getCount(e.id,m.id,p.id)>0)}
+  // ===== Ver1.01.04：1枚の変更で一覧全体を作り直さず、変わった所だけを書き換える =====
+  function allCardSummaryText(e,eligible=eligibleMembersForEvent(e)){
+    const positions=eventPositions(e);
+    let owned=0,want=0,comp=0;
+    eligible.forEach(m=>{
+      let all=true;
+      positions.forEach(p=>{
+        const n=getCount(e.id,m.id,p.id);
+        owned+=n;
+        if(n===0)all=false;
+        if(isWanted(e.id,m.id,p.id))want++;
+      });
+      if(all)comp++;
+    });
+    return `所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人`;
+  }
+  function syncCompleteBadge(card,e,m){
+    const badges=card.querySelector(".badges");
+    if(!badges)return;
+    const done=complete(e,m);
+    let badge=badges.querySelector(".badge.complete");
+    if(done&&!badge){
+      badge=document.createElement("span");
+      badge.className="badge complete";
+      badge.textContent="COMPLETE";
+      badges.appendChild(badge);
+    }else if(!done&&badge){
+      badge.remove();
+    }
+  }
+  function refreshCollectionCell(row,e,m,p){
+    const num=row.querySelector(".num");
+    if(num)num.textContent=getCount(e.id,m.id,p.id);
+    row.querySelector(".sign")?.classList.toggle("on",isSigned(e.id,m.id,p.id));
+    row.querySelector(".want")?.classList.toggle("on",isWanted(e.id,m.id,p.id));
+    const card=row.closest(".event-card");
+    if(card){
+      if(state.mode==="all"){
+        const summary=card.querySelector(".all-summary");
+        if(summary)summary.textContent=allCardSummaryText(e);
+      }else{
+        syncCompleteBadge(card,e,m);
+      }
+    }
+    updateSummary();
+  }
   function renderPositionRow(e,m,p,compact=false){const row=document.createElement("div");row.className=compact?"mini-pos":"pos-row";row.innerHTML=compact?`<div class="mini-label">${p.name}</div><div class="mini-actions"><button class="minus">−</button><b class="num">${getCount(e.id,m.id,p.id)}</b><button class="plus">＋</button><button class="wide sign ${isSigned(e.id,m.id,p.id)?"on":""}">✍️</button><button class="wide want ${isWanted(e.id,m.id,p.id)?"on":""}">♡</button></div>`:`<span>${p.name}</span><div class="pos-actions"><button class="icon-btn want ${isWanted(e.id,m.id,p.id)?"on":""}">♡</button><button class="icon-btn sign ${isSigned(e.id,m.id,p.id)?"on":""}">✍️</button><div class="counter"><button class="minus">−</button><span class="count num">${getCount(e.id,m.id,p.id)}</span><button class="plus">＋</button></div></div>`;
-  row.querySelector(".minus").onclick=()=>{setCount(e.id,m.id,p.id,Math.max(0,getCount(e.id,m.id,p.id)-1));renderCollection()};row.querySelector(".plus").onclick=()=>{setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)+1);renderCollection()};row.querySelector(".sign").onclick=()=>{toggleSign(e.id,m.id,p.id);renderCollection()};row.querySelector(".want").onclick=()=>{toggleWant(e.id,m.id,p.id);renderCollection()};return row}
+  const afterChange=()=>refreshCollectionCell(row,e,m,p);
+  row.querySelector(".minus").onclick=()=>{setCount(e.id,m.id,p.id,Math.max(0,getCount(e.id,m.id,p.id)-1));afterChange()};
+  row.querySelector(".plus").onclick=()=>{setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)+1);afterChange()};
+  row.querySelector(".sign").onclick=()=>{toggleSign(e.id,m.id,p.id);afterChange()};
+  row.querySelector(".want").onclick=()=>{toggleWant(e.id,m.id,p.id);afterChange()};
+  return row}
   function renderMemberCard(e,m){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div></div><div class="badges"><span class="badge">${esc(e.category)}</span>${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}${complete(e,m)?'<span class="badge complete">COMPLETE</span>':''}</div></div></div><div class="member-line">${m.emoji} ${m.name}</div><div class="positions"></div><div class="event-footer"></div>`;
-  POSITIONS.forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${safeOfficialUrl(e.officialUrl)?`<a href="${esc(safeOfficialUrl(e.officialUrl))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;f.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);return card}
-  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e),owned=eligible.reduce((t,m)=>t+POSITIONS.reduce((s,p)=>s+getCount(e.id,m.id,p.id),0),0),want=eligible.reduce((t,m)=>t+POSITIONS.filter(p=>isWanted(e.id,m.id,p.id)).length,0),comp=eligible.filter(m=>complete(e,m)).length;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div><div class="all-summary">所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${safeOfficialUrl(e.officialUrl)?`<a href="${esc(safeOfficialUrl(e.officialUrl))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];renderCollection()};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;POSITIONS.forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
+  eventPositions(e).forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;f.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);return card}
+  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e);card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div><div class="all-summary">${allCardSummaryText(e,eligible)}</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];card.replaceWith(renderAllCard(e))};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;eventPositions(e).forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
+  // Ver1.01.04：画面に見える分（戻す予定のスクロール位置まで）を先に描き、残りは少しずつ足す
+  let collectionRenderToken=0;
+  let collectionEntering=false; // ほかの画面から一覧へ入った直後かどうか（showPageが立てる）
   function renderCollection(){
     renderCollectionFilterUi();
     const list=filtered();
     updateSummary(list);
-    $("eventList").innerHTML="";
+    const container=$("eventList");
+    const token=++collectionRenderToken;
+    // その場で描き直す時だけ、今の高さを仮に確保する。ほかの画面から入った時は、
+    // 残っている前の内容の高さを測ると無駄な配置計算が走るので測らない
+    const previousHeight=collectionEntering?0:container.offsetHeight;
+    collectionEntering=false;
+    container.style.alignContent="start"; // 高さを仮に確保している間、カードが縦に引き伸ばされないようにする
+    container.style.minHeight=previousHeight?`${previousHeight}px`:""; // 描いている途中でページが縮み、スクロール位置が飛ぶのを防ぐ
+    container.innerHTML="";
     if(!list.length){
-      $("eventList").innerHTML=`<div class="empty-state"><span>🔍</span><h3>該当するデータがありません</h3><p>検索条件やフィルターを変更してください。</p><button id="resetFiltersButton">条件をリセット</button></div>`;
+      container.style.minHeight="";
+      container.innerHTML=`<div class="empty-state"><span>🔍</span><h3>該当するデータがありません</h3><p>検索条件やフィルターを変更してください。</p><button id="resetFiltersButton">条件をリセット</button></div>`;
       document.getElementById("resetFiltersButton").onclick=()=>resetCollectionView({render:true,scrollTop:true});
       return;
     }
-    const frag=document.createDocumentFragment();
-    if(state.mode==="all")list.forEach(e=>frag.appendChild(renderAllCard(e)));
-    else{const m=MEMBERS.find(x=>x.id===state.memberId);list.forEach(e=>frag.appendChild(renderMemberCard(e,m)))}
-    $("eventList").appendChild(frag);
+    const member=state.mode==="all"?null:MEMBERS.find(x=>x.id===state.memberId);
+    const buildCard=e=>member?renderMemberCard(e,member):renderAllCard(e);
+    let index=0;
+    const appendChunk=size=>{
+      const frag=document.createDocumentFragment();
+      const end=Math.min(list.length,index+size);
+      for(;index<end;index++)frag.appendChild(buildCard(list[index]));
+      container.appendChild(frag);
+    };
+    const contentBottom=()=>{const last=container.lastElementChild;return last?last.getBoundingClientRect().bottom+window.scrollY:0};
+    const savedTop=Number(getScrollMemory()[scrollContextKey()]||0);
+    const needBottom=Math.max(window.scrollY,savedTop)+window.innerHeight*1.5;
+    do{appendChunk(12)}while(index<list.length&&contentBottom()<needBottom);
+    if(index>=list.length){container.style.minHeight="";return}
+    const step=()=>{
+      if(token!==collectionRenderToken)return;
+      appendChunk(24);
+      if(index<list.length)setTimeout(step,16);
+      else container.style.minHeight="";
+    };
+    setTimeout(step,16);
   }
   function renderStats(){
     const ms=scopeMembers(),all=statsFor(ms);
@@ -1390,7 +1625,7 @@ function openMember(id){
   }
   function groupedWantedItems(){
     const map=new Map();
-    scopeMembers().forEach(m=>eligibleEventsForMember(m).forEach(e=>POSITIONS.forEach(p=>{
+    scopeMembers().forEach(m=>eligibleEventsForMember(m).forEach(e=>eventPositions(e).forEach(p=>{
       if(!isWanted(e.id,m.id,p.id))return;
       const key=`${m.id}__${e.id}`;
       if(!map.has(key))map.set(key,{m,e,positions:[]});
@@ -1402,7 +1637,7 @@ function openMember(id){
   }
   function groupedTradeItems(){
     const map=new Map();
-    scopeMembers().forEach(m=>eligibleEventsForMember(m).forEach(e=>POSITIONS.forEach(p=>{
+    scopeMembers().forEach(m=>eligibleEventsForMember(m).forEach(e=>eventPositions(e).forEach(p=>{
       const n=getCount(e.id,m.id,p.id);
       if(n<2)return;
       const key=`${m.id}__${e.id}`;
@@ -1418,7 +1653,7 @@ function openMember(id){
     return `<div class="item">
       <div class="item-title">${x.m.emoji} ${x.m.name}</div>
       <div class="item-meta">${esc(x.e.period)}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
-      <div class="item-tags">${tags}</div>
+      <div class="item-tags">${tags}${officialLinkHtml(x.e)}</div>
     </div>`;
   }
   function renderGroupedTradeItem(x){
@@ -1455,12 +1690,11 @@ function openMember(id){
     const q=normalizeText(state.missingSearch);
     const members=(state.missingMemberId?MEMBERS.filter(m=>m.id===state.missingMemberId):[...MEMBERS]).filter(m=>!state.oshiOnly||isOshi(m.id))
       .sort((a,b)=>(a.kana||a.name).localeCompare(b.kana||b.name,"ja"));
-    const positionIds=state.missingPositionId?[state.missingPositionId]:POSITIONS.map(p=>p.id);
     return members.map(m=>{
       const items=eligibleEventsForMember(m)
         .filter(e=>!state.missingYear||yearOf(e)===state.missingYear)
         .filter(e=>!q||eventSearchText(e).includes(q))
-        .map(e=>({e,positions:POSITIONS.filter(p=>positionIds.includes(p.id)&&getCount(e.id,m.id,p.id)===0)}))
+        .map(e=>({e,positions:eventPositions(e).filter(p=>(!state.missingPositionId||p.group===state.missingPositionId)&&getCount(e.id,m.id,p.id)===0)}))
         .filter(x=>x.positions.length)
         .sort((a,b)=>state.missingEventOrder==="asc"?a.e.sort-b.e.sort:b.e.sort-a.e.sort);
       return {m,items};
@@ -1477,7 +1711,7 @@ function openMember(id){
           <div class="item missing-event-item">
             <div class="item-title">${isNewEvent(x.e)?'<span class="inline-new">NEW</span>':''}${esc(x.e.period)}</div>
             <div class="item-meta">${esc(x.e.work)}｜${esc(x.e.category)}</div>
-            <div class="item-tags">${x.positions.map(p=>`<span class="pill missing-pill">${p.name}</span>`).join("")}</div>
+            <div class="item-tags">${x.positions.map(p=>`<span class="pill missing-pill">${p.name}</span>`).join("")}${officialLinkHtml(x.e)}</div>
           </div>`).join("")}
         </div>
       </section>`).join(""):'<div class="empty">条件に該当する未所持データはありません。</div>';
@@ -1489,8 +1723,24 @@ function openMember(id){
     const summary=$("missingSummary");
     const list=$("missingMemberList");
     if(summary)summary.textContent=`${memberGroups.length}人・${eventCount}イベント・${typeCount}種類が未所持です`;
-    if(list)list.innerHTML=missingResultsHtml(memberGroups);
+    if(!list)return;
+    const token=++missingRenderToken;
+    // 戻す予定のスクロール位置がある時や、スクロール中に絞り込み直す時は、位置がずれないよう一度に描く
+    const savedTop=Number(getScrollMemory()[scrollContextKey()]||0);
+    if(memberGroups.length<=1||savedTop>0||window.scrollY>window.innerHeight){
+      list.innerHTML=missingResultsHtml(memberGroups);
+      return;
+    }
+    list.innerHTML=missingResultsHtml(memberGroups.slice(0,1));
+    let index=1;
+    const step=()=>{
+      if(token!==missingRenderToken)return;
+      list.insertAdjacentHTML("beforeend",missingResultsHtml([memberGroups[index++]]));
+      if(index<memberGroups.length)setTimeout(step,16);
+    };
+    setTimeout(step,16);
   }
+  let missingRenderToken=0;
   function renderMissing(){
     $("missingPage").innerHTML=`
       <div class="page-head"><h2>🔎 未所持一覧</h2><p id="missingSummary"></p></div>
@@ -1499,11 +1749,11 @@ function openMember(id){
       <div id="missingMemberList" class="missing-member-list"></div>`;
     bindListToolbar("missing");
     updateMissingResults();
-    $("missingSearchInput").oninput=e=>{
-      state.missingSearch=e.target.value;
+    bindDeferredSearch($("missingSearchInput"),value=>{
+      state.missingSearch=value;
       savePreferences();
       updateMissingResults();
-    };
+    });
   }
 
 
@@ -1513,7 +1763,7 @@ function openMember(id){
   }
   function bulkManageSummary(){
     let missing=0,alreadyWanted=0;
-    bulkManageMembers().forEach(member=>eligibleEventsForMember(member).forEach(event=>POSITIONS.forEach(position=>{
+    bulkManageMembers().forEach(member=>eligibleEventsForMember(member).forEach(event=>eventPositions(event).forEach(position=>{
       if(getCount(event.id,member.id,position.id)!==0)return;
       missing++;
       if(isWanted(event.id,member.id,position.id))alreadyWanted++;
@@ -1541,13 +1791,13 @@ function openMember(id){
     const scopeLabel=member?`${member.emoji} ${member.name}`:"全メンバー";
     if(summary.addable===0){showActionToast(summary.missing?"未所持はすべて欲しい登録済みです":"未所持データはありません");return}
     if(!confirm(`${scopeLabel}の未所持 ${summary.missing}種類のうち、未登録の${summary.addable}種類を欲しいリストへ追加しますか？`))return;
-    saveAutoBackup(`未所持の欲しい一括追加直前：${scopeLabel}`);
+    if(!ensureAutoBackup(`未所持の欲しい一括追加直前：${scopeLabel}`))return;
     let changed=0;
-    bulkManageMembers().forEach(memberItem=>eligibleEventsForMember(memberItem).forEach(event=>POSITIONS.forEach(position=>{
+    bulkManageMembers().forEach(memberItem=>eligibleEventsForMember(memberItem).forEach(event=>eventPositions(event).forEach(position=>{
       const key=k(event.id,memberItem.id,position.id);
       if(getCount(event.id,memberItem.id,position.id)===0&&!state.wants[key]){state.wants[key]=true;changed++}
     })));
-    localStorage.setItem(WANT_KEY,JSON.stringify(state.wants));
+    writeStorage(WANT_KEY,state.wants);
     showActionToast(`${changed}種類を欲しいリストへ追加しました`);
     renderBulkManage();
   }
@@ -1725,7 +1975,9 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.03</h3>
+        <h3>公開版Ver1.01.04</h3>
+        <p>下のメニュー中央にホームボタンを追加しました。欲しい一覧・未所持一覧から公式サイトを開けます。キラリナコラボ・はなまるうどんコラボ・2018.June-II（台湾1）はヨリ1・ヨリ2・ヨリ3・チュウ・ヒキの5種で登録できます。欲しい一覧・提供可能一覧をテキストでコピーできます。30日以上バックアップを保存していない時は、TOPでお知らせします。所持数などを登録した時の反応と、検索欄の入力を軽くしました。</p>
+        <h3>Ver1.01.03</h3>
         <p>生写真データを更新しました。生誕記念セット11件と2026 Septemberを追加し、2026年2〜4月の名称・公式URLなどを修正しました。生誕記念セットは本人のみの一覧・未所持・コンプ率に含まれます。</p>
         <h3>Ver1.01.02</h3>
         <p>新しく発売された生写真セットを、管理ツールから入力して追加できるようにしました。追加はdata/events-add.jsonだけを更新し、アプリのバージョン更新は不要です。</p>
@@ -1772,6 +2024,30 @@ function openMember(id){
       data:{counts:state.counts,signs:state.signs,wants:state.wants,oshis:state.oshis,preferences:currentPreferences()}
     };
   }
+  // ===== Ver1.01.04：しばらくバックアップを保存していない時に、TOPで知らせる =====
+  const LAST_EXPORT_KEY="equal-love-photo-manager-last-export";
+  const REMINDER_SNOOZE_KEY="equal-love-photo-manager-backup-snooze";
+  const DAY_MS=24*60*60*1000;
+  function markBackupSaved(){
+    try{localStorage.setItem(LAST_EXPORT_KEY,new Date().toISOString());localStorage.removeItem(REMINDER_SNOOZE_KEY)}catch(error){}
+    updateBackupReminder();
+  }
+  function updateBackupReminder(){
+    const box=$("backupReminder"),label=$("backupReminderText");
+    if(!box||!label)return;
+    let last=0,snoozeUntil=0;
+    try{
+      last=Date.parse(localStorage.getItem(LAST_EXPORT_KEY)||"")||0;
+      snoozeUntil=Number(localStorage.getItem(REMINDER_SNOOZE_KEY)||0)||0;
+    }catch(error){}
+    const now=Date.now();
+    const registered=Object.keys(state.counts).length+Object.keys(state.signs).length+Object.keys(state.wants).length;
+    const due=registered>=10&&(!last||now-last>30*DAY_MS)&&now>snoozeUntil;
+    box.classList.toggle("hidden",!due);
+    if(due)label.textContent=last
+      ?`最後にバックアップを保存してから${Math.floor((now-last)/DAY_MS)}日たっています。`
+      :"この端末でバックアップを保存した記録がまだありません。";
+  }
   function exportBackup(){
     const payload=buildBackupPayload("manual");
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
@@ -1785,6 +2061,7 @@ function openMember(id){
     setTimeout(()=>URL.revokeObjectURL(url),1000);
     const msg=document.getElementById("backupMessage");
     if(msg){msg.textContent="バックアップファイルを保存しました。";msg.className="backup-message success"}
+    markBackupSaved();
   }
   function getAutoBackups(){
     try{
@@ -1796,8 +2073,16 @@ function openMember(id){
     const history=getAutoBackups();
     history.unshift(buildBackupPayload(reason));
     const max=Math.max(1,Number(APP_CONFIG.maxAutoBackups||3));
-    localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,max)));
-    return history[0];
+    // Ver1.01.04：容量不足で保存できない時は、古い履歴を減らしてもう一度試す
+    for(const size of [max,1]){
+      try{localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,size)));return history[0]}
+      catch(error){console.warn("自動バックアップを保存できませんでした",error)}
+    }
+    return null;
+  }
+  function ensureAutoBackup(reason){
+    if(saveAutoBackup(reason))return true;
+    return confirm("自動バックアップを端末内に保存できませんでした（保存容量が足りない可能性があります）。\nバックアップなしで続けますか？");
   }
   function clearAutoBackups(){
     if(confirm("端末内の自動バックアップ履歴をすべて削除しますか？")){
@@ -1836,7 +2121,7 @@ function openMember(id){
     try{
       const backup=validateBackupPayload(item);
       if(!confirm(`自動バックアップ（${formatBackupDate(backup.exportedAt)}）を復元しますか？`))return;
-      saveAutoBackup("自動履歴から復元する直前");
+      if(!ensureAutoBackup("自動履歴から復元する直前"))return;
       const migrated=applyBackupData(backup);
       alert(`復元しました。${migrated?`旧event_idを${migrated}件移行しました。`:""}画面を再読み込みします。`);
       location.reload();
@@ -1853,23 +2138,33 @@ function openMember(id){
     const text=String(value??fallback).replace(/[\u0000-\u001f\u007f]/g,"").trim();
     return (text||fallback).slice(0,MAX_TEXT_FIELD);
   }
-  function validBackupKey(key){
-    if(typeof key!=="string"||key.length<5||key.length>240)return false;
+  // Ver1.01.04：形が正しければ、今のデータに無いセットの行も消さずに保持する。
+  // （追加データを読み込めなかった時や、あとでセットを外した時に、復元そのものが失敗しないようにするため）
+  const BACKUP_KEY_PART=/^[A-Za-z0-9][A-Za-z0-9.-]{0,79}$/;
+  function backupKeyStatus(key){
+    if(typeof key!=="string"||key.length<5||key.length>240)return "bad";
     const parts=key.split("__");
-    if(parts.length!==3||parts.some(part=>!part||DANGEROUS_KEYS.has(part)))return false;
+    if(parts.length!==3||parts.some(part=>!BACKUP_KEY_PART.test(part)||DANGEROUS_KEYS.has(part)))return "bad";
     const [eventId,memberId,positionId]=parts;
     const migrations=APP_CONFIG.eventIdMigrations&&typeof APP_CONFIG.eventIdMigrations==="object"?APP_CONFIG.eventIdMigrations:{};
     const currentEventId=typeof migrations[eventId]==="string"?migrations[eventId]:eventId;
-    return EVENTS.some(event=>event.id===currentEventId)&&MEMBERS.some(member=>member.id===memberId)&&POSITIONS.some(position=>position.id===positionId);
+    const event=eventById(currentEventId);
+    if(!event||!MEMBERS.some(member=>member.id===memberId))return "unknown";
+    return eventPositions(event).some(position=>position.id===positionId)?"ok":"unknown";
   }
-  function sanitizeBackupMap(value,type){
+  function backupEntryLimit(){
+    return MEMBERS.length*EVENTS.reduce((sum,event)=>sum+eventPositions(event).length,0)+3000;
+  }
+  function sanitizeBackupMap(value,type,report){
     if(!validObject(value))throw new Error(`${type}データがオブジェクトではありません`);
     const entries=Object.entries(value);
-    const maximum=EVENTS.length*MEMBERS.length*POSITIONS.length;
+    const maximum=backupEntryLimit();
     if(entries.length>maximum)throw new Error(`${type}データの件数が多すぎます`);
     const clean=Object.create(null);
     for(const [key,item] of entries){
-      if(!validBackupKey(key))throw new Error(`${type}データに不正なキーがあります`);
+      const status=backupKeyStatus(key);
+      if(status==="bad")throw new Error(`${type}データに不正なキーがあります`);
+      if(status==="unknown"&&report)report.unknown++;
       if(type==="所持"){
         const n=Number(item);
         if(!Number.isInteger(n)||n<0||n>99)throw new Error(`${type}データの値が不正です`);
@@ -1919,11 +2214,13 @@ function openMember(id){
       if(entries.length>MEMBERS.length)throw new Error("推し設定の件数が多すぎます");
       entries.forEach(([id,rank])=>{if(MEMBERS.some(member=>member.id===id)&&["favorite","oshi","interest"].includes(rank))oshis[id]=rank});
     }
+    const report={unknown:0};
     return {
       exportedAt:new Date(payload.exportedAt),
-      counts:sanitizeBackupMap(payload.data.counts,"所持"),
-      signs:sanitizeBackupMap(payload.data.signs,"直筆"),
-      wants:sanitizeBackupMap(payload.data.wants,"欲しい"),
+      counts:sanitizeBackupMap(payload.data.counts,"所持",report),
+      signs:sanitizeBackupMap(payload.data.signs,"直筆",report),
+      wants:sanitizeBackupMap(payload.data.wants,"欲しい",report),
+      unknownCount:report.unknown,
       oshis,
       preferences:sanitizePreferences(payload.data.preferences),
       sourceVersion:cleanShortText(payload.sourceVersion),
@@ -1964,6 +2261,7 @@ function openMember(id){
             <span>直筆 ${Object.keys(pendingBackup.signs).length}件</span>
             <span>欲しい ${Object.keys(pendingBackup.wants).length}件</span><span>推し ${Object.keys(pendingBackup.oshis||{}).length}人</span>
           </div>
+          ${pendingBackup.unknownCount?`<div class="backup-preview-note">今のデータに無いセットの項目が${pendingBackup.unknownCount}件あります。消さずにそのまま保持します。</div>`:""}
           <button id="restoreBackupButton" class="primary-action">このバックアップを復元</button>`;
         preview.className="backup-preview valid";
         msg.textContent="内容に問題はありません。作成日時と件数を確認してから復元してください。";
@@ -1989,8 +2287,11 @@ function openMember(id){
     if(!pendingBackup)return;
     const summary=`作成日時：${formatBackupDate(pendingBackup.exportedAt)}\n作成元：Ver ${pendingBackup.sourceVersion}\n所持 ${Object.keys(pendingBackup.counts).length}件\n直筆 ${Object.keys(pendingBackup.signs).length}件\n欲しい ${Object.keys(pendingBackup.wants).length}件\n推し設定 ${Object.keys(pendingBackup.oshis||{}).length}人`;
     if(!confirm(`現在のデータを上書きします。\n\n${summary}\n\n復元しますか？`))return;
-    saveAutoBackup("ファイル復元の直前");
-    const migrated=applyBackupData(pendingBackup);
+    if(!ensureAutoBackup("ファイル復元の直前"))return;
+    let migrated=0;
+    try{migrated=applyBackupData(pendingBackup)}
+    catch(error){alert(`復元中に端末内へ保存できませんでした：${error.message}\n自動バックアップ履歴から元の状態へ戻せる場合があります。`);return}
+    markBackupSaved(); // 復元に使ったファイルが手元にあるため、保存済みとして扱う
     alert(`復元が完了しました。${migrated?`旧event_idを${migrated}件移行しました。`:""}画面を再読み込みします。`);
     location.reload();
   }
@@ -2002,8 +2303,8 @@ function openMember(id){
       if(msg){msg.textContent="入力が一致しなかったため、削除を中止しました。";msg.className="backup-message error"}
       return;
     }
-    saveAutoBackup("全削除の直前");
-    [COUNT_KEY,SIGN_KEY,WANT_KEY,OSHI_KEY,PREF_KEY,RECENT_KEY].forEach(key=>localStorage.removeItem(key));
+    if(!ensureAutoBackup("全削除の直前"))return;
+    [COUNT_KEY,SIGN_KEY,WANT_KEY,OSHI_KEY,PREF_KEY,RECENT_KEY,LAST_EXPORT_KEY,REMINDER_SNOOZE_KEY].forEach(key=>localStorage.removeItem(key));
     sessionStorage.removeItem(SCROLL_KEY);
     alert("すべての保存データを削除しました。画面を再読み込みします。");
     location.reload();
@@ -2051,7 +2352,7 @@ function openMember(id){
     document.getElementById("deleteAllDataButton").onclick=deleteAllUserData;
     document.querySelectorAll("[data-restore-history]").forEach(button=>button.onclick=()=>restoreAutoBackup(button.dataset.restoreHistory));
     const saveHistoryButton=document.getElementById("saveHistoryNowButton");
-    if(saveHistoryButton)saveHistoryButton.onclick=()=>{saveAutoBackup("手動履歴保存");renderBackup()};
+    if(saveHistoryButton)saveHistoryButton.onclick=()=>{const saved=saveAutoBackup("手動履歴保存");renderBackup();showActionToast(saved?"現在の状態を履歴へ保存しました":"⚠️ 容量が足りず、履歴へ保存できませんでした")};
     const clearHistoryButton=document.getElementById("clearHistoryButton");
     if(clearHistoryButton)clearHistoryButton.onclick=clearAutoBackups;
   }
@@ -2082,7 +2383,6 @@ function openMember(id){
   }
   renderHomeMembers();
   loadMemberImages();
-  renderRecentEvents();
   $("openSettingsButton").onclick=()=>openUtilitySheet("settingsSheetOverlay");
   $("closeSettingsSheetButton").onclick=()=>closeUtilitySheet("settingsSheetOverlay");
   $("closeImageAdjustSheetButton").onclick=closeImageAdjustSheet;
@@ -2101,9 +2401,9 @@ function openMember(id){
   $("openMemberSelectorButton").onclick=()=>openMemberSelector("collection");
   $("closeMemberSelectorButton").onclick=closeMemberSelector;
   $("allMembersDashboardButton").onclick=openAll;
-  $("quickInputDashboardButton").onclick=()=>{renderHomeMembers();openMemberSelector("quick")};
+  $("quickInputDashboardButton").onclick=()=>openMemberSelector("quick");
   $("eventMatrixDashboardButton").onclick=openEventMatrix;
-  $("quickMemberSwitchButton").onclick=()=>{renderHomeMembers();openMemberSelector(state.page==="quick"?"quick":"collection")};
+  $("quickMemberSwitchButton").onclick=()=>openMemberSelector(state.page==="quick"?"quick":"collection");
   $("memberSelectorOverlay").onclick=e=>{if(e.target===$("memberSelectorOverlay"))closeMemberSelector()};
 
   const selectorOverlay=$("memberSelectorOverlay");
@@ -2161,8 +2461,26 @@ function openMember(id){
   selectorSheet.addEventListener("touchcancel",resetSelectorSwipe,{passive:true});
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMemberSelector();closeUtilitySheet("filterSheetOverlay");closeUtilitySheet("sortSheetOverlay");closeUtilitySheet("bulkSheetOverlay");closeUtilitySheet("settingsSheetOverlay");closeImageAdjustSheet()}});
   $("searchInput").value=state.search;
-  $("backButton").onclick=()=>{saveScrollPosition();renderRecentEvents();$("managerScreen").classList.add("hidden");$("homeScreen").classList.remove("hidden");window.scrollTo(0,0)};
-  $("searchInput").oninput=e=>{state.search=e.target.value;savePreferences();renderCollection()};
+  // Ver1.01.04：「← 戻る」と下部ナビ中央のホームボタンで同じ処理を使う
+  function goHome(){
+    saveScrollPosition();
+    $("managerScreen").classList.add("hidden");
+    $("homeScreen").classList.remove("hidden");
+    window.scrollTo(0,0);
+    updateBackupReminder();
+  }
+  $("backButton").onclick=goHome;
+  if($("backupReminderOpen"))$("backupReminderOpen").onclick=()=>showPage("backup");
+  if($("backupReminderLater"))$("backupReminderLater").onclick=()=>{
+    try{localStorage.setItem(REMINDER_SNOOZE_KEY,String(Date.now()+7*DAY_MS))}catch(error){}
+    updateBackupReminder();
+  };
+  updateBackupReminder();
+  // ホーム画面に追加して使っている時は、端末にデータを消されにくくするよう頼んでおく（対応端末のみ・確認画面は出ない）
+  if((window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true)&&navigator.storage&&navigator.storage.persist){
+    navigator.storage.persist().catch(()=>{});
+  }
+  bindDeferredSearch($("searchInput"),value=>{state.search=value;savePreferences();renderCollection()});
   $("openCollectionFilterButton").onclick=()=>openFilterSheet("collection");
   $("openCollectionSortButton").onclick=()=>openSortSheet("collection");
   $("resetCollectionViewButton").onclick=()=>resetCollectionView({render:true,scrollTop:true,smooth:true});
@@ -2182,7 +2500,7 @@ function openMember(id){
   setupUtilitySheetSwipe("settingsSheetOverlay");
   setupUtilitySheetSwipe("imageAdjustSheetOverlay");
   document.querySelectorAll("[data-home-page]").forEach(button=>button.onclick=()=>showPage(button.dataset.homePage));
-  document.querySelectorAll(".bottom-nav button").forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+  document.querySelectorAll(".bottom-nav button").forEach(b=>b.onclick=()=>b.dataset.page==="home"?goHome():showPage(b.dataset.page));
   const topButton=document.createElement("button");
   topButton.id="backToTop";
   topButton.className="back-to-top";
