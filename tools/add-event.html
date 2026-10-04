@@ -15,6 +15,7 @@
   --shadow:0 8px 22px rgba(94,61,79,.10);
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;padding:0 0 64px;background:var(--page);color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Hiragino Sans","Yu Gothic",sans-serif;
   font-size:15px;line-height:1.6}
@@ -104,6 +105,7 @@ ul.entry-list button{min-height:38px;padding:7px 12px;font-size:12px;margin-top:
 </header>
 
 <div class="wrap">
+  <p class="msg show ng" id="jsStatus">ツールのプログラムがまだ動いていません。数秒たってもこの表示が消えない時は、Safariでこのページを開き直してください（「ファイル」アプリのプレビューでは動きません）。</p>
   <section class="panel">
     <h2>いまのデータ</h2>
     <p class="note" id="loadNote">読み込み中…</p>
@@ -140,25 +142,47 @@ ul.entry-list button{min-height:38px;padding:7px 12px;font-size:12px;margin-top:
     </div>
 
     <div class="row two">
-      <label class="field">
-        <span>年</span>
+      <div class="field">
+        <span><label for="yearInput">年</label></span>
         <input type="number" id="yearInput" min="2017" max="2099" step="1" inputmode="numeric">
-      </label>
-      <label class="field" id="monthField">
-        <span>月</span>
-        <select id="monthInput"></select>
-      </label>
+      </div>
+      <div class="field" id="monthField">
+        <span><label for="monthInput">月</label></span>
+        <select id="monthInput">
+          <option value="1">1月（January）</option>
+          <option value="2">2月（February）</option>
+          <option value="3">3月（March）</option>
+          <option value="4">4月（April）</option>
+          <option value="5">5月（May）</option>
+          <option value="6">6月（June）</option>
+          <option value="7">7月（July）</option>
+          <option value="8">8月（August）</option>
+          <option value="9">9月（September）</option>
+          <option value="10">10月（October）</option>
+          <option value="11">11月（November）</option>
+          <option value="12">12月（December）</option>
+        </select>
+      </div>
     </div>
 
-    <label class="field" id="ordinalField">
-      <span>この月の何本目か</span>
-      <select id="ordinalInput"></select>
-    </label>
+    <div class="field" id="ordinalField">
+      <span><label for="ordinalInput">この月の何本目か</label></span>
+      <select id="ordinalInput">
+        <option value="1">1本目</option>
+        <option value="2">2本目（Ⅱ）</option>
+        <option value="3">3本目（Ⅲ）</option>
+        <option value="4">4本目（Ⅳ）</option>
+        <option value="5">5本目（Ⅴ）</option>
+        <option value="6">6本目（Ⅵ）</option>
+        <option value="7">7本目（Ⅶ）</option>
+        <option value="8">8本目（Ⅷ）</option>
+      </select>
+    </div>
 
-    <label class="field" id="labelField" hidden>
-      <span>期間の呼び名（英語名を入れるとidが分かりやすくなります）</span>
+    <div class="field" id="labelField" hidden>
+      <span><label for="labelInput">期間の呼び名（英語名を入れるとidが分かりやすくなります）</label></span>
       <input type="text" id="labelInput" placeholder="例）tour / kokuritsu / cinnamoroll">
-    </label>
+    </div>
 
     <label class="field">
       <span>衣装名・楽曲名（必須）</span>
@@ -265,6 +289,6 @@ ul.entry-list button{min-height:38px;padding:7px 12px;font-size:12px;margin-top:
   </section>
 </div>
 
-<script src="./add-event.js"></script>
+<script src="./add-event.js?v=2"></script>
 </body>
 </html>

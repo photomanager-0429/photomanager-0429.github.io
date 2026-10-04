@@ -6,7 +6,20 @@
   - data/events-add.json の全文を作り、コピー・保存できるようにする
   ブラウザ内だけで動き、外部への送信は一切しない。
 */
-(() => {
+(function () {
+  // プログラムが途中で止まった時に、原因を画面へ出す（iPhoneでは開発者ツールが見られないため）
+  function reportProblem(message) {
+    var box = document.getElementById("jsStatus");
+    if (!box) return;
+    box.hidden = false;
+    box.className = "msg show ng";
+    box.textContent = "ツールでエラーが起きました：" + message;
+  }
+  window.addEventListener("error", function (event) { reportProblem(event.message || "不明なエラー"); });
+  window.addEventListener("unhandledrejection", function (event) {
+    reportProblem((event.reason && event.reason.message) || String(event.reason || "不明なエラー"));
+  });
+
   const MONTHS = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
   const ORDINAL_SUFFIX = ["", "-Ⅱ", "-Ⅲ", "-Ⅳ", "-Ⅴ", "-Ⅵ", "-Ⅶ", "-Ⅷ"];
@@ -31,7 +44,7 @@
 
   /* ---------- 小さな道具 ---------- */
   const pad2 = value => String(value).padStart(2, "0");
-  const cleanText = (value, max) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
+  const cleanText = (value, max) => String(value == null ? "" : value).replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max);
   const todayText = () => {
     const now = new Date();
     return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
@@ -170,7 +183,7 @@
     state.master = events;
     state.members = members;
     const list = Array.isArray(additions) ? additions
-      : Array.isArray(additions?.events) ? additions.events : [];
+      : (additions && Array.isArray(additions.events)) ? additions.events : [];
     state.published = list.filter(item => item && typeof item === "object" && item.id);
     // コミット済みになった下書きは、重複しないように取り除く
     const publishedIds = new Set(state.published.map(entry => entry.id));
@@ -428,9 +441,7 @@
 
   /* ---------- 起動 ---------- */
   function setupForm() {
-    $("monthInput").innerHTML = MONTHS.map((month, index) => `<option value="${index + 1}">${index + 1}月（${month}）</option>`).join("");
-    $("ordinalInput").innerHTML = ORDINAL_SUFFIX.map((suffix, index) =>
-      `<option value="${index + 1}">${index + 1}本目${suffix ? `（${suffix.replace("-", "")}）` : ""}</option>`).join("");
+    // 月・何本目の選択肢はHTMLに直接書いてある（プログラムより先に選べるようにするため）
     const now = new Date();
     $("yearInput").value = String(now.getFullYear());
     $("monthInput").value = String(now.getMonth() + 1);
@@ -469,6 +480,7 @@
   async function start() {
     loadDrafts();
     setupForm();
+    $("jsStatus").hidden = true;
     try {
       await loadData();
     } catch (error) {
@@ -483,5 +495,5 @@
     hideMessage("addMessage");
   }
 
-  start();
+  start().catch(function (error) { reportProblem(error && error.message ? error.message : String(error)); });
 })();
