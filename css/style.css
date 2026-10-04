@@ -1994,3 +1994,70 @@ textarea,
 .about-notes .add-status-error{
   color:#b5426a;
 }
+
+/* Ver1.01.04：下部ナビ中央のホームボタン・一覧から公式サイトへ・操作の反応改善 */
+/* ＋を続けて押した時に、iPhoneがダブルタップと判断して画面を拡大するのを防ぐ */
+button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:manipulation}
+.bottom-nav{grid-template-columns:repeat(5,1fr)}
+.bottom-nav .nav-home span{
+  display:grid;
+  place-items:center;
+  width:40px;
+  height:40px;
+  margin:-15px auto 1px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid color-mix(in srgb,var(--accent) 55%,#e9c9d6);
+  box-shadow:0 5px 12px rgba(94,61,79,.16);
+  font-size:19px;
+}
+.bottom-nav .nav-home:active span{transform:scale(.94)}
+.item-official-link{
+  margin-left:auto;
+  align-self:center;
+  flex:none;
+  padding:5px 10px;
+  border:1px solid #e3a9c1;
+  border-radius:999px;
+  background:#fff;
+  color:#b4466f;
+  font-size:11px;
+  font-weight:900;
+  text-decoration:none;
+  white-space:nowrap;
+}
+.backup-preview-note{
+  margin:0 0 10px;
+  font-size:11px;
+  line-height:1.5;
+  color:#75623c;
+}
+#quickBody>:last-child,
+#matrixBody>:last-child{
+  margin-bottom:0!important;
+}
+/* 一覧を少しずつ描く間も、カードの高さが引き伸ばされないようにする */
+.event-list{align-content:start}
+
+/* Ver1.01.04：一覧をテキストでコピー・バックアップのおすすめ */
+.copy-list-button{
+  grid-column:1 / -1;
+  min-height:38px;
+}
+.backup-reminder{
+  margin:18px 0 0;
+  padding:14px 15px;
+  border:1px solid #f0d9a8;
+  border-radius:17px;
+  background:linear-gradient(135deg,#fffaf0,#fff);
+  text-align:left;
+  box-shadow:0 7px 18px rgba(86,62,20,.06);
+}
+.backup-reminder b{display:block;color:#8a6417;font-size:11px}
+.backup-reminder p{margin:7px 0 10px;color:#6f6048;font-size:9px;line-height:1.7}
+.backup-reminder-actions{display:flex;gap:8px;flex-wrap:wrap}
+.backup-reminder-actions button{
+  min-height:36px;padding:7px 12px;border:1px solid #e6c98a;border-radius:11px;
+  background:#fff;color:#8a6417;font-size:9px;font-weight:900;
+}
+.backup-reminder-actions button:first-child{background:#f5b942;border-color:#f5b942;color:#3f2e06}
