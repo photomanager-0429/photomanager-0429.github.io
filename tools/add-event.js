@@ -26,6 +26,14 @@
   const CATEGORIES = ["通常", "イベント", "コラボ"];
   const ALLOWED_HOSTS = ["equal-love.jp", "sp.equal-love.jp", "store.plusmember.jp"];
   const STORE_KEY = "equal-love-photo-add-tool-v1";
+  // 5種セットの構成。yori / chuu / hiki はアプリ共通の目印なので、そのまま使う
+  const FIVE_POSITIONS = [
+    {id: "yori", name: "ヨリ1", group: "yori"},
+    {id: "yori2", name: "ヨリ2", group: "yori"},
+    {id: "yori3", name: "ヨリ3", group: "yori"},
+    {id: "chuu", name: "チュウ", group: "chuu"},
+    {id: "hiki", name: "ヒキ", group: "hiki"}
+  ];
   const FILE_MEMO = "新しく発売された生写真セットは、このファイルの events に追加します。tools/add-event.html で入力して作った全文を、このファイルへ貼り付けて保存（コミット）してください。events.json（マスター）は編集しません。";
   const DEFAULT_REPO = "photomanager-0429/photomanager-0429.github.io";
   const DEFAULT_BRANCH = "main";
@@ -226,7 +234,8 @@
       const meta = document.createElement("small");
       const exclude = Array.isArray(entry.excludeMemberIds) && entry.excludeMemberIds.length
         ? `／除外 ${entry.excludeMemberIds.map(id => memberName(id)).join("・")}` : "";
-      meta.textContent = `${entry.category}｜id ${entry.id}｜sort ${entry.sort}${exclude}`;
+      const kinds = Array.isArray(entry.positions) && entry.positions.length ? `｜${entry.positions.length}種` : "";
+      meta.textContent = `${entry.category}${kinds}｜id ${entry.id}｜sort ${entry.sort}${exclude}`;
       const remove = document.createElement("button");
       remove.type = "button";
       remove.textContent = "この行を削除";
@@ -288,6 +297,10 @@
         if (Array.isArray(entry.excludeMemberIds) && entry.excludeMemberIds.length) {
           item.excludeMemberIds = entry.excludeMemberIds;
         }
+        // すでに公開済みの行に種類の指定がある場合も、落とさずそのまま出力する
+        if (Array.isArray(entry.positions) && entry.positions.length) {
+          item.positions = entry.positions;
+        }
         return item;
       });
     return {_memo: FILE_MEMO, events};
@@ -336,6 +349,7 @@
 
     const checked = checkUrl($("urlInput").value.trim());
     const entry = {officialName, id, sort, category, period, work, officialUrl: checked.url, addedDate, excludeMemberIds};
+    if ($("setTypeInput").value === "5") entry.positions = FIVE_POSITIONS.map(position => ({...position}));
     state.drafts.push(entry);
     saveDrafts();
     renderEntries();
@@ -343,6 +357,7 @@
     // 次の入力に備えて、衣装名とURLだけ空にする
     $("workInput").value = "";
     $("urlInput").value = "";
+    $("setTypeInput").value = "3";
     document.querySelectorAll("[data-member-check]:checked").forEach(input => { input.checked = false; });
     state.dirty = {id: false, sort: false, period: false, officialName: false};
     refreshDefaultOrdinal();
@@ -378,8 +393,13 @@
       refreshDefaultOrdinal();
     }
 
-    const work = text.match(/[(（]([^()（）]{1,120})[)）]/);
-    if (work) { $("workInput").value = cleanText(work[1], 120); found.push("衣装名"); }
+    // かっこの中身を衣装名として読む。「(5種)」のような枚数だけのかっこは衣装名にしない
+    const work = [...text.matchAll(/[(（]([^()（）]{1,120})[)）]/g)]
+      .map(match => cleanText(match[1], 120))
+      .find(value => value && !/^\d+\s*種$/.test(value));
+    if (work) { $("workInput").value = work; found.push("衣装名"); }
+
+    if (/5\s*種/.test(text)) { $("setTypeInput").value = "5"; found.push("5種"); }
 
     const url = text.match(/https:\/\/[^\s"'<>）)]+/);
     if (url) { $("urlInput").value = url[0]; found.push("公式URL"); }
