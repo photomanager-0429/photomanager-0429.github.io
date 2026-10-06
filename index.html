@@ -12,8 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="非公式 生写真管理">
-<link rel="manifest" href="./manifest.webmanifest?v=1.01.04">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.01.04">
+<link rel="manifest" href="./manifest.webmanifest?v=1.01.05">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.01.05">
 <title>【非公式】＝LOVE 生写真管理</title>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-385XD642LL"></script>
@@ -24,7 +24,7 @@
 
   gtag('config', 'G-385XD642LL');
 </script>
-<link rel="stylesheet" href="./css/style.css?v=1.01.04">
+<link rel="stylesheet" href="./css/style.css?v=1.01.05">
 </head>
 <body>
 <section id="homeScreen" class="home dashboard-home">
@@ -69,6 +69,7 @@
       <button class="dashboard-card" data-home-page="wishlist"><span>♡</span><b>欲しい一覧</b></button>
       <button class="dashboard-card" data-home-page="trade"><span>🔄</span><b>提供可能</b></button>
       <button class="dashboard-card" data-home-page="missing"><span>🔎</span><b>未所持一覧</b></button>
+      <button class="dashboard-card dashboard-card-wide" data-home-page="enclosed"><span>📷</span><b>封入生写真</b><small>CDの封入などを写真で記録</small></button>
     </div>
   </section>
 
@@ -138,6 +139,7 @@
 <header class="topbar"><div class="top-inner"><div class="top-row"><button id="backButton" class="back">← 戻る</button><div class="member-heading"><strong id="memberTitle"></strong><span id="memberSub"></span></div><button id="quickMemberSwitchButton" class="quick-member-switch" aria-label="メンバーを変更">👥</button></div>
 <div id="managerTools">
   <div class="searchbox"><span>🔍</span><input id="searchInput" type="search" placeholder="年月・楽曲名・ツアー名・コラボ名で検索"></div>
+  <div id="collectionCategoryTabs" class="category-tabs" role="tablist" aria-label="カテゴリで切り替え"></div>
   <div class="unified-filter-toolbar">
     <button id="openCollectionFilterButton" class="filter-action-button"><span>⚙️</span><b>絞り込み</b><i id="collectionFilterCount" class="filter-count hidden">0</i></button>
     <button id="openCollectionSortButton" class="filter-action-button"><span>↕</span><b id="collectionSortLabel">新しい順</b></button>
@@ -167,6 +169,7 @@
 <section id="helpPage" class="hidden"></section>
 <section id="aboutPage" class="hidden"></section>
 <section id="legalPage" class="hidden"></section>
+<section id="enclosedPage" class="hidden"></section>
 </main>
 <nav class="bottom-nav">
 <button data-page="collection" class="active"><span>📚</span>一覧</button>
@@ -232,6 +235,53 @@
   </div>
 </div>
 
+<div id="enclosedEditSheetOverlay" class="utility-sheet-overlay hidden" aria-hidden="true">
+  <div class="utility-sheet" role="dialog" aria-modal="true" aria-labelledby="enclosedEditTitle">
+    <div class="utility-sheet-handle"></div>
+    <div class="utility-sheet-head">
+      <div><h2 id="enclosedEditTitle">封入生写真を追加</h2><p>写真は、保存したあとに枠をタップして入れられます</p></div>
+      <button id="closeEnclosedEditButton" class="utility-sheet-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="utility-sheet-body">
+      <label class="sheet-field"><span>メンバー</span><select id="enclosedMemberInput"></select></label>
+      <label class="sheet-field"><span>何の生写真か（イベント・作品名）</span><input id="enclosedTitleInput" type="text" maxlength="80" list="enclosedTitleList" autocomplete="off" placeholder="例）19thシングル 封入"></label>
+      <datalist id="enclosedTitleList"></datalist>
+      <div class="sheet-field-row">
+        <label class="sheet-field"><span>枠の分け方</span><select id="enclosedLayoutType">
+          <option value="ycf">ヨリ・チュウ・ヒキ</option>
+          <option value="alpha">A・B・C…</option>
+          <option value="number">1・2・3…</option>
+        </select></label>
+        <label class="sheet-field" id="enclosedLayoutCountField"><span>種類の数</span><select id="enclosedLayoutCount"></select></label>
+      </div>
+      <p id="enclosedLayoutPreview" class="enclosed-layout-preview"></p>
+      <label class="sheet-field"><span>メモ（任意）</span><input id="enclosedNoteInput" type="text" maxlength="200" autocomplete="off" placeholder="例）Type-A"></label>
+      <button type="button" id="deleteEnclosedButton" class="text-danger-button hidden">この記録を削除</button>
+    </div>
+    <div class="utility-sheet-actions">
+      <button id="cancelEnclosedEditButton" class="sheet-clear-button">キャンセル</button>
+      <button id="saveEnclosedEditButton" class="sheet-apply-button">保存する</button>
+    </div>
+  </div>
+</div>
+
+<div id="enclosedViewSheetOverlay" class="utility-sheet-overlay hidden" aria-hidden="true">
+  <div class="utility-sheet enclosed-view-sheet" role="dialog" aria-modal="true" aria-labelledby="enclosedViewTitle">
+    <div class="utility-sheet-handle"></div>
+    <div class="utility-sheet-head">
+      <div><h2 id="enclosedViewTitle">写真</h2><p id="enclosedViewSub"></p></div>
+      <button id="closeEnclosedViewButton" class="utility-sheet-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="utility-sheet-body">
+      <div class="enclosed-view-frame"><img id="enclosedViewImage" alt="保存した生写真"></div>
+    </div>
+    <div class="utility-sheet-actions">
+      <button id="removeEnclosedPhotoButton" class="sheet-clear-button">写真を削除</button>
+      <button id="replaceEnclosedPhotoButton" class="sheet-apply-button">写真を入れ替える</button>
+    </div>
+  </div>
+</div>
+
 <div id="filterSheetOverlay" class="utility-sheet-overlay hidden" aria-hidden="true">
   <div class="utility-sheet" role="dialog" aria-modal="true" aria-labelledby="filterSheetTitle">
     <div class="utility-sheet-handle"></div>
@@ -276,8 +326,8 @@
   <button id="applyUpdateButton">更新する</button>
 </div>
 <div id="offlineBanner" class="offline-banner hidden">オフラインで表示しています</div>
-<div id="versionLabel" class="version-label">Ver 1.01.04</div>
-<script src="./js/app.js?v=1.01.04"></script>
-<script src="./js/bootstrap.js?v=1.01.04"></script>
+<div id="versionLabel" class="version-label">Ver 1.01.05</div>
+<script src="./js/app.js?v=1.01.05"></script>
+<script src="./js/bootstrap.js?v=1.01.05"></script>
 </body>
 </html>
