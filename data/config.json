@@ -1,6 +1,6 @@
 {
-  "version": "1.01.04",
-  "releaseDate": "2026-10-05",
+  "version": "1.01.05",
+  "releaseDate": "2026-10-06",
   "dataVersion": "2026-10-05.1",
   "newItemCount": 12,
   "pwaEnabled": true,
@@ -17,6 +17,6 @@
   "securityHardening": "2026-07-18-audit-final",
   "releaseCandidate": false,
   "memberColorTheme": "pattern-a-final",
-  "uiTuning": "partial-update-and-home-nav",
+  "uiTuning": "category-tabs-and-enclosed-photos",
   "eventAdditionsFile": "data/events-add.json"
 }
