@@ -139,10 +139,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.05",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.05",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.05",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.05",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.06",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.06",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.06",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.06",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -2019,7 +2019,9 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.05</h3>
+        <h3>公開版Ver1.01.06</h3>
+        <p>封入生写真の一覧の作り方を、より安全な方式に変更しました。見た目と使い方は変わりません。</p>
+        <h3>Ver1.01.05</h3>
         <p>一覧の上に「すべて／通常／イベント／コラボ」の切り替えを追加しました。統計にカテゴリ別コンプ率、未所持一覧にカテゴリの絞り込みが増えています。CDの封入など一覧に無い生写真を写真で記録できる「封入生写真」を追加しました。枠はヨリ・チュウ・ヒキ、A・B・C…、1・2・3…から選べます。</p>
         <h3>Ver1.01.04</h3>
         <p>下のメニュー中央にホームボタンを追加しました。欲しい一覧・未所持一覧から公式サイトを開けます。キラリナコラボ・はなまるうどんコラボ・2018.June-II（台湾1）はヨリ1・ヨリ2・ヨリ3・チュウ・ヒキの5種で登録できます。欲しい一覧・提供可能一覧をテキストでコピーできます。30日以上バックアップを保存していない時は、TOPでお知らせします。所持数などを登録した時の反応と、検索欄の入力を軽くしました。</p>
@@ -2634,30 +2636,69 @@ function openMember(id){
     // 文字として保存しているため、実際の画像の大きさはおよそ4分の3
     return enclosedItems.reduce((sum,item)=>sum+Object.values(item.sizes).reduce((a,b)=>a+b,0)+Object.values(item.thumbs).reduce((a,b)=>a+b.length,0),0)*0.75;
   }
-  function enclosedCardHtml(item){
-    const member=MEMBERS.find(m=>m.id===item.memberId);
-    const slots=enclosedSlots(item).map(position=>{
+  // Ver1.01.06：入力された文字（作品名・メモ）は、HTMLとして解釈されない textContent で入れる。
+  // 以前もタグは無害化していたが、文字列をHTMLへ流し込む書き方自体をやめて、仕組みとして安全にした
+  function createEnclosedCard(item){
+    const member=MEMBERS.find(m=>m.id===item.memberId)||null;
+    const card=document.createElement("article");
+    card.className="enclosed-card";
+    card.dataset.enclosedId=item.id;
+    applyMemberVars(card,member);
+
+    const head=document.createElement("div");
+    head.className="enclosed-card-head";
+    const text=document.createElement("div");
+    const title=document.createElement("b");
+    title.textContent=item.title;
+    const sub=document.createElement("span");
+    sub.textContent=`${member?`${member.emoji} ${member.name}`:""}${item.note?`｜${item.note}`:""}`;
+    text.append(title,sub);
+    const edit=document.createElement("button");
+    edit.type="button";
+    edit.className="enclosed-edit-button";
+    edit.dataset.enclosedEdit="1";
+    edit.textContent="編集";
+    head.append(text,edit);
+
+    const slots=document.createElement("div");
+    slots.className="enclosed-slots";
+    enclosedSlots(item).forEach(position=>{
       const thumb=item.thumbs[position.id];
-      return `<button type="button" class="enclosed-slot${thumb?" filled":""}" data-enclosed-slot="${esc(position.id)}" aria-label="${esc(position.name)}の写真を${thumb?"表示":"追加"}">
-        ${thumb?`<img src="${esc(thumb)}" alt="" loading="lazy" decoding="async">`:`<span class="enclosed-slot-empty"><b>＋</b><small>写真を追加</small></span>`}
-        <i>${esc(position.name)}</i>
-      </button>`;
-    }).join("");
-    return `<article class="enclosed-card" data-enclosed-id="${esc(item.id)}" style="${memberCssVars(member)}">
-      <div class="enclosed-card-head">
-        <div><b>${esc(item.title)}</b><span>${member?`${member.emoji} ${esc(member.name)}`:""}${item.note?`｜${esc(item.note)}`:""}</span></div>
-        <button type="button" class="enclosed-edit-button" data-enclosed-edit="1">編集</button>
-      </div>
-      <div class="enclosed-slots">${slots}</div>
-    </article>`;
+      const slot=document.createElement("button");
+      slot.type="button";
+      slot.className=thumb?"enclosed-slot filled":"enclosed-slot";
+      slot.dataset.enclosedSlot=position.id;
+      slot.setAttribute("aria-label",`${position.name}の写真を${thumb?"表示":"追加"}`);
+      if(thumb){
+        const image=document.createElement("img");
+        image.alt="";
+        image.loading="lazy";
+        image.decoding="async";
+        image.src=thumb;
+        slot.appendChild(image);
+      }else{
+        const empty=document.createElement("span");
+        empty.className="enclosed-slot-empty";
+        const plus=document.createElement("b");
+        plus.textContent="＋";
+        const hint=document.createElement("small");
+        hint.textContent="写真を追加";
+        empty.append(plus,hint);
+        slot.appendChild(empty);
+      }
+      const label=document.createElement("i");
+      label.textContent=position.name;
+      slot.appendChild(label);
+      slots.appendChild(slot);
+    });
+    card.append(head,slots);
+    return card;
   }
   function refreshEnclosedCard(id){
     const card=[...document.querySelectorAll("#enclosedList [data-enclosed-id]")].find(node=>node.dataset.enclosedId===id);
     const item=enclosedItems.find(entry=>entry.id===id);
     if(!card||!item)return;
-    const holder=document.createElement("div");
-    holder.innerHTML=enclosedCardHtml(item);
-    card.replaceWith(holder.firstElementChild);
+    card.replaceWith(createEnclosedCard(item));
   }
   function updateEnclosedSummary(){
     const count=$("enclosedItemCount"),photos=$("enclosedPhotoCount"),size=$("enclosedSizeLabel"),status=$("enclosedBackupStatus");
@@ -2682,7 +2723,10 @@ function openMember(id){
     }else if(!items.length){
       list.innerHTML=`<div class="empty-state"><span>🔍</span><h3>該当する記録がありません</h3><p>検索語またはメンバーを変更してください。</p></div>`;
     }else{
-      list.innerHTML=items.map(enclosedCardHtml).join("");
+      const fragment=document.createDocumentFragment();
+      items.forEach(item=>fragment.appendChild(createEnclosedCard(item)));
+      list.textContent="";
+      list.appendChild(fragment);
     }
     const label=$("enclosedListCount");
     if(label)label.textContent=enclosedItems.length&&items.length!==enclosedItems.length?`${items.length}件を表示中（全${enclosedItems.length}件）`:"";
@@ -2708,7 +2752,7 @@ function openMember(id){
       </div>
       <button type="button" id="enclosedAddButton" class="primary-action enclosed-add-button">＋ 記録を追加</button>
       <div class="mode-filter-grid enclosed-filter-grid">
-        <div class="searchbox"><span>🔍</span><input id="enclosedSearchInput" type="search" value="${esc(enclosedFilter.search)}" placeholder="作品名・メモ・メンバーで検索"></div>
+        <div class="searchbox"><span>🔍</span><input id="enclosedSearchInput" type="search" placeholder="作品名・メモ・メンバーで検索"></div>
         <select id="enclosedMemberFilter" aria-label="メンバーで絞り込み">${enclosedMemberOptions(enclosedFilter.memberId,"全メンバー")}</select>
       </div>
       <p id="enclosedListCount" class="enclosed-list-count"></p>
@@ -2726,6 +2770,7 @@ function openMember(id){
       </div>
       <p class="local-image-note">写真はこの端末のブラウザ内だけに保存され、外部へ送信されません。生写真の画像の権利は各権利者にあります。個人で楽しむ範囲で利用してください。</p>
       <div class="settings-page-bottom-space" aria-hidden="true"></div>`;
+    $("enclosedSearchInput").value=enclosedFilter.search;
     renderEnclosedList();
     updateEnclosedSummary();
     $("enclosedAddButton").onclick=()=>openEnclosedEdit("");
@@ -2769,7 +2814,13 @@ function openMember(id){
     $("enclosedLayoutCount").innerHTML=Array.from({length:ENCLOSED_MAX_SLOTS},(_,index)=>`<option value="${index+1}">${index+1}種</option>`).join("");
     $("enclosedLayoutCount").value=String(layout.type==="ycf"?5:layout.count);
     syncEnclosedLayoutInputs();
-    $("enclosedTitleList").innerHTML=[...new Set(enclosedItems.map(entry=>entry.title))].slice(0,60).map(title=>`<option value="${esc(title)}"></option>`).join("");
+    const titleList=$("enclosedTitleList");
+    titleList.textContent="";
+    [...new Set(enclosedItems.map(entry=>entry.title))].slice(0,60).forEach(title=>{
+      const option=document.createElement("option");
+      option.value=title;
+      titleList.appendChild(option);
+    });
     $("deleteEnclosedButton").classList.toggle("hidden",!item);
     openUtilitySheet("enclosedEditSheetOverlay");
   }
