@@ -2061,3 +2061,147 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
   background:#fff;color:#8a6417;font-size:9px;font-weight:900;
 }
 .backup-reminder-actions button:first-child{background:#f5b942;border-color:#f5b942;color:#3f2e06}
+
+/* =====================================================================
+   Ver1.01.05：カテゴリの切り替えタブ・封入生写真
+   ===================================================================== */
+.category-tabs{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:6px;
+  margin-top:9px;
+}
+.category-tab{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-height:38px;
+  padding:6px 4px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(255,255,255,.9);
+  color:#7a5565;
+  font-size:11px;
+}
+.category-tab b{font-weight:900;white-space:nowrap}
+.category-tab small{
+  min-width:20px;
+  padding:1px 5px;
+  border-radius:999px;
+  background:#f6ecf1;
+  color:#8d6c7a;
+  font-size:9px;
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+}
+.category-tab.selected{
+  border-color:#d95b91;
+  background:#d95b91;
+  color:#fff;
+}
+.category-tab.selected small{background:rgba(255,255,255,.26);color:#fff}
+
+.dashboard-card-wide{
+  grid-column:1 / -1;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  grid-template-rows:auto auto;
+  column-gap:12px;
+  align-items:center;
+  justify-items:start;
+  min-height:0;
+  padding:14px 18px;
+  text-align:left;
+}
+.dashboard-card-wide span{grid-row:1 / 3;margin:0;font-size:28px}
+.dashboard-card-wide b{align-self:end}
+.dashboard-card-wide small{align-self:start;color:#8d6c7a;font-size:10px;font-weight:700}
+
+.sheet-field input[type="text"]{
+  width:100%;
+  min-height:46px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fff;
+  color:var(--text);
+  font-size:16px; /* 16px未満だと、iPhoneで入力時に画面が勝手に拡大される */
+}
+
+.enclosed-add-button{width:100%;margin:12px 0 4px}
+.enclosed-filter-grid{margin-top:10px}
+.enclosed-list-count{margin:0 2px 8px;color:var(--muted);font-size:10px;min-height:1px}
+.enclosed-list{display:grid;gap:12px;align-content:start}
+.enclosed-card{
+  padding:13px;
+  border:1px solid var(--line);
+  border-radius:19px;
+  background:#fff;
+  box-shadow:0 6px 16px rgba(94,61,79,.07);
+}
+.enclosed-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.enclosed-card-head>div{min-width:0}
+.enclosed-card-head b{display:block;font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.enclosed-card-head span{display:block;margin-top:3px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+.enclosed-edit-button{
+  flex:none;
+  min-height:34px;
+  padding:6px 12px;
+  border:1px solid #e4b5ca;
+  border-radius:11px;
+  background:#fff;
+  color:#ad426e;
+  font-size:11px;
+  font-weight:900;
+}
+.enclosed-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.enclosed-slot{
+  position:relative;
+  display:block;
+  width:100%;
+  aspect-ratio:89 / 127; /* 生写真（L判）の縦横比 */
+  padding:0;
+  overflow:hidden;
+  border:1px dashed #dcc3ce;
+  border-radius:12px;
+  background:#fdf7fa;
+  color:#b08a9a;
+}
+.enclosed-slot.filled{border:1px solid var(--line);background:#f4eef1}
+.enclosed-slot img{display:block;width:100%;height:100%;object-fit:cover}
+.enclosed-slot-empty{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:2px}
+.enclosed-slot-empty b{font-size:22px;font-weight:400;line-height:1}
+.enclosed-slot-empty small{font-size:9px;font-weight:700}
+.enclosed-slot i{
+  position:absolute;
+  left:5px;
+  bottom:5px;
+  padding:2px 7px;
+  border-radius:999px;
+  background:rgba(255,255,255,.92);
+  color:#6d5260;
+  font-size:10px;
+  font-weight:900;
+  font-style:normal;
+  box-shadow:0 1px 4px rgba(60,35,48,.18);
+}
+.enclosed-backup-panel{margin-top:18px}
+.enclosed-backup-panel .secondary-action,.enclosed-backup-panel .primary-action{margin-top:8px}
+.enclosed-backup-status{font-weight:800;color:#75623c}
+.enclosed-backup-panel .text-danger-button{display:block;margin:14px auto 0;padding:8px}
+.enclosed-view-frame{
+  display:grid;
+  place-items:center;
+  max-height:62vh;
+  border-radius:14px;
+  background:#f4eef1;
+  overflow:hidden;
+}
+.enclosed-view-frame img{display:block;max-width:100%;max-height:62vh;object-fit:contain}
+#deleteEnclosedButton{display:block;margin:4px auto 0;padding:10px}
+#deleteEnclosedButton.hidden{display:none}
+.sheet-field-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.sheet-field-row .sheet-field.hidden{display:none}
+.enclosed-layout-preview{margin:-6px 2px 15px;color:#8d6c7a;font-size:11px;font-weight:700;overflow-wrap:anywhere}
+.enclosed-slot i{max-width:calc(100% - 10px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
