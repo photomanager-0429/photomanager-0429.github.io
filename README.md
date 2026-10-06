@@ -52,7 +52,7 @@ CSP、外部通信制限、バックアップJSONの厳格検証、画像形式�
 
 ## 公開版
 
-- Version: 1.01.05
+- Version: 1.01.06
 - Release date: 2026-10-06
 - Public URL: https://photomanager-0429.github.io/
 - 公開前確認: `RELEASE_CHECKLIST.md`
