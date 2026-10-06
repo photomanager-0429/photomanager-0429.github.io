@@ -139,10 +139,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.04",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.04",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.04",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.04",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.05",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.05",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.05",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.05",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -240,6 +240,7 @@ function initializeApp() {
     missingMemberId:savedPrefs.missingMemberId||"",
     missingPositionId:savedPrefs.missingPositionId||"",
     missingYear:savedPrefs.missingYear||"",
+    missingCategory:savedPrefs.missingCategory||"",
     missingEventOrder:savedPrefs.missingEventOrder||"desc",
     missingSearch:savedPrefs.missingSearch||"",
     quickEventId:savedPrefs.quickOrder?savedPrefs.quickEventId||"":"",
@@ -275,6 +276,7 @@ function initializeApp() {
       missingMemberId:state.missingMemberId,
       missingPositionId:state.missingPositionId,
       missingYear:state.missingYear,
+      missingCategory:state.missingCategory,
       missingEventOrder:state.missingEventOrder,
       missingSearch:state.missingSearch,
       quickEventId:state.quickEventId,
@@ -585,7 +587,8 @@ function initializeApp() {
     return jpeg||png||webp;
   }
 
-  async function compressMemberImage(file){
+  // 選ばれたファイルが安全な画像か（種類・大きさ・中身）を確かめてから読み込む。メンバー画像と封入生写真で共通
+  async function loadCheckedImage(file){
     if(!file||!SAFE_IMAGE_TYPES.has(String(file.type||"").toLowerCase()))throw new Error("JPEG・PNG・WebP画像を選択してください");
     if(file.size<=0||file.size>15*1024*1024)throw new Error("画像は15MB以下にしてください");
     if(!(await hasSafeRasterSignature(file)))throw new Error("画像の形式を確認できませんでした。SVGなどは使用できません");
@@ -594,6 +597,12 @@ function initializeApp() {
     const naturalHeight=image.naturalHeight||image.height;
     if(!Number.isFinite(naturalWidth)||!Number.isFinite(naturalHeight)||naturalWidth<1||naturalHeight<1)throw new Error("画像サイズを確認できませんでした");
     if(naturalWidth>12000||naturalHeight>12000||naturalWidth*naturalHeight>40000000)throw new Error("画像の解像度が大きすぎます");
+    return image;
+  }
+  async function compressMemberImage(file){
+    const image=await loadCheckedImage(file);
+    const naturalWidth=image.naturalWidth||image.width;
+    const naturalHeight=image.naturalHeight||image.height;
     const maxSide=1400;
     const scale=Math.min(1,maxSide/Math.max(naturalWidth,naturalHeight));
     const width=Math.max(1,Math.round(naturalWidth*scale));
@@ -606,7 +615,8 @@ function initializeApp() {
     context.fillRect(0,0,width,height);
     context.drawImage(image,0,0,width,height);
     let blob=await canvasToBlob(canvas,"image/webp",0.84);
-    if(!blob)blob=await canvasToBlob(canvas,"image/jpeg",0.86);
+    // Ver1.01.05：WebPで書き出せない端末（iPhoneなど）では、指定を無視して容量の大きいPNGになるため、JPEGで作り直す
+    if(!blob||blob.type!=="image/webp")blob=await canvasToBlob(canvas,"image/jpeg",0.86);
     canvas.width=1;canvas.height=1;
     if(!blob)throw new Error("画像を保存用に変換できませんでした");
     return blob;
@@ -956,7 +966,6 @@ function initializeApp() {
   function collectionFilterEntries(){
     const entries=[];
     if(state.yearFilter)entries.push({key:"year",label:`${state.yearFilter}年`});
-    if(state.category)entries.push({key:"category",label:state.category});
     if(state.mode!=="all"&&state.ownership)entries.push({key:"ownership",label:state.ownership==="owned"?"所持あり":"未所持"});
     if(state.newFilter==="new")entries.push({key:"new",label:"NEWのみ"});
     if(state.mode==="all"&&state.oshiOnly)entries.push({key:"oshi",label:"推しだけ"});
@@ -980,6 +989,7 @@ function initializeApp() {
       if(state.missingMemberId){const m=MEMBERS.find(x=>x.id===state.missingMemberId);if(m)entries.push({key:"member",label:`${m.emoji} ${m.name}`})}
       if(state.missingPositionId){const p=POSITIONS.find(x=>x.id===state.missingPositionId);if(p)entries.push({key:"position",label:p.name})}
       if(state.missingYear)entries.push({key:"year",label:`${state.missingYear}年`});
+      if(state.missingCategory)entries.push({key:"category",label:state.missingCategory});
       if(state.oshiOnly)entries.push({key:"oshi",label:"推しだけ"});
       return entries;
     }
@@ -1010,7 +1020,31 @@ function initializeApp() {
       <div class="active-filter-chips">${filterChipsHtml(entries,page)}</div>
     </div>`;
   }
+  // ===== Ver1.01.05：一覧の上のカテゴリ切り替えタブ（すべて／通常／イベント／コラボ） =====
+  const CATEGORY_TABS=[["","すべて"],["通常","通常"],["イベント","イベント"],["コラボ","コラボ"]];
+  function categoryOptions(selected){
+    return CATEGORY_TABS.map(([value,label])=>`<option value="${value}" ${selected===value?"selected":""}>${value?label:"すべてのカテゴリ"}</option>`).join("");
+  }
+  function renderCategoryTabs(){
+    const box=$("collectionCategoryTabs");
+    if(!box)return;
+    const member=state.mode==="member"?MEMBERS.find(m=>m.id===state.memberId):null;
+    const base=member?eligibleEventsForMember(member):EVENTS;
+    box.innerHTML=CATEGORY_TABS.map(([value,label])=>{
+      const count=value?base.filter(e=>e.category===value).length:base.length;
+      const selected=state.category===value;
+      return `<button type="button" role="tab" aria-selected="${selected}" class="category-tab${selected?" selected":""}" data-category="${value}"><b>${label}</b><small>${count}</small></button>`;
+    }).join("");
+    box.querySelectorAll("[data-category]").forEach(button=>button.onclick=()=>{
+      if(state.category===button.dataset.category)return;
+      state.category=button.dataset.category;
+      savePreferences();
+      window.scrollTo(0,0);
+      renderCollection();
+    });
+  }
   function renderCollectionFilterUi(){
+    renderCategoryTabs();
     const entries=collectionFilterEntries();
     const count=$("collectionFilterCount");
     if(count){count.textContent=entries.length;count.classList.toggle("hidden",!entries.length)}
@@ -1085,6 +1119,7 @@ function initializeApp() {
       if(key==="member")state.missingMemberId="";
       if(key==="position")state.missingPositionId="";
       if(key==="year")state.missingYear="";
+      if(key==="category")state.missingCategory="";
       if(key==="oshi")state.oshiOnly=false;
       savePreferences();renderMissing();
     }
@@ -1108,7 +1143,6 @@ function initializeApp() {
     if(page==="collection"){
       body.innerHTML=`
         ${filterSheetField("年代",`<select id="sheetYear">${yearOptions(state.yearFilter)}</select>`)}
-        ${filterSheetField("カテゴリ",`<select id="sheetCategory"><option value="">すべて</option><option value="通常" ${state.category==="通常"?"selected":""}>通常</option><option value="イベント" ${state.category==="イベント"?"selected":""}>イベント</option><option value="コラボ" ${state.category==="コラボ"?"selected":""}>コラボ</option></select>`)}
         ${state.mode!=="all"?filterSheetField("所持状況",`<select id="sheetOwnership"><option value="">すべて</option><option value="owned" ${state.ownership==="owned"?"selected":""}>所持ありのみ</option><option value="unowned" ${state.ownership==="unowned"?"selected":""}>未所持のみ</option></select>`):""}
         <div class="sheet-toggle-group">${filterSheetToggle("sheetNew","NEWのみ",state.newFilter==="new")}${state.mode==="all"?filterSheetToggle("sheetOshi","推しだけ表示",state.oshiOnly):""}</div>`;
     }else if(page==="wishlist"||page==="trade"){
@@ -1121,6 +1155,7 @@ function initializeApp() {
         ${filterSheetField("メンバー",`<select id="sheetMissingMember">${missingMemberOptions()}</select>`)}
         ${filterSheetField("ポジション",`<select id="sheetPosition">${missingPositionOptions()}</select>`)}
         ${filterSheetField("年代",`<select id="sheetYear">${yearOptions(state.missingYear)}</select>`)}
+        ${filterSheetField("カテゴリ",`<select id="sheetMissingCategory">${categoryOptions(state.missingCategory)}</select>`)}
         <div class="sheet-toggle-group">${filterSheetToggle("sheetOshi","推しだけ表示",state.oshiOnly)}</div>`;
     }
     openUtilitySheet("filterSheetOverlay");
@@ -1132,14 +1167,13 @@ function initializeApp() {
     }else if(activeFilterPage==="wishlist"||activeFilterPage==="trade"){
       const member=$("sheetMember"),year=$("sheetYear");if(member)member.value="";if(year)year.value="";
     }else{
-      const member=$("sheetMissingMember"),position=$("sheetPosition"),year=$("sheetYear"),oshi=$("sheetOshi");
-      if(member)member.value="";if(position)position.value="";if(year)year.value="";if(oshi)oshi.checked=false;
+      const member=$("sheetMissingMember"),position=$("sheetPosition"),year=$("sheetYear"),oshi=$("sheetOshi"),category=$("sheetMissingCategory");
+      if(member)member.value="";if(position)position.value="";if(year)year.value="";if(oshi)oshi.checked=false;if(category)category.value="";
     }
   }
   function applyFilterSheet(){
     if(activeFilterPage==="collection"){
       state.yearFilter=$("sheetYear")?.value||"";
-      state.category=$("sheetCategory")?.value||"";
       state.ownership=$("sheetOwnership")?.value||"";
       state.newFilter=$("sheetNew")?.checked?"new":"";
       if($("sheetOshi"))state.oshiOnly=$("sheetOshi").checked;
@@ -1156,6 +1190,7 @@ function initializeApp() {
       state.missingMemberId=$("sheetMissingMember")?.value||"";
       state.missingPositionId=$("sheetPosition")?.value||"";
       state.missingYear=$("sheetYear")?.value||"";
+      state.missingCategory=$("sheetMissingCategory")?.value||"";
       state.oshiOnly=$("sheetOshi")?.checked||false;
       savePreferences();closeUtilitySheet("filterSheetOverlay");renderMissing();
     }
@@ -1305,7 +1340,7 @@ function openMember(id){
   function updateHeader(){
     const m=MEMBERS.find(x=>x.id===state.memberId);
     $("memberTitle").textContent=state.mode==="all"?"🌈 全メンバー":m?`${m.emoji} ${m.name}`:"生写真管理";
-    const labels={collection:"生写真コレクション",quick:"クイック入力",matrix:"イベント別チェック表",stats:"統計・年代別コンプ率",wishlist:"欲しい生写真一覧",trade:"ダブり・提供可能一覧",missing:"未所持一覧",oshi:"推しカスタマイズ",memberImages:"メンバー画像設定",bulkManage:"未所持・欲しい一括操作",help:"使い方",about:"バージョン情報",legal:"本サイトについて・利用上の注意",backup:"バックアップ・復元"};
+    const labels={collection:"生写真コレクション",quick:"クイック入力",matrix:"イベント別チェック表",stats:"統計・年代別コンプ率",wishlist:"欲しい生写真一覧",trade:"ダブり・提供可能一覧",missing:"未所持一覧",oshi:"推しカスタマイズ",memberImages:"メンバー画像設定",bulkManage:"未所持・欲しい一括操作",help:"使い方",about:"バージョン情報",legal:"本サイトについて・利用上の注意",backup:"バックアップ・復元",enclosed:"封入生写真"};
     const pageLabel=labels[state.page]||"生写真管理";
     $("memberSub").textContent=state.mode==="member"&&m&&isGraduated(m)?`${m.graduation}｜${pageLabel}`:pageLabel;
     const heading=$("memberTitle")?.parentElement;
@@ -1319,7 +1354,7 @@ function openMember(id){
     if(!skipScrollSave)saveScrollPosition();
     if($("homeScreen").classList.contains("hidden")===false){state.mode="all";state.memberId=null;theme(null);$("homeScreen").classList.add("hidden");$("managerScreen").classList.remove("hidden")}
     state.page=page;
-    ["collection","quick","matrix","stats","wishlist","trade","missing","oshi","memberImages","bulkManage","backup","help","legal","about"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
+    ["collection","quick","matrix","stats","wishlist","trade","missing","oshi","memberImages","bulkManage","backup","help","legal","about","enclosed"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
     $("managerTools").classList.toggle("hidden",page!=="collection");
     document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
     updateHeader();
@@ -1337,6 +1372,7 @@ function openMember(id){
     if(page==="help")renderHelp();
     if(page==="legal")renderLegal();
     if(page==="about")renderAbout();
+    if(page==="enclosed")renderEnclosed();
     restoreScrollPosition();
   }
   function modeEventList(kind){
@@ -1616,10 +1652,14 @@ function openMember(id){
     const statsVars=memberCssVars(singleMember);
     let years=[...new Set(EVENTS.filter(e=>ms.some(m=>eventAvailableForMember(e,m))).map(yearOf))].sort();
     let yearHtml=years.map(y=>{const ev=EVENTS.filter(e=>yearOf(e)===y),s=statsFor(ms,ev);return `<div class="year-row"><div class="year-line"><span>${y}年</span><span>${s.types}/${s.possible}種・${s.rate}%</span></div><div class="bar"><span style="width:${s.rate}%"></span></div></div>`}).join("");
+    const categoryHtml=CATEGORY_TABS.filter(([value])=>value).map(([value,label])=>{
+      const s=statsFor(ms,EVENTS.filter(e=>e.category===value));
+      return s.possible?`<div class="year-row"><div class="year-line"><span>${label}</span><span>${s.types}/${s.possible}種・${s.rate}%</span></div><div class="bar"><span style="width:${s.rate}%"></span></div></div>`:"";
+    }).join("");
     const title=singleMember
       ?`${memberAvatarMarkup(singleMember,"stats-member-avatar")}<div><small>メンバー別統計</small><h2>${esc(singleMember.name)}</h2></div>`
       :`<span class="stats-all-icon">🌈</span><div><small>全体統計</small><h2>全メンバー</h2><p>メンバーごとの収集状況を確認できます</p></div>`;
-    $("statsPage").innerHTML=`<div class="page-head stats-themed-head" style="${statsVars}"><div class="stats-title-row">${title}</div></div><div class="page-filter dual-filter"><select id="pageMemberFilter">${pageMemberOptions()}</select><button id="statsOshiToggle" class="oshi-toggle ${state.oshiOnly?"on":""}">👑 推しだけ</button></div><div class="stat-grid stats-color-grid" style="${statsVars}"><div class="big-stat"><b>${all.total}</b><span>総所持枚数</span></div><div class="big-stat"><b>${all.types}</b><span>所持種類数</span></div><div class="big-stat"><b>${all.signed}</b><span>直筆あり</span></div><div class="big-stat"><b>${all.rate}%</b><span>全体コンプ率</span></div></div><div class="panel stats-year-panel" style="${statsVars}"><h3>年代別コンプ率</h3>${yearHtml}</div>`;
+    $("statsPage").innerHTML=`<div class="page-head stats-themed-head" style="${statsVars}"><div class="stats-title-row">${title}</div></div><div class="page-filter dual-filter"><select id="pageMemberFilter">${pageMemberOptions()}</select><button id="statsOshiToggle" class="oshi-toggle ${state.oshiOnly?"on":""}">👑 推しだけ</button></div><div class="stat-grid stats-color-grid" style="${statsVars}"><div class="big-stat"><b>${all.total}</b><span>総所持枚数</span></div><div class="big-stat"><b>${all.types}</b><span>所持種類数</span></div><div class="big-stat"><b>${all.signed}</b><span>直筆あり</span></div><div class="big-stat"><b>${all.rate}%</b><span>全体コンプ率</span></div></div><div class="panel stats-year-panel" style="${statsVars}"><h3>カテゴリ別コンプ率</h3>${categoryHtml}</div><div class="panel stats-year-panel" style="${statsVars}"><h3>年代別コンプ率</h3>${yearHtml}</div>`;
     bindPageMemberFilter();
     document.getElementById("statsOshiToggle").onclick=()=>{state.oshiOnly=!state.oshiOnly;savePreferences();renderStats()};
   }
@@ -1693,6 +1733,7 @@ function openMember(id){
     return members.map(m=>{
       const items=eligibleEventsForMember(m)
         .filter(e=>!state.missingYear||yearOf(e)===state.missingYear)
+        .filter(e=>!state.missingCategory||e.category===state.missingCategory)
         .filter(e=>!q||eventSearchText(e).includes(q))
         .map(e=>({e,positions:eventPositions(e).filter(p=>(!state.missingPositionId||p.group===state.missingPositionId)&&getCount(e.id,m.id,p.id)===0)}))
         .filter(x=>x.positions.length)
@@ -1779,6 +1820,7 @@ function openMember(id){
     state.missingMemberId=state.bulkMemberId;
     state.missingPositionId="";
     state.missingYear="";
+    state.missingCategory="";
     state.missingSearch="";
     state.missingEventOrder="desc";
     state.oshiOnly=false;
@@ -1903,6 +1945,7 @@ function openMember(id){
         <section class="panel guide-card"><span>6</span><div><h3>メンバー画像を設定する</h3><p>TOP右上の設定から、端末内の好きな画像をメンバーごとに登録できます。画像は編集画面で表示範囲を確認しながら位置調整でき、外部送信もされません。</p></div></section>
         <section class="panel guide-card important"><span>7</span><div><h3>定期的にバックアップする</h3><p>端末変更、Safariのデータ削除、ブラウザ変更に備えてJSONを保存してください。復元前には日時と件数を確認できます。</p></div></section>
         <section class="panel guide-card"><span>8</span><div><h3>iPhoneでアプリ化する</h3><p>Safariの共有ボタンから「ホーム画面に追加」を選択します。一度読み込めばオフラインでも閲覧できます。</p></div></section>
+        <section class="panel guide-card"><span>＋</span><div><h3>封入生写真を写真で記録する</h3><p>TOPの「封入生写真」から、メンバーと何の生写真かを入れて記録を作り、枠の分け方（ヨリ・チュウ・ヒキ／A・B・C…／1・2・3…）を選んでから、枠をタップして写真を入れます。写真は端末内だけに保存されるので、「写真つきバックアップ」を定期的に保存してください。</p></div></section>
         <section class="panel guide-card important"><span>9</span><div><h3>利用上の注意を確認する</h3><p>本サイトは非公式です。画像の利用、端末内保存、免責事項について、設定内の「本サイトについて・利用上の注意」を確認してください。</p></div></section>
       </div>`;
   }
@@ -1923,6 +1966,7 @@ function openMember(id){
           <h3>メンバー画像設定について</h3>
           <p>利用者が選択した画像は、その端末のブラウザ内だけに保存されます。外部サーバーへの送信、運営者による収集・閲覧、ほかの利用者への共有は行いません。</p>
           <p>画像の権利と入手元をご確認のうえ、個人利用の範囲で使用してください。設定画像を含む画面のSNS投稿や第三者への配布については、利用者自身の責任で判断してください。</p>
+          <p>「封入生写真」で保存した写真も同じ扱いです。その端末のブラウザ内だけに保存し、外部への送信や運営者による収集・閲覧は行いません。写真つきバックアップのファイルには写真そのものが入るため、公開の場所へ置かないでください。</p>
         </section>
         <section class="panel legal-card">
           <h3>保存データとプライバシー</h3>
@@ -1975,7 +2019,9 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.04</h3>
+        <h3>公開版Ver1.01.05</h3>
+        <p>一覧の上に「すべて／通常／イベント／コラボ」の切り替えを追加しました。統計にカテゴリ別コンプ率、未所持一覧にカテゴリの絞り込みが増えています。CDの封入など一覧に無い生写真を写真で記録できる「封入生写真」を追加しました。枠はヨリ・チュウ・ヒキ、A・B・C…、1・2・3…から選べます。</p>
+        <h3>Ver1.01.04</h3>
         <p>下のメニュー中央にホームボタンを追加しました。欲しい一覧・未所持一覧から公式サイトを開けます。キラリナコラボ・はなまるうどんコラボ・2018.June-II（台湾1）はヨリ1・ヨリ2・ヨリ3・チュウ・ヒキの5種で登録できます。欲しい一覧・提供可能一覧をテキストでコピーできます。30日以上バックアップを保存していない時は、TOPでお知らせします。所持数などを登録した時の反応と、検索欄の入力を軽くしました。</p>
         <h3>Ver1.01.03</h3>
         <p>生写真データを更新しました。生誕記念セット11件と2026 Septemberを追加し、2026年2〜4月の名称・公式URLなどを修正しました。生誕記念セットは本人のみの一覧・未所持・コンプ率に含まれます。</p>
@@ -2006,7 +2052,7 @@ function openMember(id){
       memberId:state.memberId,category:state.category,yearFilter:state.yearFilter,sort:state.sort,search:state.search,
       ownership:state.ownership,newFilter:state.newFilter,oshiOnly:state.oshiOnly,pageMemberId:state.pageMemberId,
       wishlistYear:state.wishlistYear,tradeYear:state.tradeYear,wishlistOrder:state.wishlistOrder,tradeOrder:state.tradeOrder,
-      missingMemberId:state.missingMemberId,missingPositionId:state.missingPositionId,missingYear:state.missingYear,
+      missingMemberId:state.missingMemberId,missingPositionId:state.missingPositionId,missingYear:state.missingYear,missingCategory:state.missingCategory,
       missingEventOrder:state.missingEventOrder,missingSearch:state.missingSearch,
       quickEventId:state.quickEventId,quickSearch:state.quickSearch,quickYear:state.quickYear,quickOrder:state.quickOrder,
       matrixEventId:state.matrixEventId,matrixSearch:state.matrixSearch,matrixYear:state.matrixYear,matrixOrder:state.matrixOrder
@@ -2188,6 +2234,7 @@ function openMember(id){
     ["quickEventId","matrixEventId"].forEach(key=>{const v=String(value[key]||"");out[key]=eventIds.has(v)?v:""});
     out.missingPositionId=positionIds.has(String(value.missingPositionId||""))?String(value.missingPositionId):"";
     out.category=categories.has(String(value.category||""))?String(value.category):"";
+    out.missingCategory=categories.has(String(value.missingCategory||""))?String(value.missingCategory):"";
     ["yearFilter","wishlistYear","tradeYear","missingYear","quickYear","matrixYear"].forEach(key=>{
       const v=String(value[key]||"");out[key]=/^20\d{2}$/.test(v)?v:"";
     });
@@ -2321,7 +2368,7 @@ function openMember(id){
       <div class="panel backup-panel">
         <div class="backup-icon">📤</div>
         <h3>バックアップを保存</h3>
-        <p>所持枚数・直筆・欲しい・推し・フィルター設定を、1つのJSONファイルに保存します。端末内のメンバー画像は含まれません。</p>
+        <p>所持枚数・直筆・欲しい・推し・フィルター設定を、1つのJSONファイルに保存します。端末内のメンバー画像と封入生写真は含まれません（封入生写真は、そのページにある「写真つきバックアップ」で保存します）。</p>
         <button id="exportBackupButton" class="primary-action">バックアップファイルを保存</button>
       </div>
       <div class="panel backup-panel">
@@ -2355,6 +2402,652 @@ function openMember(id){
     if(saveHistoryButton)saveHistoryButton.onclick=()=>{const saved=saveAutoBackup("手動履歴保存");renderBackup();showActionToast(saved?"現在の状態を履歴へ保存しました":"⚠️ 容量が足りず、履歴へ保存できませんでした")};
     const clearHistoryButton=document.getElementById("clearHistoryButton");
     if(clearHistoryButton)clearHistoryButton.onclick=clearAutoBackups;
+  }
+
+  // =====================================================================
+  // Ver1.01.05：封入生写真（CD封入など、一覧表が無い生写真を写真で記録する）
+  //   ・1件＝メンバー＋「何の生写真か」＋ヨリ／チュウ／ヒキの写真
+  //   ・写真はこの端末の中（IndexedDB）だけに保存し、外部へは送らない
+  //   ・一覧には小さい画像、拡大表示には大きい画像を使う（一覧を軽くするため別々に保存）
+  // =====================================================================
+  const ENCLOSED_DB_NAME="equal-love-photo-manager-enclosed";
+  const ENCLOSED_DB_VERSION=1;
+  const ENCLOSED_ITEM_STORE="items";
+  const ENCLOSED_PHOTO_STORE="photos";
+  const ENCLOSED_ID_PATTERN=/^enc-[a-z0-9]{6,32}$/;
+  const ENCLOSED_IMAGE_PATTERN=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/;
+  const ENCLOSED_FULL_MAX_CHARS=2400000;   // 拡大用の画像1枚の上限（約1.8MB）
+  const ENCLOSED_THUMB_MAX_CHARS=400000;   // 一覧用の画像1枚の上限（約300KB）
+  const ENCLOSED_MAX_ITEMS=3000;
+  const ENCLOSED_BACKUP_MAX_BYTES=400*1024*1024;
+  const ENCLOSED_EXPORT_KEY="equal-love-photo-manager-enclosed-last-export";
+  const ENCLOSED_CHANGE_KEY="equal-love-photo-manager-enclosed-last-change";
+  let enclosedDbPromise=null;
+  let enclosedItems=[];
+  let enclosedReady=false;
+  let enclosedLoadError="";
+  let enclosedEditingId="";
+  let enclosedViewing=null;
+  let enclosedBusy=false;
+  const enclosedFilter={memberId:"",search:""};
+
+  function openEnclosedDb(){
+    if(enclosedDbPromise)return enclosedDbPromise;
+    enclosedDbPromise=new Promise((resolve,reject)=>{
+      if(!("indexedDB" in window)){reject(new Error("このブラウザは端末内への写真保存に対応していません"));return}
+      const request=indexedDB.open(ENCLOSED_DB_NAME,ENCLOSED_DB_VERSION);
+      request.onupgradeneeded=()=>{
+        const db=request.result;
+        if(!db.objectStoreNames.contains(ENCLOSED_ITEM_STORE))db.createObjectStore(ENCLOSED_ITEM_STORE,{keyPath:"id"});
+        if(!db.objectStoreNames.contains(ENCLOSED_PHOTO_STORE))db.createObjectStore(ENCLOSED_PHOTO_STORE,{keyPath:"key"});
+      };
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||new Error("写真の保存領域を開けませんでした"));
+      request.onblocked=()=>reject(new Error("写真の保存領域の準備がブロックされています"));
+    });
+    enclosedDbPromise.catch(()=>{enclosedDbPromise=null});
+    return enclosedDbPromise;
+  }
+  // 1回のまとまった読み書き。途中で失敗したら全部取り消されるので、記録と写真が食い違わない
+  function enclosedTransaction(mode,work){
+    return openEnclosedDb().then(db=>new Promise((resolve,reject)=>{
+      const transaction=db.transaction([ENCLOSED_ITEM_STORE,ENCLOSED_PHOTO_STORE],mode);
+      let output;
+      let settled=false;
+      const fail=error=>{if(settled)return;settled=true;reject(error||new Error("写真データを処理できませんでした"))};
+      try{output=work(transaction.objectStore(ENCLOSED_ITEM_STORE),transaction.objectStore(ENCLOSED_PHOTO_STORE))}
+      catch(error){try{transaction.abort()}catch(abortError){}fail(error);return}
+      transaction.oncomplete=()=>{if(settled)return;settled=true;resolve(output instanceof IDBRequest?output.result:output)};
+      transaction.onerror=()=>fail(transaction.error);
+      transaction.onabort=()=>fail(transaction.error||new Error("保存できませんでした。端末の空き容量を確認してください"));
+    }));
+  }
+  function enclosedPhotoKey(id,positionId){return `${id}__${positionId}`}
+  // 1件ごとに選べる「種類の分け方」。ycf＝ヨリ・チュウ・ヒキ、alpha＝A・B・C…、number＝1・2・3…
+  const ENCLOSED_MAX_SLOTS=12;
+  const ENCLOSED_LAYOUT_TYPES=["ycf","alpha","number"];
+  const ENCLOSED_LAYOUT_KEY="equal-love-photo-manager-enclosed-last-layout";
+  function normalizeEnclosedLayout(layout){
+    const type=layout&&ENCLOSED_LAYOUT_TYPES.includes(layout.type)?layout.type:"ycf";
+    if(type==="ycf")return {type,count:POSITIONS.length};
+    const count=Math.min(ENCLOSED_MAX_SLOTS,Math.max(1,Math.round(Number(layout.count))||5));
+    return {type,count};
+  }
+  // 枠の目印（id）は、分け方ごとに重ならないようにしてある：yori/chuu/hiki、a〜l、n1〜n12
+  function enclosedSlotsFor(layout){
+    const {type,count}=normalizeEnclosedLayout(layout);
+    if(type==="ycf")return POSITIONS.map(p=>({id:p.id,name:p.name}));
+    return Array.from({length:count},(_,index)=>type==="alpha"
+      ?{id:String.fromCharCode(97+index),name:String.fromCharCode(65+index)}
+      :{id:`n${index+1}`,name:String(index+1)});
+  }
+  function enclosedSlots(item){return enclosedSlotsFor(item.layout)}
+  function allEnclosedSlotIds(){
+    return [...new Set([{type:"ycf"},{type:"alpha",count:ENCLOSED_MAX_SLOTS},{type:"number",count:ENCLOSED_MAX_SLOTS}].flatMap(layout=>enclosedSlotsFor(layout).map(slot=>slot.id)))];
+  }
+  function enclosedLayoutLabel(layout){
+    const normalized=normalizeEnclosedLayout(layout);
+    return normalized.type==="ycf"?"ヨリ・チュウ・ヒキ":`${enclosedSlotsFor(normalized).map(slot=>slot.name).join("・")}`;
+  }
+  function validEnclosedImage(value,maxChars){
+    if(typeof value!=="string"||value.length<40||value.length>maxChars||!ENCLOSED_IMAGE_PATTERN.test(value))return false;
+    // 先頭の数バイトを取り出して、本当にJPEG・PNG・WebPの中身かを確かめる
+    try{
+      const head=atob(value.slice(value.indexOf(",")+1,value.indexOf(",")+25));
+      const b=i=>head.charCodeAt(i);
+      const jpeg=b(0)===0xff&&b(1)===0xd8&&b(2)===0xff;
+      const png=b(0)===0x89&&b(1)===0x50&&b(2)===0x4e&&b(3)===0x47;
+      const webp=head.slice(0,4)==="RIFF"&&head.slice(8,12)==="WEBP";
+      return jpeg||png||webp;
+    }catch(error){return false}
+  }
+  function enclosedText(value,max){
+    return String(value??"").replace(/[\u0000-\u001f\u007f]/g,"").trim().slice(0,max);
+  }
+  function enclosedDate(value){
+    return typeof value==="string"&&value.length<=40&&!Number.isNaN(Date.parse(value))?value:new Date().toISOString();
+  }
+  // 保存されている1件を、決まった形に整える。形がおかしいものは null を返して使わない
+  function normalizeEnclosedItem(record){
+    if(!record||typeof record!=="object")return null;
+    const id=String(record.id||"");
+    if(!ENCLOSED_ID_PATTERN.test(id))return null;
+    const memberId=String(record.memberId||"");
+    if(!MEMBERS.some(member=>member.id===memberId))return null;
+    const title=enclosedText(record.title,80);
+    if(!title)return null;
+    const layout=normalizeEnclosedLayout(record.layout);
+    const thumbs={},sizes={};
+    enclosedSlotsFor(layout).forEach(position=>{
+      const thumb=record.thumbs&&record.thumbs[position.id];
+      if(validEnclosedImage(thumb,ENCLOSED_THUMB_MAX_CHARS)){
+        thumbs[position.id]=thumb;
+        sizes[position.id]=Math.max(0,Number(record.sizes&&record.sizes[position.id])||0);
+      }
+    });
+    return {id,memberId,title,note:enclosedText(record.note,200),createdAt:enclosedDate(record.createdAt),updatedAt:enclosedDate(record.updatedAt),layout,thumbs,sizes};
+  }
+  function sortEnclosedItems(){
+    enclosedItems.sort((a,b)=>b.createdAt.localeCompare(a.createdAt)||b.id.localeCompare(a.id));
+  }
+  async function loadEnclosedItems(){
+    try{
+      const records=await enclosedTransaction("readonly",items=>items.getAll());
+      enclosedItems=(records||[]).map(normalizeEnclosedItem).filter(Boolean);
+      sortEnclosedItems();
+      enclosedLoadError="";
+    }catch(error){
+      enclosedItems=[];
+      enclosedLoadError=error.message||"写真の保存領域を読み込めませんでした";
+      console.warn("封入生写真の読み込みに失敗しました",error);
+    }
+    enclosedReady=true;
+  }
+  function markEnclosedChanged(){
+    try{localStorage.setItem(ENCLOSED_CHANGE_KEY,new Date().toISOString())}catch(error){}
+  }
+  function newEnclosedId(){
+    const random=Math.random().toString(36).slice(2,8).padEnd(6,"0");
+    return `enc-${Date.now().toString(36)}${random}`;
+  }
+
+  // ---------- 写真の取り込み ----------
+  function scaledImageDataUrl(image,maxSide,quality){
+    const naturalWidth=image.naturalWidth||image.width,naturalHeight=image.naturalHeight||image.height;
+    const scale=Math.min(1,maxSide/Math.max(naturalWidth,naturalHeight));
+    const canvas=document.createElement("canvas");
+    canvas.width=Math.max(1,Math.round(naturalWidth*scale));
+    canvas.height=Math.max(1,Math.round(naturalHeight*scale));
+    const context=canvas.getContext("2d",{alpha:false});
+    if(!context)throw new Error("画像の処理に対応していません");
+    context.fillStyle="#ffffff";
+    context.fillRect(0,0,canvas.width,canvas.height);
+    context.drawImage(image,0,0,canvas.width,canvas.height);
+    // WebPで書き出せない端末（iPhoneなど）は、容量の大きいPNGになってしまうためJPEGにする
+    let url=canvas.toDataURL("image/webp",quality);
+    if(!url.startsWith("data:image/webp"))url=canvas.toDataURL("image/jpeg",quality);
+    canvas.width=1;canvas.height=1;
+    return url;
+  }
+  async function prepareEnclosedImages(file){
+    const image=await loadCheckedImage(file);
+    const full=scaledImageDataUrl(image,1200,0.82);
+    const thumb=scaledImageDataUrl(image,360,0.72);
+    if(!validEnclosedImage(full,ENCLOSED_FULL_MAX_CHARS)||!validEnclosedImage(thumb,ENCLOSED_THUMB_MAX_CHARS))throw new Error("画像を保存用に変換できませんでした");
+    return {full,thumb};
+  }
+  function chooseEnclosedPhoto(itemId,positionId){
+    const item=enclosedItems.find(entry=>entry.id===itemId);
+    if(!item||enclosedBusy)return;
+    const input=document.createElement("input");
+    input.type="file";
+    input.accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
+    input.onchange=async()=>{
+      const file=input.files?.[0];
+      if(!file)return;
+      enclosedBusy=true;
+      showActionToast("写真を保存しています…");
+      try{
+        const images=await prepareEnclosedImages(file);
+        const next={...item,thumbs:{...item.thumbs,[positionId]:images.thumb},sizes:{...item.sizes,[positionId]:images.full.length},updatedAt:new Date().toISOString()};
+        await enclosedTransaction("readwrite",(items,photos)=>{
+          photos.put({key:enclosedPhotoKey(item.id,positionId),itemId:item.id,positionId,dataUrl:images.full,updatedAt:next.updatedAt});
+          items.put(next);
+        });
+        Object.assign(item,next);
+        markEnclosedChanged();
+        refreshEnclosedCard(item.id);
+        updateEnclosedSummary();
+        const viewerOpen=!$("enclosedViewSheetOverlay").classList.contains("hidden");
+        if(viewerOpen&&enclosedViewing&&enclosedViewing.id===item.id&&enclosedViewing.positionId===positionId)openEnclosedViewer(item.id,positionId);
+        showActionToast("写真を保存しました");
+      }catch(error){
+        $("actionToast").classList.add("hidden");
+        alert(`写真を保存できませんでした：${error.message}`);
+      }finally{
+        enclosedBusy=false;
+      }
+    };
+    input.click();
+  }
+
+  // ---------- 一覧 ----------
+  function enclosedMemberOptions(selected,allLabel){
+    const option=m=>`<option value="${esc(m.id)}" ${selected===m.id?"selected":""}>${m.emoji} ${esc(m.name)}</option>`;
+    const active=rankedMembers(MEMBERS.filter(m=>!isGraduated(m))).map(option).join("");
+    const graduated=rankedMembers(MEMBERS.filter(isGraduated)).map(option).join("");
+    return `${allLabel?`<option value="">${allLabel}</option>`:""}<optgroup label="現役メンバー">${active}</optgroup><optgroup label="卒業メンバー">${graduated}</optgroup>`;
+  }
+  function enclosedVisibleItems(){
+    const query=normalizeText(enclosedFilter.search);
+    return enclosedItems.filter(item=>{
+      if(enclosedFilter.memberId&&item.memberId!==enclosedFilter.memberId)return false;
+      if(!query)return true;
+      const member=MEMBERS.find(m=>m.id===item.memberId);
+      return normalizeText(`${item.title} ${item.note} ${member?member.name:""}`).includes(query);
+    });
+  }
+  function enclosedPhotoCount(items=enclosedItems){
+    return items.reduce((sum,item)=>sum+Object.keys(item.thumbs).length,0);
+  }
+  function enclosedBytes(){
+    // 文字として保存しているため、実際の画像の大きさはおよそ4分の3
+    return enclosedItems.reduce((sum,item)=>sum+Object.values(item.sizes).reduce((a,b)=>a+b,0)+Object.values(item.thumbs).reduce((a,b)=>a+b.length,0),0)*0.75;
+  }
+  function enclosedCardHtml(item){
+    const member=MEMBERS.find(m=>m.id===item.memberId);
+    const slots=enclosedSlots(item).map(position=>{
+      const thumb=item.thumbs[position.id];
+      return `<button type="button" class="enclosed-slot${thumb?" filled":""}" data-enclosed-slot="${esc(position.id)}" aria-label="${esc(position.name)}の写真を${thumb?"表示":"追加"}">
+        ${thumb?`<img src="${esc(thumb)}" alt="" loading="lazy" decoding="async">`:`<span class="enclosed-slot-empty"><b>＋</b><small>写真を追加</small></span>`}
+        <i>${esc(position.name)}</i>
+      </button>`;
+    }).join("");
+    return `<article class="enclosed-card" data-enclosed-id="${esc(item.id)}" style="${memberCssVars(member)}">
+      <div class="enclosed-card-head">
+        <div><b>${esc(item.title)}</b><span>${member?`${member.emoji} ${esc(member.name)}`:""}${item.note?`｜${esc(item.note)}`:""}</span></div>
+        <button type="button" class="enclosed-edit-button" data-enclosed-edit="1">編集</button>
+      </div>
+      <div class="enclosed-slots">${slots}</div>
+    </article>`;
+  }
+  function refreshEnclosedCard(id){
+    const card=[...document.querySelectorAll("#enclosedList [data-enclosed-id]")].find(node=>node.dataset.enclosedId===id);
+    const item=enclosedItems.find(entry=>entry.id===id);
+    if(!card||!item)return;
+    const holder=document.createElement("div");
+    holder.innerHTML=enclosedCardHtml(item);
+    card.replaceWith(holder.firstElementChild);
+  }
+  function updateEnclosedSummary(){
+    const count=$("enclosedItemCount"),photos=$("enclosedPhotoCount"),size=$("enclosedSizeLabel"),status=$("enclosedBackupStatus");
+    if(count)count.textContent=enclosedItems.length;
+    if(photos)photos.textContent=enclosedPhotoCount();
+    if(size)size.textContent=formatImageBytes(Math.round(enclosedBytes()));
+    if(status){
+      let exported="",changed="";
+      try{exported=localStorage.getItem(ENCLOSED_EXPORT_KEY)||"";changed=localStorage.getItem(ENCLOSED_CHANGE_KEY)||""}catch(error){}
+      if(!enclosedItems.length)status.textContent="記録を追加したら、写真つきバックアップを保存しておくと安心です。";
+      else if(!exported)status.textContent="⚠️ 写真つきバックアップをまだ保存していません。機種変更やブラウザのデータ削除で写真が消えることがあります。";
+      else if(changed&&changed>exported)status.textContent=`⚠️ 前回の保存（${formatBackupDate(new Date(exported))}）のあとに変更があります。`;
+      else status.textContent=`前回の保存：${formatBackupDate(new Date(exported))}`;
+    }
+  }
+  function renderEnclosedList(){
+    const list=$("enclosedList");
+    if(!list)return;
+    const items=enclosedVisibleItems();
+    if(!enclosedItems.length){
+      list.innerHTML=`<div class="empty-state"><span>📷</span><h3>まだ記録がありません</h3><p>「＋ 記録を追加」から、メンバーと何の生写真か、枠の分け方を入れてください。写真はそのあと、枠をタップして入れられます。</p></div>`;
+    }else if(!items.length){
+      list.innerHTML=`<div class="empty-state"><span>🔍</span><h3>該当する記録がありません</h3><p>検索語またはメンバーを変更してください。</p></div>`;
+    }else{
+      list.innerHTML=items.map(enclosedCardHtml).join("");
+    }
+    const label=$("enclosedListCount");
+    if(label)label.textContent=enclosedItems.length&&items.length!==enclosedItems.length?`${items.length}件を表示中（全${enclosedItems.length}件）`:"";
+  }
+  function renderEnclosed(){
+    const page=$("enclosedPage");
+    if(!page)return;
+    if(!enclosedReady){
+      page.innerHTML=`<div class="page-head"><h2>📷 封入生写真</h2><p>端末内の保存領域を読み込んでいます</p></div><div class="panel image-loading-panel">読み込み中…</div>`;
+      loadEnclosedItems().then(()=>{if(state.page==="enclosed")renderEnclosed()});
+      return;
+    }
+    if(enclosedLoadError){
+      page.innerHTML=`<div class="page-head"><h2>📷 封入生写真</h2><p>CDの封入などを写真で記録できます</p></div><div class="panel image-storage-error"><b>写真の保存機能を利用できません</b><p>${esc(enclosedLoadError)}</p></div>`;
+      return;
+    }
+    page.innerHTML=`
+      <div class="page-head"><h2>📷 封入生写真</h2><p>CDの封入など、一覧に無い生写真を写真で記録できます。枠は「ヨリ・チュウ・ヒキ」「A・B・C…」「1・2・3…」から選べます</p></div>
+      <div class="backup-summary enclosed-summary">
+        <div><b id="enclosedItemCount">0</b><span>記録</span></div>
+        <div><b id="enclosedPhotoCount">0</b><span>写真</span></div>
+        <div><b id="enclosedSizeLabel">0 B</b><span>端末内使用量</span></div>
+      </div>
+      <button type="button" id="enclosedAddButton" class="primary-action enclosed-add-button">＋ 記録を追加</button>
+      <div class="mode-filter-grid enclosed-filter-grid">
+        <div class="searchbox"><span>🔍</span><input id="enclosedSearchInput" type="search" value="${esc(enclosedFilter.search)}" placeholder="作品名・メモ・メンバーで検索"></div>
+        <select id="enclosedMemberFilter" aria-label="メンバーで絞り込み">${enclosedMemberOptions(enclosedFilter.memberId,"全メンバー")}</select>
+      </div>
+      <p id="enclosedListCount" class="enclosed-list-count"></p>
+      <div id="enclosedList" class="enclosed-list"></div>
+      <div class="panel backup-panel enclosed-backup-panel">
+        <div class="backup-icon">💾</div>
+        <h3>写真つきバックアップ</h3>
+        <p>封入生写真の記録と写真を、1つのファイルに保存します。所持枚数などの通常のバックアップとは別のファイルです。</p>
+        <p id="enclosedBackupStatus" class="enclosed-backup-status"></p>
+        <button type="button" id="enclosedExportButton" class="primary-action">写真つきバックアップを保存</button>
+        <input id="enclosedImportInput" class="file-input" type="file" accept=".json,application/json">
+        <label for="enclosedImportInput" class="secondary-action">バックアップから読み込む</label>
+        <div class="backup-warning">読み込みは「追加」です。同じ記録は上書きし、それ以外は今の記録に足します。ファイルには写真が入るので、SNSや公開の場所へ置かないでください。</div>
+        <button type="button" id="enclosedDeleteAllButton" class="text-danger-button">封入生写真の記録をすべて削除</button>
+      </div>
+      <p class="local-image-note">写真はこの端末のブラウザ内だけに保存され、外部へ送信されません。生写真の画像の権利は各権利者にあります。個人で楽しむ範囲で利用してください。</p>
+      <div class="settings-page-bottom-space" aria-hidden="true"></div>`;
+    renderEnclosedList();
+    updateEnclosedSummary();
+    $("enclosedAddButton").onclick=()=>openEnclosedEdit("");
+    bindDeferredSearch($("enclosedSearchInput"),value=>{enclosedFilter.search=value;renderEnclosedList()});
+    $("enclosedMemberFilter").onchange=event=>{enclosedFilter.memberId=event.target.value;renderEnclosedList()};
+    // 一覧は作り直すことがあるので、ボタンごとではなく一覧全体でタップを受ける
+    $("enclosedList").onclick=event=>{
+      const card=event.target.closest("[data-enclosed-id]");
+      if(!card)return;
+      const id=card.dataset.enclosedId;
+      if(event.target.closest("[data-enclosed-edit]")){openEnclosedEdit(id);return}
+      const slot=event.target.closest("[data-enclosed-slot]");
+      if(!slot)return;
+      const item=enclosedItems.find(entry=>entry.id===id);
+      if(!item)return;
+      if(item.thumbs[slot.dataset.enclosedSlot])openEnclosedViewer(id,slot.dataset.enclosedSlot);
+      else chooseEnclosedPhoto(id,slot.dataset.enclosedSlot);
+    };
+    $("enclosedExportButton").onclick=exportEnclosedBackup;
+    $("enclosedImportInput").onchange=event=>{const file=event.target.files?.[0];event.target.value="";importEnclosedBackup(file)};
+    $("enclosedDeleteAllButton").onclick=deleteAllEnclosed;
+  }
+
+  // ---------- 追加・編集 ----------
+  function openEnclosedEdit(id){
+    const item=id?enclosedItems.find(entry=>entry.id===id):null;
+    enclosedEditingId=item?item.id:"";
+    const favorite=Object.keys(state.oshis).find(memberId=>state.oshis[memberId]==="favorite");
+    const memberId=item?item.memberId:(enclosedFilter.memberId||favorite||rankedMembers(MEMBERS.filter(m=>!isGraduated(m)))[0]?.id||MEMBERS[0].id);
+    $("enclosedEditTitle").textContent=item?"記録を編集":"封入生写真を追加";
+    $("enclosedMemberInput").innerHTML=enclosedMemberOptions(memberId,"");
+    $("enclosedTitleInput").value=item?item.title:"";
+    $("enclosedNoteInput").value=item?item.note:"";
+    let layout=item?item.layout:null;
+    if(!layout){
+      // 新しく作る時は、前回選んだ分け方を最初から選んでおく
+      try{layout=JSON.parse(localStorage.getItem(ENCLOSED_LAYOUT_KEY)||"null")}catch(error){layout=null}
+    }
+    layout=normalizeEnclosedLayout(layout);
+    $("enclosedLayoutType").value=layout.type;
+    $("enclosedLayoutCount").innerHTML=Array.from({length:ENCLOSED_MAX_SLOTS},(_,index)=>`<option value="${index+1}">${index+1}種</option>`).join("");
+    $("enclosedLayoutCount").value=String(layout.type==="ycf"?5:layout.count);
+    syncEnclosedLayoutInputs();
+    $("enclosedTitleList").innerHTML=[...new Set(enclosedItems.map(entry=>entry.title))].slice(0,60).map(title=>`<option value="${esc(title)}"></option>`).join("");
+    $("deleteEnclosedButton").classList.toggle("hidden",!item);
+    openUtilitySheet("enclosedEditSheetOverlay");
+  }
+  function syncEnclosedLayoutInputs(){
+    const type=$("enclosedLayoutType").value;
+    const layout=normalizeEnclosedLayout({type,count:$("enclosedLayoutCount").value});
+    $("enclosedLayoutCountField").classList.toggle("hidden",type==="ycf"); // ヨリ・チュウ・ヒキは3種で決まっているので、数は選ばない
+    $("enclosedLayoutPreview").textContent=`枠：${enclosedLayoutLabel(layout)}`;
+  }
+  async function saveEnclosedEdit(){
+    const title=enclosedText($("enclosedTitleInput").value,80);
+    const memberId=$("enclosedMemberInput").value;
+    if(!title){alert("何の生写真か（イベント・作品名）を入力してください。");$("enclosedTitleInput").focus();return}
+    if(!MEMBERS.some(member=>member.id===memberId)){alert("メンバーを選択してください。");return}
+    const now=new Date().toISOString();
+    const existing=enclosedEditingId?enclosedItems.find(entry=>entry.id===enclosedEditingId):null;
+    if(!existing&&enclosedItems.length>=ENCLOSED_MAX_ITEMS){alert(`記録は${ENCLOSED_MAX_ITEMS}件までです。`);return}
+    const layout=normalizeEnclosedLayout({type:$("enclosedLayoutType").value,count:$("enclosedLayoutCount").value});
+    const note=enclosedText($("enclosedNoteInput").value,200);
+    // 分け方や数を変えた時、入れてある写真は「同じ順番の枠」へ引き継ぐ。枠が足りなくなる分だけ削除になる
+    const thumbs={},sizes={},moves=[],removed=[];
+    if(existing){
+      const sameType=existing.layout.type===layout.type;
+      const newSlots=enclosedSlotsFor(layout);
+      enclosedSlots(existing).forEach((slot,index)=>{
+        if(!existing.thumbs[slot.id])return;
+        const target=sameType?newSlots.find(entry=>entry.id===slot.id):newSlots[index];
+        if(!target){removed.push(slot);return}
+        thumbs[target.id]=existing.thumbs[slot.id];
+        sizes[target.id]=existing.sizes[slot.id]||0;
+        if(target.id!==slot.id)moves.push([slot.id,target.id]);
+      });
+      if(removed.length&&!confirm(`種類の数が減るため、${removed.map(slot=>slot.name).join("・")}の写真${removed.length}枚が削除されます。\n続けますか？`))return;
+    }
+    const next=existing
+      ?{...existing,memberId,title,note,layout,thumbs,sizes,updatedAt:now}
+      :{id:newEnclosedId(),memberId,title,note,createdAt:now,updatedAt:now,layout,thumbs:{},sizes:{}};
+    try{
+      await enclosedTransaction("readwrite",(items,photos)=>{
+        moves.forEach(([from,to])=>{
+          const request=photos.get(enclosedPhotoKey(next.id,from));
+          request.onsuccess=()=>{
+            if(request.result)photos.put({...request.result,key:enclosedPhotoKey(next.id,to),positionId:to});
+            photos.delete(enclosedPhotoKey(next.id,from));
+          };
+        });
+        removed.forEach(slot=>photos.delete(enclosedPhotoKey(next.id,slot.id)));
+        items.put(next);
+      });
+      if(!existing){try{localStorage.setItem(ENCLOSED_LAYOUT_KEY,JSON.stringify(layout))}catch(error){}} // 次に追加する時の初期値として覚えておく
+      if(existing)Object.assign(existing,next);else enclosedItems.unshift(next);
+      sortEnclosedItems();
+      markEnclosedChanged();
+      closeUtilitySheet("enclosedEditSheetOverlay");
+      renderEnclosedList();
+      updateEnclosedSummary();
+      showActionToast(existing?"記録を更新しました":"記録を追加しました。枠をタップして写真を入れてください");
+    }catch(error){
+      alert(`保存できませんでした：${error.message}`);
+    }
+  }
+  async function deleteEnclosedItem(id){
+    const item=enclosedItems.find(entry=>entry.id===id);
+    if(!item)return;
+    const photoCount=Object.keys(item.thumbs).length;
+    if(!confirm(`「${item.title}」の記録${photoCount?`と写真${photoCount}枚`:""}を、この端末から削除しますか？`))return;
+    try{
+      await enclosedTransaction("readwrite",(items,photos)=>{
+        items.delete(item.id);
+        allEnclosedSlotIds().forEach(slotId=>photos.delete(enclosedPhotoKey(item.id,slotId)));
+      });
+      enclosedItems=enclosedItems.filter(entry=>entry.id!==item.id);
+      markEnclosedChanged();
+      closeUtilitySheet("enclosedEditSheetOverlay");
+      renderEnclosedList();
+      updateEnclosedSummary();
+      showActionToast("記録を削除しました");
+    }catch(error){
+      alert(`削除できませんでした：${error.message}`);
+    }
+  }
+
+  // ---------- 拡大表示 ----------
+  async function openEnclosedViewer(id,positionId){
+    const item=enclosedItems.find(entry=>entry.id===id);
+    const position=item?enclosedSlots(item).find(entry=>entry.id===positionId):null;
+    if(!item||!position||!item.thumbs[positionId])return;
+    const member=MEMBERS.find(m=>m.id===item.memberId);
+    enclosedViewing={id,positionId};
+    $("enclosedViewTitle").textContent=`${position.name}｜${item.title}`;
+    $("enclosedViewSub").textContent=`${member?`${member.emoji} ${member.name}`:""}${item.note?`｜${item.note}`:""}`;
+    const image=$("enclosedViewImage");
+    image.src=item.thumbs[positionId]; // 大きい画像を読み込むまで、小さい画像を出しておく
+    openUtilitySheet("enclosedViewSheetOverlay");
+    try{
+      const record=await enclosedTransaction("readonly",(items,photos)=>photos.get(enclosedPhotoKey(id,positionId)));
+      const stillOpen=enclosedViewing&&enclosedViewing.id===id&&enclosedViewing.positionId===positionId;
+      if(stillOpen&&record&&validEnclosedImage(record.dataUrl,ENCLOSED_FULL_MAX_CHARS))image.src=record.dataUrl;
+    }catch(error){
+      console.warn("拡大用の写真を読み込めませんでした",error);
+    }
+  }
+  function closeEnclosedViewer(){
+    closeUtilitySheet("enclosedViewSheetOverlay");
+    enclosedViewing=null;
+    const image=$("enclosedViewImage");
+    if(image)image.removeAttribute("src");
+  }
+  async function removeEnclosedPhoto(){
+    if(!enclosedViewing)return;
+    const {id,positionId}=enclosedViewing;
+    const item=enclosedItems.find(entry=>entry.id===id);
+    const position=item?enclosedSlots(item).find(entry=>entry.id===positionId):null;
+    if(!item||!position)return;
+    if(!confirm(`${position.name}の写真をこの端末から削除しますか？`))return;
+    const next={...item,thumbs:{...item.thumbs},sizes:{...item.sizes},updatedAt:new Date().toISOString()};
+    delete next.thumbs[positionId];delete next.sizes[positionId];
+    try{
+      await enclosedTransaction("readwrite",(items,photos)=>{
+        photos.delete(enclosedPhotoKey(id,positionId));
+        items.put(next);
+      });
+      item.thumbs=next.thumbs;item.sizes=next.sizes;item.updatedAt=next.updatedAt;
+      markEnclosedChanged();
+      closeEnclosedViewer();
+      refreshEnclosedCard(id);
+      updateEnclosedSummary();
+      showActionToast("写真を削除しました");
+    }catch(error){
+      alert(`削除できませんでした：${error.message}`);
+    }
+  }
+
+  // ---------- 写真つきバックアップ ----------
+  async function exportEnclosedBackup(){
+    if(!enclosedItems.length){showActionToast("保存する記録がありません");return}
+    if(enclosedBusy)return;
+    enclosedBusy=true;
+    const button=$("enclosedExportButton");
+    const label=button?button.textContent:"";
+    if(button){button.disabled=true;button.textContent="写真をまとめています…"}
+    try{
+      const head={app:"equal-love-photo-manager-enclosed",backupVersion:1,exportedAt:new Date().toISOString(),sourceVersion:APP_CONFIG.version};
+      // 1件ずつ文字にして順番に足していく（全部を一度に大きな文字列にしないため、メモリを使いすぎない）
+      const parts=[JSON.stringify(head).slice(0,-1)+',"items":['];
+      for(let index=0;index<enclosedItems.length;index++){
+        const item=enclosedItems[index];
+        const photos={};
+        for(const position of enclosedSlots(item)){
+          if(!item.thumbs[position.id])continue;
+          const record=await enclosedTransaction("readonly",(items,store)=>store.get(enclosedPhotoKey(item.id,position.id)));
+          if(record&&validEnclosedImage(record.dataUrl,ENCLOSED_FULL_MAX_CHARS))photos[position.id]={thumb:item.thumbs[position.id],full:record.dataUrl};
+        }
+        parts.push((index?",":"")+JSON.stringify({id:item.id,memberId:item.memberId,title:item.title,note:item.note,createdAt:item.createdAt,updatedAt:item.updatedAt,layout:item.layout,photos}));
+      }
+      parts.push("]}");
+      const blob=new Blob(parts,{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement("a");
+      const d=new Date(),pad=n=>String(n).padStart(2,"0");
+      link.href=url;
+      link.download=`equal-love-enclosed-backup-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),4000);
+      try{localStorage.setItem(ENCLOSED_EXPORT_KEY,new Date().toISOString())}catch(error){}
+      updateEnclosedSummary();
+      showActionToast(`記録${enclosedItems.length}件・写真${enclosedPhotoCount()}枚を保存しました`);
+    }catch(error){
+      alert(`バックアップを保存できませんでした：${error.message}`);
+    }finally{
+      enclosedBusy=false;
+      if(button){button.disabled=false;button.textContent=label}
+    }
+  }
+  // 読み込むファイルを確かめて、使える形に直す。おかしな所があれば理由を付けて中止する
+  function validateEnclosedBackup(payload){
+    if(!validObject(payload)||payload.app!=="equal-love-photo-manager-enclosed")throw new Error("封入生写真のバックアップではありません");
+    if(Number(payload.backupVersion)!==1)throw new Error("対応していないバックアップの形式です");
+    if(!Array.isArray(payload.items))throw new Error("記録が見つかりません");
+    if(payload.items.length>ENCLOSED_MAX_ITEMS)throw new Error("記録の件数が多すぎます");
+    const seen=new Set();
+    const items=[];
+    let skipped=0,photoCount=0;
+    payload.items.forEach(raw=>{
+      if(!validObject(raw)){skipped++;return}
+      const item=normalizeEnclosedItem({...raw,thumbs:{},sizes:{}});
+      if(!item||seen.has(item.id)){skipped++;return}
+      seen.add(item.id);
+      const fulls={};
+      if(validObject(raw.photos)){
+        enclosedSlots(item).map(position=>position.id).forEach(positionId=>{
+          const photo=raw.photos[positionId];
+          if(photo===undefined)return;
+          if(!validObject(photo)||!validEnclosedImage(photo.thumb,ENCLOSED_THUMB_MAX_CHARS)||!validEnclosedImage(photo.full,ENCLOSED_FULL_MAX_CHARS)){
+            throw new Error(`「${item.title}」の写真データが正しくありません`);
+          }
+          item.thumbs[positionId]=photo.thumb;
+          item.sizes[positionId]=photo.full.length;
+          fulls[positionId]=photo.full;
+          photoCount++;
+        });
+      }
+      items.push({item,fulls});
+    });
+    return {items,skipped,photoCount,exportedAt:validDateString(payload.exportedAt)?new Date(payload.exportedAt):null};
+  }
+  async function importEnclosedBackup(file){
+    if(!file||enclosedBusy)return;
+    if(file.size<=0||file.size>ENCLOSED_BACKUP_MAX_BYTES){alert("読み込みを中止しました：ファイルが空か、大きすぎます。");return}
+    if(!String(file.name||"").toLowerCase().endsWith(".json")){alert("読み込みを中止しました：JSONファイルを選択してください。");return}
+    enclosedBusy=true;
+    showActionToast("バックアップを確認しています…");
+    try{
+      const backup=validateEnclosedBackup(JSON.parse(await file.text()));
+      if(!backup.items.length)throw new Error("読み込める記録がありません");
+      const existingIds=new Set(enclosedItems.map(item=>item.id));
+      const overwrite=backup.items.filter(entry=>existingIds.has(entry.item.id)).length;
+      const added=backup.items.length-overwrite;
+      if(enclosedItems.length+added>ENCLOSED_MAX_ITEMS)throw new Error(`記録は${ENCLOSED_MAX_ITEMS}件までです`);
+      const summary=`${backup.exportedAt?`作成日時：${formatBackupDate(backup.exportedAt)}\n`:""}記録 ${backup.items.length}件・写真 ${backup.photoCount}枚\n（新しく追加 ${added}件／上書き ${overwrite}件）${backup.skipped?`\n形式が合わない${backup.skipped}件は読み込みません`:""}`;
+      if(!confirm(`封入生写真のバックアップを読み込みます。\n\n${summary}\n\n読み込みますか？`))return;
+      // 件数が多くても固まらないよう、少しずつ分けて保存する
+      for(let start=0;start<backup.items.length;start+=20){
+        const chunk=backup.items.slice(start,start+20);
+        await enclosedTransaction("readwrite",(items,photos)=>{
+          chunk.forEach(({item,fulls})=>{
+            items.put(item);
+            allEnclosedSlotIds().forEach(slotId=>{
+              const key=enclosedPhotoKey(item.id,slotId);
+              if(fulls[slotId])photos.put({key,itemId:item.id,positionId:slotId,dataUrl:fulls[slotId],updatedAt:item.updatedAt});
+              else photos.delete(key);
+            });
+          });
+        });
+      }
+      await loadEnclosedItems();
+      try{localStorage.setItem(ENCLOSED_EXPORT_KEY,new Date().toISOString());localStorage.setItem(ENCLOSED_CHANGE_KEY,"")}catch(error){}
+      renderEnclosedList();
+      updateEnclosedSummary();
+      showActionToast(`記録${backup.items.length}件・写真${backup.photoCount}枚を読み込みました`);
+    }catch(error){
+      alert(`読み込みを中止しました：${error instanceof SyntaxError?"ファイルの中身を読めませんでした（壊れている可能性があります）":error.message}`);
+    }finally{
+      enclosedBusy=false;
+    }
+  }
+  async function deleteAllEnclosed(){
+    if(!enclosedItems.length){showActionToast("削除する記録がありません");return}
+    if(!confirm(`封入生写真の記録${enclosedItems.length}件と写真${enclosedPhotoCount()}枚を、この端末からすべて削除します。\n所持枚数などのデータは削除されません。\n\n続けますか？`))return;
+    if(prompt("最終確認です。\n削除する場合は「全削除」と入力してください。")!=="全削除"){showActionToast("入力が一致しなかったため、削除を中止しました");return}
+    try{
+      await enclosedTransaction("readwrite",(items,photos)=>{items.clear();photos.clear()});
+      enclosedItems=[];
+      try{localStorage.removeItem(ENCLOSED_EXPORT_KEY);localStorage.removeItem(ENCLOSED_CHANGE_KEY)}catch(error){}
+      renderEnclosedList();
+      updateEnclosedSummary();
+      showActionToast("封入生写真の記録をすべて削除しました");
+    }catch(error){
+      alert(`削除できませんでした：${error.message}`);
+    }
+  }
+  function setupEnclosedSheets(){
+    if(!$("enclosedEditSheetOverlay")||!$("enclosedViewSheetOverlay"))return;
+    $("closeEnclosedEditButton").onclick=()=>closeUtilitySheet("enclosedEditSheetOverlay");
+    $("cancelEnclosedEditButton").onclick=()=>closeUtilitySheet("enclosedEditSheetOverlay");
+    $("saveEnclosedEditButton").onclick=saveEnclosedEdit;
+    $("enclosedLayoutType").onchange=syncEnclosedLayoutInputs;
+    $("enclosedLayoutCount").onchange=syncEnclosedLayoutInputs;
+    $("deleteEnclosedButton").onclick=()=>deleteEnclosedItem(enclosedEditingId);
+    $("enclosedEditSheetOverlay").onclick=event=>{if(event.target===$("enclosedEditSheetOverlay"))closeUtilitySheet("enclosedEditSheetOverlay")};
+    $("closeEnclosedViewButton").onclick=closeEnclosedViewer;
+    $("removeEnclosedPhotoButton").onclick=removeEnclosedPhoto;
+    $("replaceEnclosedPhotoButton").onclick=()=>{if(enclosedViewing)chooseEnclosedPhoto(enclosedViewing.id,enclosedViewing.positionId)};
+    $("enclosedViewSheetOverlay").onclick=event=>{if(event.target===$("enclosedViewSheetOverlay"))closeEnclosedViewer()};
+    setupUtilitySheetSwipe("enclosedEditSheetOverlay");
+    setupUtilitySheetSwipe("enclosedViewSheetOverlay");
   }
 
   function createMemberButton(m){
@@ -2459,7 +3152,7 @@ function openMember(id){
   },{passive:true});
 
   selectorSheet.addEventListener("touchcancel",resetSelectorSwipe,{passive:true});
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMemberSelector();closeUtilitySheet("filterSheetOverlay");closeUtilitySheet("sortSheetOverlay");closeUtilitySheet("bulkSheetOverlay");closeUtilitySheet("settingsSheetOverlay");closeImageAdjustSheet()}});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMemberSelector();closeUtilitySheet("filterSheetOverlay");closeUtilitySheet("sortSheetOverlay");closeUtilitySheet("bulkSheetOverlay");closeUtilitySheet("settingsSheetOverlay");closeImageAdjustSheet();closeUtilitySheet("enclosedEditSheetOverlay");closeEnclosedViewer()}});
   $("searchInput").value=state.search;
   // Ver1.01.04：「← 戻る」と下部ナビ中央のホームボタンで同じ処理を使う
   function goHome(){
@@ -2499,6 +3192,7 @@ function openMember(id){
   setupUtilitySheetSwipe("bulkSheetOverlay");
   setupUtilitySheetSwipe("settingsSheetOverlay");
   setupUtilitySheetSwipe("imageAdjustSheetOverlay");
+  setupEnclosedSheets();
   document.querySelectorAll("[data-home-page]").forEach(button=>button.onclick=()=>showPage(button.dataset.homePage));
   document.querySelectorAll(".bottom-nav button").forEach(b=>b.onclick=()=>b.dataset.page==="home"?goHome():showPage(b.dataset.page));
   const topButton=document.createElement("button");
