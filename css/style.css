@@ -2542,3 +2542,14 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
   background:rgba(255,255,255,.62);
   box-shadow:none;
 }
+
+/* =====================================================================
+   Ver1.01.08：ツアー名・イベント名の表示
+   ===================================================================== */
+/* ツアー名は長いものが多いので、少し小さくして折り返す */
+.period.is-event-name{
+  font-size:12px;
+  line-height:1.45;
+  color:#5f4d57;
+  overflow-wrap:anywhere;
+}
