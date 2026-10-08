@@ -52,8 +52,8 @@ CSP、外部通信制限、バックアップJSONの厳格検証、画像形式�
 
 ## 公開版
 
-- Version: 1.01.07
-- Release date: 2026-10-08
+- Version: 1.01.08
+- Release date: 2026-10-09
 - Public URL: https://photomanager-0429.github.io/
 - 公開前確認: `RELEASE_CHECKLIST.md`
 
@@ -77,6 +77,11 @@ CSP、外部通信制限、バックアップJSONの厳格検証、画像形式�
 
 名前専用の囲みを撤廃し、メンバーカードの背景へ絵文字と名前を直接表示する形に統一しました。全画面・メンバー選択・ボトムシートの最下部操作と、iPhoneキーボード表示時の入力欄スクロールも改善しています。
 
+
+## Ver1.01.08
+
+- ツアー・コンサート・フェスのセットに、正式なツアー名・イベント名を表示（`data/events.json` の `eventName`）
+- 詳細は `CHANGELOG.md` を確認してください
 
 ## Ver1.01.07
 
