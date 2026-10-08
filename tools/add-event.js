@@ -156,13 +156,18 @@
     $("pvSort").textContent = $("sortInput").value || "-";
     $("pvPeriod").textContent = $("periodInput").value || "-";
     $("pvOfficial").textContent = $("officialNameInput").value || "-";
-    $("pvShownPeriod").textContent = $("periodInput").value || "-";
+    $("pvShownPeriod").textContent = currentEventName() || $("periodInput").value || "-";
     $("pvShownWork").textContent = `${work || "（衣装名・楽曲名が未入力）"}｜${selectedCategory()}`;
+  }
+  // Ver1.01.08：イベントのセットだけ、ツアー名・イベント名を入れられる（アプリでは時期の代わりに一覧の上の行へ出る）
+  function currentEventName() {
+    return selectedCategory() === "イベント" ? cleanText($("eventNameInput").value, 80) : "";
   }
   function syncCategoryFields() {
     const isRegular = selectedCategory() === "通常";
     $("ordinalField").hidden = !isRegular;
     $("labelField").hidden = isRegular;
+    $("eventNameField").hidden = selectedCategory() !== "イベント";
     refreshDefaultOrdinal();
     refreshAuto();
   }
@@ -229,7 +234,7 @@
       chip.className = `chip${draft ? " draft" : ""}`;
       chip.textContent = draft ? "未コミット" : "公開済み";
       const title = document.createElement("b");
-      title.textContent = `${entry.period || entry.id}｜${entry.work || entry.officialName}`;
+      title.textContent = `${entry.eventName || entry.period || entry.id}｜${entry.work || entry.officialName}`;
       line.append(chip, title);
       const meta = document.createElement("small");
       const exclude = Array.isArray(entry.excludeMemberIds) && entry.excludeMemberIds.length
@@ -290,6 +295,7 @@
           sort: Number(entry.sort),
           category: entry.category,
           period: entry.period,
+          ...(entry.eventName ? {eventName: entry.eventName} : {}),
           work: entry.work,
           officialUrl: entry.officialUrl || "",
           addedDate: entry.addedDate || ""
@@ -349,6 +355,8 @@
 
     const checked = checkUrl($("urlInput").value.trim());
     const entry = {officialName, id, sort, category, period, work, officialUrl: checked.url, addedDate, excludeMemberIds};
+    const eventName = currentEventName();
+    if (eventName) entry.eventName = eventName; // 同じツアーのセットを続けて入れやすいよう、入力欄は空にしない
     if ($("setTypeInput").value === "5") entry.positions = FIVE_POSITIONS.map(position => ({...position}));
     state.drafts.push(entry);
     saveDrafts();
@@ -475,7 +483,7 @@
       refreshDefaultOrdinal();
       refreshAuto();
     }));
-    ["ordinalInput", "labelInput", "workInput"].forEach(id => {
+    ["ordinalInput", "labelInput", "workInput", "eventNameInput"].forEach(id => {
       $(id).addEventListener("input", refreshAuto);
       $(id).addEventListener("change", refreshAuto);
     });
