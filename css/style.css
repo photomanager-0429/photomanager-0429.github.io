@@ -2205,3 +2205,340 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
 .sheet-field-row .sheet-field.hidden{display:none}
 .enclosed-layout-preview{margin:-6px 2px 15px;color:#8d6c7a;font-size:11px;font-weight:700;overflow-wrap:anywhere}
 .enclosed-slot i{max-width:calc(100% - 10px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* =====================================================================
+   Ver1.01.07：一覧の上の道具を小さく・所持状況ボタン・カードの見やすさ
+   ===================================================================== */
+:root{--topbar-h:68px}
+
+/* --- 一覧の上の道具 ---
+   名前の行だけが常に上へ残り、検索・絞り込みはページと一緒に流れる。
+   カテゴリと所持状況の行は、名前の行のすぐ下に残る。 */
+.manager-tools{background:color-mix(in srgb,var(--soft) 78%,white)}
+.manager-tools>.top-inner{padding-top:10px;padding-bottom:4px}
+.manager-tools .searchbox{margin-top:0}
+.manager-sticky-tools{
+  position:sticky;
+  top:calc(var(--topbar-h) - 1px);
+  z-index:29;
+  background:color-mix(in srgb,var(--soft) 78%,white);
+  border-bottom:1px solid var(--line);
+}
+.manager-sticky-tools>.top-inner{padding-top:8px;padding-bottom:9px}
+.manager-sticky-tools .category-tabs{margin-top:0}
+
+/* 絞り込み・並び順・リセットを1行に */
+.manager-tools .unified-filter-toolbar{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;
+  gap:7px;
+  margin-top:8px;
+}
+.manager-tools .filter-action-button{min-height:42px;justify-content:center}
+.manager-tools .reset-view-button{
+  grid-column:auto;
+  min-height:42px;
+  padding:0 12px;
+}
+.manager-tools .reset-view-button.is-idle{opacity:.45}
+.manager-tools .active-filter-chips{margin-top:7px}
+
+/* 検索語を消すボタン */
+.searchbox .search-clear{
+  flex:none;
+  width:30px;
+  height:30px;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:#f1e6ec;
+  color:#8a6474;
+  font-size:17px;
+  line-height:1;
+}
+#searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}
+
+/* 所持状況の切り替え（未所持あり・あと1種・全部未所持・所持あり・コンプ） */
+.ownership-chips{
+  display:flex;
+  gap:6px;
+  margin-top:7px;
+  overflow-x:auto;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+.ownership-chips::-webkit-scrollbar{display:none}
+.ownership-chip{
+  flex:none;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  min-height:36px;
+  padding:5px 11px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(255,255,255,.9);
+  color:#7a5565;
+  font-size:11px;
+}
+.ownership-chip b{font-weight:900;white-space:nowrap}
+.ownership-chip small{
+  min-width:20px;
+  padding:1px 5px;
+  border-radius:999px;
+  background:#f6ecf1;
+  color:#8d6c7a;
+  font-size:9px;
+  font-weight:800;
+  font-variant-numeric:tabular-nums;
+  text-align:center;
+}
+.ownership-chip.selected{
+  border-color:var(--accent);
+  background:var(--accent);
+  color:#fff;
+}
+.ownership-chip.selected small{background:rgba(255,255,255,.28);color:#fff}
+.sheet-note{margin:13px 2px 0;color:var(--muted);font-size:11px;line-height:1.6}
+
+/* --- 一覧の上の集計 --- */
+#collectionPage .summary{margin:2px 0 8px;gap:7px}
+#collectionPage .summary-card{padding:8px 6px;border-radius:14px}
+#collectionPage .summary-card b{font-size:17px}
+.summary-progress{margin:0 2px 11px}
+.summary-progress-line{display:flex;align-items:baseline;gap:7px;color:var(--muted);font-size:11px}
+.summary-progress-line b{color:var(--text);font-size:14px;font-weight:900}
+.summary-progress-line small{margin-left:auto;font-size:10px;font-variant-numeric:tabular-nums}
+.summary-progress .bar{height:7px;margin-top:4px}
+#collectionPage .collection-mode-actions{margin:0 0 8px}
+#collectionPage .notice{
+  margin:14px 0 0;
+  padding:0 3px;
+  text-align:center;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--muted);
+  font-size:10px;
+}
+
+/* --- 年の見出し --- */
+.year-divider{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin:5px 0 -4px;
+  padding:5px 3px;
+  border:0;
+  background:transparent;
+  color:var(--text);
+  text-align:left;
+}
+.year-divider:first-child{margin-top:0}
+.year-divider b{font-size:15px;font-weight:900}
+.year-divider small{color:var(--muted);font-size:11px}
+.year-divider i{
+  margin-left:auto;
+  padding:5px 10px;
+  border:1px solid color-mix(in srgb,var(--accent) 34%,white);
+  border-radius:999px;
+  background:rgba(255,255,255,.82);
+  color:var(--accent);
+  font-size:10px;
+  font-style:normal;
+  font-weight:800;
+}
+.sort-choice .year-jump-count{color:#8d6c7a;font-size:11px;font-weight:800}
+
+/* --- カード --- */
+/* セット名は省略せず、3行まで折り返す */
+#collectionPage .work{
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  white-space:normal;
+  text-overflow:clip;
+  overflow-wrap:anywhere;
+}
+/* メンバーごとの一覧では、カード1枚ごとの名前を出さない（画面の一番上に出ているため） */
+#collectionPage .event-card>.member-line{display:none}
+#collectionPage .event-card>.member-line+.positions{padding-top:12px}
+.event-card{scroll-margin-top:calc(var(--topbar-h) + 112px)}
+.event-card.jump-highlight{animation:jumpGlow 1.9s ease-out}
+@keyframes jumpGlow{
+  0%,55%{box-shadow:0 0 0 3px var(--accent),0 10px 28px rgba(94,61,79,.1)}
+  100%{box-shadow:0 0 0 3px transparent,0 10px 28px rgba(94,61,79,.1)}
+}
+
+/* ＋・−・♡・直筆のボタンを押しやすい大きさに */
+#collectionPage .pos-row{gap:6px;padding:9px 6px 8px}
+#collectionPage .pos-actions{gap:6px 5px}
+#collectionPage .pos-actions .counter{grid-template-columns:34px minmax(0,1fr) 34px;gap:2px}
+#collectionPage .counter button{width:34px;height:34px;padding:0;font-size:18px}
+#collectionPage .icon-btn{height:32px}
+#collectionPage .mini-actions button{width:30px;height:30px}
+/* メモ：ボタンに position:relative を付けると、数千個のボタンすべてが別の描画単位になり、
+   文字入力やスクロールのたびの画面更新が遅くなる（計測で確認）。付けないこと。 */
+@media(max-width:380px){
+  #collectionPage .pos-actions .counter{grid-template-columns:32px minmax(0,1fr) 32px;gap:1px}
+  #collectionPage .counter button{width:32px;height:32px}
+}
+@media(max-width:345px){
+  #collectionPage .pos-actions .counter{grid-template-columns:28px minmax(0,1fr) 28px}
+  #collectionPage .counter button{width:28px;height:28px;font-size:16px}
+  #collectionPage .mini-actions button{width:27px;height:27px}
+}
+
+/* 押した時の手ごたえ（少し縮む）。連打しても文字が選択されないようにする */
+#collectionPage .counter button,
+#collectionPage .icon-btn,
+#collectionPage .mini-actions button,
+.ownership-chip,
+.category-tab,
+.year-divider{-webkit-tap-highlight-color:transparent}
+#collectionPage .counter button,
+#collectionPage .icon-btn,
+#collectionPage .mini-actions button{transition:transform .08s ease-out}
+#collectionPage .counter button:active,
+#collectionPage .icon-btn:active,
+#collectionPage .mini-actions button:active{transform:scale(.88)}
+.ownership-chip:active,.category-tab:active{transform:scale(.96)}
+#collectionPage .pos-actions,
+#collectionPage .mini-actions{-webkit-user-select:none;user-select:none}
+@media(prefers-reduced-motion:reduce){
+  #collectionPage .counter button,
+  #collectionPage .icon-btn,
+  #collectionPage .mini-actions button{transition:none}
+  .event-card.jump-highlight{animation-duration:.01s}
+}
+
+/* 持っている種類に色を付ける（未所持は名前を薄くする） */
+#collectionPage .pos-row>span{color:#a59aa5}
+#collectionPage .pos-row.owned{
+  border-color:color-mix(in srgb,var(--accent) 52%,white);
+  background:color-mix(in srgb,var(--soft) 40%,white);
+}
+#collectionPage .pos-row.owned>span{color:var(--accent)}
+#collectionPage .pos-row.owned>span::before{content:"✓ "}
+#collectionPage .mini-pos.owned,
+.quick-position-row.owned{
+  border-color:color-mix(in srgb,var(--accent) 45%,white);
+  background:color-mix(in srgb,var(--soft) 34%,white);
+}
+#collectionPage .mini-pos.owned .mini-label::before{content:"✓ "}
+
+/* --- クイック入力：並び順と「未所持ありだけ」を横に並べる --- */
+#quickPage .mode-filter-grid-with-sort{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#quickPage .mode-filter-grid-with-sort .mode-sort-button{grid-column:auto}
+.mode-toggle-button.on{border-color:#db709f;background:#fff0f6;color:#aa3d6d}
+
+/* --- 欲しい・提供・未所持の各項目：「一覧で開く」（見出しの行の右端） --- */
+.item-title+.item-meta{clear:both} /* ボタンの横に説明文が回り込んで、折り返しが増えないようにする */
+.item-jump-button{
+  float:right;
+  margin:-1px 0 2px 10px;
+  padding:3px 9px;
+  border:1px solid #e3a9c1;
+  border-radius:999px;
+  background:#fff6fa;
+  color:#b4466f;
+  font-size:11px;
+  font-weight:500; /* 件数の多い未所持一覧で描画が重くならないよう、太字にしない */
+  white-space:nowrap;
+}
+
+/* --- 統計：セットごとの状況 --- */
+.set-status-lead{margin:-6px 0 9px;color:var(--muted);font-size:11px}
+.set-status-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  min-height:46px;
+  margin-top:7px;
+  padding:0 12px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:#fff;
+  color:var(--text);
+  font-size:13px;
+  font-weight:800;
+  text-align:left;
+}
+.set-status-row b{margin-left:auto;font-variant-numeric:tabular-nums}
+.set-status-row i{color:#b9a5af;font-size:18px;font-style:normal}
+
+/* --- TOP：推しメンバーへの近道 --- */
+.home-shortcuts{display:grid;gap:8px;margin-bottom:10px}
+.home-shortcut{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+.home-shortcut-main{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  min-height:68px;
+  padding:9px 12px;
+  border:2px solid rgba(255,255,255,.86);
+  border-radius:18px;
+  background:var(--member-bg);
+  color:#2d2730;
+  text-align:left;
+  box-shadow:0 7px 18px rgba(91,42,62,.08);
+}
+.home-shortcut-avatar{
+  flex:none;
+  display:grid;
+  place-items:center;
+  width:44px;
+  height:44px;
+  overflow:hidden;
+  border:2px solid rgba(255,255,255,.9);
+  border-radius:50%;
+  background:rgba(255,255,255,.78);
+  font-size:23px;
+}
+.home-shortcut-avatar img{width:100%;height:100%;object-fit:cover}
+.home-shortcut-text{display:grid;gap:1px;min-width:0}
+.home-shortcut-text small{color:#5f4d57;font-size:9px;font-weight:900}
+.home-shortcut-text b{overflow:hidden;font-size:16px;text-overflow:ellipsis;white-space:nowrap}
+.home-shortcut-text i{color:#5f565e;font-size:10px;font-style:normal;font-weight:700}
+.home-shortcut-main>em{margin-left:auto;color:#7d6470;font-size:24px;font-style:normal;font-weight:300}
+.home-shortcut-missing{
+  display:grid;
+  place-content:center;
+  justify-items:center;
+  gap:3px;
+  min-width:96px;
+  padding:8px 10px;
+  border:2px solid rgba(255,255,255,.86);
+  border-radius:18px;
+  background:rgba(255,255,255,.94);
+  color:#a8446e;
+  box-shadow:0 7px 18px rgba(91,42,62,.08);
+}
+.home-shortcut-missing b{font-size:12px;font-weight:900}
+.home-shortcut-missing small{color:#8d747f;font-size:10px;font-weight:800}
+.home-shortcut-main:active,.home-shortcut-missing:active{transform:scale(.985)}
+.home-shortcut-hint{
+  width:100%;
+  padding:11px 12px;
+  border:1px dashed rgba(255,255,255,.9);
+  border-radius:14px;
+  background:rgba(255,255,255,.34);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  line-height:1.5;
+  text-align:left;
+}
+
+/* --- バージョン表示：画面の上に重ねず、TOPの一番下に置く --- */
+.version-label{
+  position:static;
+  display:block;
+  width:max-content;
+  max-width:100%;
+  margin:9px auto 0;
+  background:rgba(255,255,255,.62);
+  box-shadow:none;
+}
