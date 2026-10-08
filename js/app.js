@@ -139,10 +139,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.06",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.06",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.06",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.06",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.07",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.07",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.07",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.07",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -252,6 +252,7 @@ function initializeApp() {
     matrixYear:savedPrefs.matrixYear||"",
     matrixOrder:savedPrefs.matrixOrder||"asc",
     bulkMemberId:savedPrefs.bulkMemberId||"",
+    quickMissingOnly:false, // クイック入力の「未所持ありだけ」。その場かぎりの切り替えで、保存はしない
     counts:safeStorageObject(COUNT_KEY),
     signs:safeStorageObject(SIGN_KEY),
     wants:safeStorageObject(WANT_KEY),
@@ -883,7 +884,7 @@ function initializeApp() {
       if(pendingScrollTarget){
         const target=[...document.querySelectorAll("[data-event-id]")].find(node=>node.dataset.eventId===pendingScrollTarget);
         pendingScrollTarget="";
-        if(target){target.scrollIntoView({block:"start"});return}
+        if(target){scrollToCollectionNode(target);flashCollectionCard(target);return}
       }
       const top=Number(getScrollMemory()[scrollContextKey()]||0);
       window.scrollTo(0,top);
@@ -957,16 +958,84 @@ function initializeApp() {
     const el=document.getElementById("pageMemberFilter");
     if(el)el.onchange=e=>{state.pageMemberId=e.target.value;if(state.page==="stats")renderStats();if(state.page==="wishlist")renderWishlist();if(state.page==="trade")renderTrade()};
   }
+  // ===== Ver1.01.07：所持状況の絞り込み =====
+  // 「未所持あり」は、ヨリ・チュウ・ヒキなどのうち1種でも持っていないセット（以前は全部持っていないセットだけだった）
+  const OWNERSHIP_FILTERS=[["","すべて"],["unowned","未所持あり"],["almost","あと1種"],["none","全部未所持"],["owned","所持あり"],["complete","コンプ"]];
+  const OWNERSHIP_VALUES=OWNERSHIP_FILTERS.map(item=>item[0]);
+  function ownershipState(e,memberId){
+    const positions=eventPositions(e);
+    let owned=0;
+    for(let i=0;i<positions.length;i++)if(getCount(e.id,memberId,positions[i].id)>0)owned++;
+    return {owned,missing:positions.length-owned,total:positions.length};
+  }
+  function ownershipMatches(kind,s){
+    if(kind==="unowned")return s.missing>0;
+    if(kind==="almost")return s.missing===1&&s.owned>0;
+    if(kind==="none")return s.owned===0;
+    if(kind==="owned")return s.owned>0;
+    if(kind==="complete")return s.missing===0;
+    return true;
+  }
   function eventOwnershipMatches(e){
     if(!state.ownership||state.mode==="all")return true;
-    const counts=eventPositions(e).map(p=>getCount(e.id,state.memberId,p.id));
-    return state.ownership==="owned"?counts.some(n=>n>0):counts.every(n=>n===0);
+    return ownershipMatches(state.ownership,ownershipState(e,state.memberId));
+  }
+  function ownershipCounts(list){
+    const counts={"":list.length,unowned:0,almost:0,none:0,owned:0,complete:0};
+    list.forEach(e=>{
+      const s=ownershipState(e,state.memberId);
+      if(s.missing>0)counts.unowned++;else counts.complete++;
+      if(s.owned>0)counts.owned++;else counts.none++;
+      if(s.missing===1&&s.owned>0)counts.almost++;
+    });
+    return counts;
+  }
+  function renderOwnershipChips(base){
+    const box=$("collectionOwnershipChips");
+    if(!box)return;
+    const show=state.mode==="member"&&!!state.memberId;
+    box.classList.toggle("hidden",!show);
+    if(!show){box.innerHTML="";return}
+    const counts=ownershipCounts(base||collectionBaseList());
+    box.innerHTML=OWNERSHIP_FILTERS.map(([value,label])=>{
+      const selected=state.ownership===value;
+      return `<button type="button" class="ownership-chip${selected?" selected":""}" aria-pressed="${selected}" data-ownership="${value}"><b>${label}</b><small>${counts[value]}</small></button>`;
+    }).join("");
+    box.querySelectorAll("[data-ownership]").forEach(button=>button.onclick=()=>{
+      // 選択中のボタンをもう一度押したら「すべて」に戻す
+      const next=state.ownership===button.dataset.ownership?"":button.dataset.ownership;
+      if(state.ownership===next)return;
+      state.ownership=next;
+      savePreferences();
+      resetCollectionScroll();
+      renderCollection();
+    });
+    // 横に並びきらない時、選択中のボタンが見える位置まで横に送る。
+    // 位置を測ると画面全体の配置計算が走るので、一覧を描き終えた後（次の描画の直前）に回す
+    requestAnimationFrame(()=>{
+      const selected=box.querySelector(".ownership-chip.selected");
+      if(!selected)return;
+      const left=selected.offsetLeft-box.offsetLeft,right=left+selected.offsetWidth;
+      if(left<box.scrollLeft||right>box.scrollLeft+box.clientWidth)box.scrollLeft=Math.max(0,left-12);
+    });
+  }
+  function updateOwnershipChipCounts(){
+    const box=$("collectionOwnershipChips");
+    if(!box||box.classList.contains("hidden"))return;
+    const counts=ownershipCounts(collectionBaseList());
+    box.querySelectorAll("[data-ownership]").forEach(button=>{
+      const small=button.querySelector("small");
+      if(small)small.textContent=counts[button.dataset.ownership];
+    });
+  }
+  function resetCollectionScroll(){
+    window.scrollTo(0,0);
+    saveScrollPosition(); // 前の位置を覚えたままにすると、切り替え直後に余分なカードまで描いてしまう
   }
   function memberTotal(id){let t=0;const m=MEMBERS.find(x=>x.id===id);eligibleEventsForMember(m).forEach(e=>eventPositions(e).forEach(p=>t+=getCount(e.id,id,p.id)));return t}
   function collectionFilterEntries(){
     const entries=[];
     if(state.yearFilter)entries.push({key:"year",label:`${state.yearFilter}年`});
-    if(state.mode!=="all"&&state.ownership)entries.push({key:"ownership",label:state.ownership==="owned"?"所持あり":"未所持"});
     if(state.newFilter==="new")entries.push({key:"new",label:"NEWのみ"});
     if(state.mode==="all"&&state.oshiOnly)entries.push({key:"oshi",label:"推しだけ"});
     return entries;
@@ -1039,12 +1108,21 @@ function initializeApp() {
       if(state.category===button.dataset.category)return;
       state.category=button.dataset.category;
       savePreferences();
-      window.scrollTo(0,0);
+      resetCollectionScroll();
       renderCollection();
     });
   }
-  function renderCollectionFilterUi(){
+  function collectionViewChanged(){
+    return !!(state.category||state.yearFilter||state.search||state.newFilter||state.sort!=="desc"
+      ||(state.mode==="all"?state.oshiOnly:state.ownership));
+  }
+  function renderCollectionFilterUi(base){
     renderCategoryTabs();
+    renderOwnershipChips(base);
+    const reset=$("resetCollectionViewButton");
+    if(reset)reset.classList.toggle("is-idle",!collectionViewChanged());
+    const clear=$("clearSearchButton"),searchInput=$("searchInput");
+    if(clear&&searchInput)clear.classList.toggle("hidden",!searchInput.value);
     const entries=collectionFilterEntries();
     const count=$("collectionFilterCount");
     if(count){count.textContent=entries.length;count.classList.toggle("hidden",!entries.length)}
@@ -1132,6 +1210,11 @@ function initializeApp() {
     input.addEventListener("compositionstart",()=>{composing=true;clearTimeout(timer)});
     input.addEventListener("compositionend",()=>{composing=false;schedule()});
     input.addEventListener("input",event=>{if(composing||event.isComposing)return;schedule()});
+    // Ver1.01.07：キーボードの「検索／確定」を押したら、キーボードを閉じて結果を見やすくする（変換の確定中は何もしない）
+    input.addEventListener("keydown",event=>{
+      if(event.key!=="Enter"||composing||event.isComposing||event.keyCode===229)return;
+      clearTimeout(timer);timer=0;apply(input.value);input.blur();
+    });
   }
   let activeFilterPage="collection";
   function filterSheetField(label,content){return `<label class="sheet-field"><span>${label}</span>${content}</label>`}
@@ -1143,8 +1226,8 @@ function initializeApp() {
     if(page==="collection"){
       body.innerHTML=`
         ${filterSheetField("年代",`<select id="sheetYear">${yearOptions(state.yearFilter)}</select>`)}
-        ${state.mode!=="all"?filterSheetField("所持状況",`<select id="sheetOwnership"><option value="">すべて</option><option value="owned" ${state.ownership==="owned"?"selected":""}>所持ありのみ</option><option value="unowned" ${state.ownership==="unowned"?"selected":""}>未所持のみ</option></select>`):""}
-        <div class="sheet-toggle-group">${filterSheetToggle("sheetNew","NEWのみ",state.newFilter==="new")}${state.mode==="all"?filterSheetToggle("sheetOshi","推しだけ表示",state.oshiOnly):""}</div>`;
+        <div class="sheet-toggle-group">${filterSheetToggle("sheetNew","NEWのみ",state.newFilter==="new")}${state.mode==="all"?filterSheetToggle("sheetOshi","推しだけ表示",state.oshiOnly):""}</div>
+        ${state.mode!=="all"?'<p class="sheet-note">所持状況（未所持あり・あと1種・コンプ など）は、一覧の上に並んでいるボタンで切り替えられます。</p>':""}`;
     }else if(page==="wishlist"||page==="trade"){
       const selectedYear=page==="wishlist"?state.wishlistYear:state.tradeYear;
       body.innerHTML=`
@@ -1174,7 +1257,6 @@ function initializeApp() {
   function applyFilterSheet(){
     if(activeFilterPage==="collection"){
       state.yearFilter=$("sheetYear")?.value||"";
-      state.ownership=$("sheetOwnership")?.value||"";
       state.newFilter=$("sheetNew")?.checked?"new":"";
       if($("sheetOshi"))state.oshiOnly=$("sheetOshi").checked;
       savePreferences();closeUtilitySheet("filterSheetOverlay");renderCollection();
@@ -1205,6 +1287,7 @@ function initializeApp() {
       page==="matrix"?state.matrixOrder:
       state.missingEventOrder;
     const choices=page==="collection"?[["desc","新しい順"],["asc","古い順"],["new","NEW優先"]]:[["desc","新しい順"],["asc","古い順"]];
+    setSortSheetHeading("並び順","一覧の表示順を選択してください");
     $("sortSheetBody").innerHTML=`<div class="sort-choice-list">${choices.map(([value,label])=>`<button class="sort-choice ${current===value?"selected":""}" data-sort-value="${value}"><span>${label}</span><i>${current===value?"✓":""}</i></button>`).join("")}</div>`;
     document.querySelectorAll("[data-sort-value]").forEach(button=>button.onclick=()=>applySortChoice(button.dataset.sortValue));
     openUtilitySheet("sortSheetOverlay");
@@ -1251,23 +1334,27 @@ function initializeApp() {
     },{passive:true});
     sheet.addEventListener("touchcancel",reset,{passive:true});
   }
-  function filtered(){
+  // Ver1.01.07：所持状況以外の条件（カテゴリ・年代・NEW・検索）に合うセット。所持状況ボタンの件数にも使う
+  function collectionBaseList(){
     const q=normalizeText(state.search);
     const base=state.mode==="member"?eligibleEventsForMember(MEMBERS.find(m=>m.id===state.memberId)):EVENTS;
-    return base
-      .filter(e=>!state.category||e.category===state.category)
-      .filter(e=>!state.yearFilter||yearOf(e)===state.yearFilter)
-      .filter(eventOwnershipMatches)
-      .filter(e=>state.newFilter!=="new"||isNewEvent(e))
-      .filter(e=>!q||eventSearchText(e).includes(q))
-      .sort((a,b)=>{
-        if(state.sort==="asc")return a.sort-b.sort;
-        if(state.sort==="new"){
-          const newDiff=Number(isNewEvent(b))-Number(isNewEvent(a));
-          return newDiff||b.sort-a.sort;
-        }
-        return b.sort-a.sort;
-      });
+    return base.filter(e=>(!state.category||e.category===state.category)
+      &&(!state.yearFilter||yearOf(e)===state.yearFilter)
+      &&(state.newFilter!=="new"||isNewEvent(e))
+      &&(!q||eventSearchText(e).includes(q)));
+  }
+  function sortCollectionList(list){
+    return list.sort((a,b)=>{
+      if(state.sort==="asc")return a.sort-b.sort;
+      if(state.sort==="new"){
+        const newDiff=Number(isNewEvent(b))-Number(isNewEvent(a));
+        return newDiff||b.sort-a.sort;
+      }
+      return b.sort-a.sort;
+    });
+  }
+  function filtered(base=collectionBaseList()){
+    return sortCollectionList(base.filter(eventOwnershipMatches));
   }
   // Ver1.01.04：白に近いメンバーカラーは、文字・ボタン用の色だけ濃いグレーに置き換える（背景の白はそのまま）
   function readableAccent(color){
@@ -1313,7 +1400,7 @@ function initializeApp() {
     overlay.setAttribute("aria-hidden","true");
     document.body.classList.remove("selector-open");
   }
-function openMember(id){
+function openMember(id,preset=null){
     const destination=pendingMemberDestination||"collection";
     pendingMemberDestination="collection";
     closeMemberSelector();
@@ -1321,6 +1408,8 @@ function openMember(id){
     state.memberId=id;
     state.pageMemberId=id;
     resetCollectionView();
+    // Ver1.01.07：TOPの近道や統計から、所持状況を指定して開く
+    if(preset&&OWNERSHIP_VALUES.includes(preset.ownership))state.ownership=preset.ownership;
     savePreferences();
     theme(MEMBERS.find(m=>m.id===id));
     openManager(destination);
@@ -1353,9 +1442,12 @@ function openMember(id){
   function showPage(page,skipScrollSave=false){
     if(!skipScrollSave)saveScrollPosition();
     if($("homeScreen").classList.contains("hidden")===false){state.mode="all";state.memberId=null;theme(null);$("homeScreen").classList.add("hidden");$("managerScreen").classList.remove("hidden")}
+    pushManagerHistory();
     state.page=page;
     ["collection","quick","matrix","stats","wishlist","trade","missing","oshi","memberImages","bulkManage","backup","help","legal","about","enclosed"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
     $("managerTools").classList.toggle("hidden",page!=="collection");
+    const stickyTools=$("collectionStickyTools"); // 古いindex.htmlと組み合わさった時（アップロードの途中など）でも止まらないようにする
+    if(stickyTools)stickyTools.classList.toggle("hidden",page!=="collection");
     document.querySelectorAll(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
     updateHeader();
     if(page==="collection"){collectionEntering=true;renderCollection()}
@@ -1381,9 +1473,12 @@ function openMember(id){
     const search=normalizeText(kind==="quick"?state.quickSearch:state.matrixSearch);
     const year=kind==="quick"?state.quickYear:state.matrixYear;
     const order=kind==="quick"?state.quickOrder:state.matrixOrder;
+    // Ver1.01.07：「未所持ありだけ」の時も、いま開いているセットは残す（登録してコンプになった瞬間に、行き先が分からなくならないように）
+    const missingOnly=kind==="quick"&&state.quickMissingOnly&&!!member;
     return source
       .filter(e=>!year||yearOf(e)===year)
       .filter(e=>!search||eventSearchText(e).includes(search))
+      .filter(e=>!missingOnly||e.id===state.quickEventId||ownershipState(e,member.id).missing>0)
       .sort((a,b)=>order==="desc"?b.sort-a.sort:a.sort-b.sort);
   }
   function ensureSelectedEvent(kind,list){
@@ -1410,12 +1505,19 @@ function openMember(id){
     const member=MEMBERS.find(m=>m.id===state.memberId);
     if(!member){openMemberSelector("quick");return}
     $("quickPage").innerHTML=`<div class="page-head mode-page-head"><div><h2>⚡ クイック入力</h2><p>${member.emoji} ${esc(member.name)}｜購入後の登録を素早く行えます</p></div><button id="quickBackToList" class="mode-back-button">一覧へ</button></div>
-      <div class="mode-filter-grid mode-filter-grid-with-sort"><div class="searchbox"><span>🔍</span><input id="quickSearchInput" type="search" value="${esc(state.quickSearch)}" placeholder="イベント名を検索"></div><select id="quickYearFilter">${yearOptions(state.quickYear)}</select><button id="quickSortButton" class="mode-sort-button"><span>↕</span>${sortLabel("quick")}</button></div>
+      <div class="mode-filter-grid mode-filter-grid-with-sort"><div class="searchbox"><span>🔍</span><input id="quickSearchInput" type="search" value="${esc(state.quickSearch)}" placeholder="イベント名を検索"></div><select id="quickYearFilter">${yearOptions(state.quickYear)}</select><button id="quickSortButton" class="mode-sort-button"><span>↕</span>${sortLabel("quick")}</button><button type="button" id="quickMissingToggle" class="mode-sort-button mode-toggle-button${state.quickMissingOnly?" on":""}" aria-pressed="${state.quickMissingOnly}"><span>${state.quickMissingOnly?"✓":"○"}</span>未所持ありだけ</button></div>
       <div id="quickBody"></div>`;
     $("quickBackToList").onclick=()=>showPage("collection");
     bindDeferredSearch($("quickSearchInput"),value=>{state.quickSearch=value;savePreferences();renderQuickBody()});
     $("quickYearFilter").onchange=e=>{state.quickYear=e.target.value;savePreferences();renderQuickBody()};
     $("quickSortButton").onclick=()=>openSortSheet("quick");
+    $("quickMissingToggle").onclick=()=>{
+      state.quickMissingOnly=!state.quickMissingOnly;
+      // いま開いているセットがコンプ済みなら、未所持のあるセットへ移る
+      const current=eventById(state.quickEventId);
+      if(state.quickMissingOnly&&current&&ownershipState(current,member.id).missing===0)state.quickEventId="";
+      renderQuick();
+    };
     renderQuickBody();
   }
   // Ver1.01.04：検索欄は作り直さず、選択中のセットの部分だけを更新する（日本語入力が途切れない）
@@ -1428,7 +1530,9 @@ function openMember(id){
         <div class="quick-event-head"><div><span>${esc(event.period)}</span><h3>${esc(event.work||event.officialName)}</h3><small>${esc(event.category)}｜${index+1}/${list.length}</small></div><button id="quickBulkButton" class="card-bulk-button">⋯ 一括操作</button></div>
         <div id="quickPositionList" class="quick-position-list"></div>
         <div class="quick-nav-row"><button id="quickPreviousButton" ${index<=0?"disabled":""}>← 前へ</button><button id="quickNextButton" ${index>=list.length-1?"disabled":""}>次へ →</button></div>
-      </article>`:'<div class="empty-state"><span>🔍</span><h3>該当するイベントがありません</h3><p>検索語または年代を変更してください。</p></div>';
+      </article>`:state.quickMissingOnly&&!state.quickSearch&&!state.quickYear
+        ?'<div class="empty-state"><span>🎉</span><h3>未所持のセットはありません</h3><p>すべてのセットがコンプ済みです。</p></div>'
+        :'<div class="empty-state"><span>🔍</span><h3>該当するイベントがありません</h3><p>検索語・年代・「未所持ありだけ」を変更してください。</p></div>';
     if(!event)return;
     $("quickEventSelect").onchange=e=>{state.quickEventId=e.target.value;savePreferences();renderQuickBody()};
     fillQuickPositions(event,member);
@@ -1443,8 +1547,8 @@ function openMember(id){
     if(!positionList)return;
     positionList.innerHTML="";
     eventPositions(event).forEach(p=>{
-      const row=document.createElement("div");row.className="quick-position-row";
-      row.innerHTML=`<div class="quick-position-title"><b>${esc(p.name)}</b><small>${getCount(event.id,member.id,p.id)>0?"所持済み":"未所持"}</small></div><div class="quick-stepper"><button class="minus">−</button><strong>${getCount(event.id,member.id,p.id)}</strong><button class="plus">＋</button></div><button class="quick-toggle want ${isWanted(event.id,member.id,p.id)?"on":""}">♡</button><button class="quick-toggle sign ${isSigned(event.id,member.id,p.id)?"on":""}">✍️</button>`;
+      const row=document.createElement("div");row.className=`quick-position-row${getCount(event.id,member.id,p.id)>0?" owned":""}`;
+      row.innerHTML=`<div class="quick-position-title"><b>${esc(p.name)}</b><small>${getCount(event.id,member.id,p.id)>0?"所持済み":"未所持"}</small></div><div class="quick-stepper"><button class="minus" aria-label="${esc(p.name)}を1枚減らす">−</button><strong>${getCount(event.id,member.id,p.id)}</strong><button class="plus" aria-label="${esc(p.name)}を1枚増やす">＋</button></div><button class="quick-toggle want ${isWanted(event.id,member.id,p.id)?"on":""}" aria-label="${esc(p.name)}を欲しいに登録" aria-pressed="${isWanted(event.id,member.id,p.id)}">♡</button><button class="quick-toggle sign ${isSigned(event.id,member.id,p.id)?"on":""}" aria-label="${esc(p.name)}を直筆ありにする" aria-pressed="${isSigned(event.id,member.id,p.id)}">✍️</button>`;
       row.querySelector(".minus").onclick=()=>{setCount(event.id,member.id,p.id,Math.max(0,getCount(event.id,member.id,p.id)-1));fillQuickPositions(event,member)};
       row.querySelector(".plus").onclick=()=>{setCount(event.id,member.id,p.id,getCount(event.id,member.id,p.id)+1);fillQuickPositions(event,member)};
       row.querySelector(".want").onclick=()=>{toggleWant(event.id,member.id,p.id);fillQuickPositions(event,member)};
@@ -1544,7 +1648,15 @@ function openMember(id){
     }));
     return{total,types,signed,wanted,possible,rate:possible?Math.round(types/possible*100):0};
   }
-  function updateSummary(list){const s=statsFor(scopeMembers());$("ownedTotal").textContent=s.total;$("ownedTypes").textContent=s.types;$("signedTotal").textContent=s.signed}
+  function updateSummary(list){
+    const s=statsFor(scopeMembers());
+    $("ownedTotal").textContent=s.total;$("ownedTypes").textContent=s.types;$("signedTotal").textContent=s.signed;
+    // Ver1.01.07：コンプ率を一覧の上にも出す
+    const rate=$("compRateText"),detail=$("compRateDetail"),bar=$("compRateBar");
+    if(rate)rate.textContent=`${s.rate}%`;
+    if(detail)detail.textContent=`${s.types} / ${s.possible}種`;
+    if(bar)bar.style.width=`${s.rate}%`;
+  }
   function complete(e,m){return eventPositions(e).every(p=>getCount(e.id,m.id,p.id)>0)}
   // ===== Ver1.01.04：1枚の変更で一覧全体を作り直さず、変わった所だけを書き換える =====
   function allCardSummaryText(e,eligible=eligibleMembersForEvent(e)){
@@ -1576,11 +1688,19 @@ function openMember(id){
       badge.remove();
     }
   }
-  function refreshCollectionCell(row,e,m,p){
-    const num=row.querySelector(".num");
-    if(num)num.textContent=getCount(e.id,m.id,p.id);
-    row.querySelector(".sign")?.classList.toggle("on",isSigned(e.id,m.id,p.id));
-    row.querySelector(".want")?.classList.toggle("on",isWanted(e.id,m.id,p.id));
+  const prefersReducedMotion=window.matchMedia?window.matchMedia("(prefers-reduced-motion: reduce)"):null;
+  function refreshCollectionCell(row,e,m,p,countChanged=false){
+    const num=row.querySelector(".num"),count=getCount(e.id,m.id,p.id);
+    if(num)num.textContent=count;
+    // Ver1.01.07：持っている種類は色を付けて、ひと目で分かるようにする
+    row.classList.toggle("owned",count>0);
+    if(countChanged&&num&&num.animate&&!(prefersReducedMotion&&prefersReducedMotion.matches)){
+      num.animate([{transform:"scale(1.4)"},{transform:"scale(1)"}],{duration:170,easing:"ease-out"});
+    }
+    const sign=row.querySelector(".sign"),want=row.querySelector(".want");
+    if(sign){sign.classList.toggle("on",isSigned(e.id,m.id,p.id));sign.setAttribute("aria-pressed",String(isSigned(e.id,m.id,p.id)))}
+    if(want){want.classList.toggle("on",isWanted(e.id,m.id,p.id));want.setAttribute("aria-pressed",String(isWanted(e.id,m.id,p.id)))}
+    if(countChanged)updateOwnershipChipCounts();
     const card=row.closest(".event-card");
     if(card){
       if(state.mode==="all"){
@@ -1592,25 +1712,122 @@ function openMember(id){
     }
     updateSummary();
   }
-  function renderPositionRow(e,m,p,compact=false){const row=document.createElement("div");row.className=compact?"mini-pos":"pos-row";row.innerHTML=compact?`<div class="mini-label">${p.name}</div><div class="mini-actions"><button class="minus">−</button><b class="num">${getCount(e.id,m.id,p.id)}</b><button class="plus">＋</button><button class="wide sign ${isSigned(e.id,m.id,p.id)?"on":""}">✍️</button><button class="wide want ${isWanted(e.id,m.id,p.id)?"on":""}">♡</button></div>`:`<span>${p.name}</span><div class="pos-actions"><button class="icon-btn want ${isWanted(e.id,m.id,p.id)?"on":""}">♡</button><button class="icon-btn sign ${isSigned(e.id,m.id,p.id)?"on":""}">✍️</button><div class="counter"><button class="minus">−</button><span class="count num">${getCount(e.id,m.id,p.id)}</span><button class="plus">＋</button></div></div>`;
-  const afterChange=()=>refreshCollectionCell(row,e,m,p);
-  row.querySelector(".minus").onclick=()=>{setCount(e.id,m.id,p.id,Math.max(0,getCount(e.id,m.id,p.id)-1));afterChange()};
-  row.querySelector(".plus").onclick=()=>{setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)+1);afterChange()};
-  row.querySelector(".sign").onclick=()=>{toggleSign(e.id,m.id,p.id);afterChange()};
-  row.querySelector(".want").onclick=()=>{toggleWant(e.id,m.id,p.id);afterChange()};
-  return row}
+  function renderPositionRow(e,m,p,compact=false){
+    const row=document.createElement("div");
+    const count=getCount(e.id,m.id,p.id),signed=isSigned(e.id,m.id,p.id),wanted=isWanted(e.id,m.id,p.id),name=esc(p.name);
+    row.className=(compact?"mini-pos":"pos-row")+(count>0?" owned":"");
+    // Ver1.01.07：読み上げ（VoiceOver）で、どのボタンか分かるように名前を付ける
+    const minus=`<button class="minus" aria-label="${name}を1枚減らす">−</button>`,plus=`<button class="plus" aria-label="${name}を1枚増やす">＋</button>`;
+    row.innerHTML=compact
+      ?`<div class="mini-label">${name}</div><div class="mini-actions">${minus}<b class="num">${count}</b>${plus}<button class="wide sign ${signed?"on":""}" aria-label="${name}を直筆ありにする" aria-pressed="${signed}">✍️</button><button class="wide want ${wanted?"on":""}" aria-label="${name}を欲しいに登録" aria-pressed="${wanted}">♡</button></div>`
+      :`<span>${name}</span><div class="pos-actions"><button class="icon-btn want ${wanted?"on":""}" aria-label="${name}を欲しいに登録" aria-pressed="${wanted}">♡</button><button class="icon-btn sign ${signed?"on":""}" aria-label="${name}を直筆ありにする" aria-pressed="${signed}">✍️</button><div class="counter">${minus}<span class="count num">${count}</span>${plus}</div></div>`;
+    row.querySelector(".minus").onclick=()=>{
+      if(getCount(e.id,m.id,p.id)<=0)return; // 0枚の時は何も変わらないので、保存も描き直しもしない
+      setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)-1);refreshCollectionCell(row,e,m,p,true);
+    };
+    row.querySelector(".plus").onclick=()=>{setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)+1);refreshCollectionCell(row,e,m,p,true)};
+    row.querySelector(".sign").onclick=()=>{toggleSign(e.id,m.id,p.id);refreshCollectionCell(row,e,m,p)};
+    row.querySelector(".want").onclick=()=>{toggleWant(e.id,m.id,p.id);refreshCollectionCell(row,e,m,p)};
+    return row;
+  }
   function renderMemberCard(e,m){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div></div><div class="badges"><span class="badge">${esc(e.category)}</span>${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}${complete(e,m)?'<span class="badge complete">COMPLETE</span>':''}</div></div></div><div class="member-line">${m.emoji} ${m.name}</div><div class="positions"></div><div class="event-footer"></div>`;
   eventPositions(e).forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;f.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);return card}
   function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e);card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div><div class="all-summary">${allCardSummaryText(e,eligible)}</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];card.replaceWith(renderAllCard(e))};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;eventPositions(e).forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
   // Ver1.01.04：画面に見える分（戻す予定のスクロール位置まで）を先に描き、残りは少しずつ足す
   let collectionRenderToken=0;
   let collectionEntering=false; // ほかの画面から一覧へ入った直後かどうか（showPageが立てる）
+  // ===== Ver1.01.07：年の見出し・年への移動・目的のセットへの移動 =====
+  let collectionRun=null; // いま描いている一覧の途中経過（続きを先に描きたい時に使う）
+  function collectionEmptyHtml(base){
+    // ほかの条件には合うセットがあるのに、所持状況で0件になった時は、理由が分かる文にする
+    if(state.mode==="member"&&state.ownership&&base.length){
+      const messages={
+        unowned:["🎉","未所持のセットはありません","この条件のセットは、すべてコンプしています。"],
+        almost:["🔍","あと1種でコンプのセットはありません","上のボタンで、ほかの所持状況に切り替えてみてください。"],
+        none:["🔍","全部未所持のセットはありません","この条件のセットは、どれも1種以上持っています。"],
+        owned:["🔍","所持しているセットはまだありません","＋を押して枚数を登録すると、ここに並びます。"],
+        complete:["🔍","コンプしたセットはまだありません","全種類そろったセットが、ここに並びます。"]
+      };
+      const message=messages[state.ownership];
+      if(message)return `<div class="empty-state"><span>${message[0]}</span><h3>${message[1]}</h3><p>${message[2]}</p><button id="resetFiltersButton">条件をリセット</button></div>`;
+    }
+    return `<div class="empty-state"><span>🔍</span><h3>該当するデータがありません</h3><p>検索条件やフィルターを変更してください。</p><button id="resetFiltersButton">条件をリセット</button></div>`;
+  }
+  function yearLabel(year){return year==="不明"?"年不明":`${year}年`}
+  function yearDividerNode(year,count){
+    const node=document.createElement("button");
+    node.type="button";
+    node.className="year-divider";
+    node.dataset.year=year;
+    node.setAttribute("aria-label",`${yearLabel(year)}、${count}セット。押すと年を選んで移動できます`);
+    const label=document.createElement("b");
+    label.textContent=yearLabel(year);
+    const size=document.createElement("small");
+    size.textContent=`${count}セット`;
+    const hint=document.createElement("i");
+    hint.textContent="年を選ぶ ▾";
+    node.appendChild(label);node.appendChild(size);node.appendChild(hint);
+    node.onclick=openYearJumpSheet;
+    return node;
+  }
+  function setSortSheetHeading(title,lead){
+    const heading=$("sortSheetTitle");
+    if(!heading)return;
+    heading.textContent=title;
+    const text=heading.parentElement?heading.parentElement.querySelector("p"):null;
+    if(text)text.textContent=lead;
+  }
+  // 画面の上に残る帯（名前の行＋カテゴリ・所持状況の行）の高さ。この下に目的の場所が来るように移動する
+  function collectionStickyOffset(){
+    const bar=document.querySelector(".topbar"),tools=$("collectionStickyTools");
+    return (bar?bar.offsetHeight:0)+(tools&&!tools.classList.contains("hidden")?tools.offsetHeight:0)+10;
+  }
+  function scrollToCollectionNode(node){
+    const top=node.getBoundingClientRect().top+window.scrollY-collectionStickyOffset();
+    window.scrollTo(0,Math.max(0,Math.round(top)));
+  }
+  function flashCollectionCard(card){
+    card.classList.add("jump-highlight");
+    setTimeout(()=>card.classList.remove("jump-highlight"),1900);
+  }
+  // 一覧は少しずつ描いているので、移動先がまだ描かれていなければ、そこまで先に描く
+  function renderCollectionThrough(eventId){
+    const run=collectionRun;
+    if(!run||run.token!==collectionRenderToken)return false;
+    const target=run.list.findIndex(e=>e.id===eventId);
+    if(target<0)return false;
+    while(run.position()<=target)run.appendChunk(24);
+    return true;
+  }
+  function openYearJumpSheet(){
+    const run=collectionRun;
+    if(!run||run.token!==collectionRenderToken)return;
+    const years=[];
+    run.list.forEach(e=>{
+      const year=yearOf(e),last=years[years.length-1];
+      if(last&&last.year===year)last.count++;
+      else years.push({year,count:1,eventId:e.id});
+    });
+    setSortSheetHeading("年を選んで移動","選んだ年の先頭へ移動します");
+    const body=$("sortSheetBody");
+    body.innerHTML=`<div class="sort-choice-list">${years.map((item,index)=>`<button type="button" class="sort-choice" data-year-jump="${index}"><span>${esc(yearLabel(item.year))}</span><small class="year-jump-count">${item.count}セット</small></button>`).join("")}</div>`;
+    body.querySelectorAll("[data-year-jump]").forEach(button=>button.onclick=()=>{
+      const item=years[Number(button.dataset.yearJump)];
+      closeUtilitySheet("sortSheetOverlay");
+      if(!item||!renderCollectionThrough(item.eventId))return;
+      const divider=[...$("eventList").querySelectorAll(".year-divider")].find(node=>node.dataset.year===item.year);
+      if(divider)scrollToCollectionNode(divider);
+    });
+    openUtilitySheet("sortSheetOverlay");
+  }
   function renderCollection(){
-    renderCollectionFilterUi();
-    const list=filtered();
+    const base=collectionBaseList();
+    renderCollectionFilterUi(base);
+    const list=filtered(base);
     updateSummary(list);
     const container=$("eventList");
     const token=++collectionRenderToken;
+    collectionRun=null;
     // その場で描き直す時だけ、今の高さを仮に確保する。ほかの画面から入った時は、
     // 残っている前の内容の高さを測ると無駄な配置計算が走るので測らない
     const previousHeight=collectionEntering?0:container.offsetHeight;
@@ -1620,23 +1837,37 @@ function openMember(id){
     container.innerHTML="";
     if(!list.length){
       container.style.minHeight="";
-      container.innerHTML=`<div class="empty-state"><span>🔍</span><h3>該当するデータがありません</h3><p>検索条件やフィルターを変更してください。</p><button id="resetFiltersButton">条件をリセット</button></div>`;
+      container.innerHTML=collectionEmptyHtml(base);
       document.getElementById("resetFiltersButton").onclick=()=>resetCollectionView({render:true,scrollTop:true});
       return;
     }
     const member=state.mode==="all"?null:MEMBERS.find(x=>x.id===state.memberId);
     const buildCard=e=>member?renderMemberCard(e,member):renderAllCard(e);
-    let index=0;
+    // Ver1.01.07：年が変わる所に見出しを入れる（NEW優先の時は年が前後するので入れない）
+    const showYears=state.sort!=="new";
+    const yearCounts=new Map();
+    if(showYears)list.forEach(e=>yearCounts.set(yearOf(e),(yearCounts.get(yearOf(e))||0)+1));
+    let index=0,lastYear=null;
     const appendChunk=size=>{
       const frag=document.createDocumentFragment();
       const end=Math.min(list.length,index+size);
-      for(;index<end;index++)frag.appendChild(buildCard(list[index]));
+      for(;index<end;index++){
+        const e=list[index];
+        if(showYears&&yearOf(e)!==lastYear){
+          lastYear=yearOf(e);
+          frag.appendChild(yearDividerNode(lastYear,yearCounts.get(lastYear)));
+        }
+        frag.appendChild(buildCard(e));
+      }
       container.appendChild(frag);
     };
+    collectionRun={token,list,appendChunk,position:()=>index};
+    // 欲しい一覧などから「一覧で開く」で来た時は、目的のセットまで先に描く
+    const targetIndex=pendingScrollTarget?list.findIndex(e=>e.id===pendingScrollTarget):-1;
     const contentBottom=()=>{const last=container.lastElementChild;return last?last.getBoundingClientRect().bottom+window.scrollY:0};
     const savedTop=Number(getScrollMemory()[scrollContextKey()]||0);
     const needBottom=Math.max(window.scrollY,savedTop)+window.innerHeight*1.5;
-    do{appendChunk(12)}while(index<list.length&&contentBottom()<needBottom);
+    do{appendChunk(12)}while(index<list.length&&(contentBottom()<needBottom||index<=targetIndex));
     if(index>=list.length){container.style.minHeight="";return}
     const step=()=>{
       if(token!==collectionRenderToken)return;
@@ -1659,9 +1890,44 @@ function openMember(id){
     const title=singleMember
       ?`${memberAvatarMarkup(singleMember,"stats-member-avatar")}<div><small>メンバー別統計</small><h2>${esc(singleMember.name)}</h2></div>`
       :`<span class="stats-all-icon">🌈</span><div><small>全体統計</small><h2>全メンバー</h2><p>メンバーごとの収集状況を確認できます</p></div>`;
-    $("statsPage").innerHTML=`<div class="page-head stats-themed-head" style="${statsVars}"><div class="stats-title-row">${title}</div></div><div class="page-filter dual-filter"><select id="pageMemberFilter">${pageMemberOptions()}</select><button id="statsOshiToggle" class="oshi-toggle ${state.oshiOnly?"on":""}">👑 推しだけ</button></div><div class="stat-grid stats-color-grid" style="${statsVars}"><div class="big-stat"><b>${all.total}</b><span>総所持枚数</span></div><div class="big-stat"><b>${all.types}</b><span>所持種類数</span></div><div class="big-stat"><b>${all.signed}</b><span>直筆あり</span></div><div class="big-stat"><b>${all.rate}%</b><span>全体コンプ率</span></div></div><div class="panel stats-year-panel" style="${statsVars}"><h3>カテゴリ別コンプ率</h3>${categoryHtml}</div><div class="panel stats-year-panel" style="${statsVars}"><h3>年代別コンプ率</h3>${yearHtml}</div>`;
+    // Ver1.01.07：メンバー1人を見ている時は、セット単位の状況（コンプ・あと1種など）も出し、押すとその一覧を開く
+    let setStatusHtml="";
+    if(singleMember){
+      const tally={complete:0,almost:0,unowned:0,none:0};
+      eligibleEventsForMember(singleMember).forEach(e=>{
+        const s=ownershipState(e,singleMember.id);
+        if(s.missing===0)tally.complete++;else tally.unowned++;
+        if(s.missing===1&&s.owned>0)tally.almost++;
+        if(s.owned===0)tally.none++;
+      });
+      const rows=[["complete","✅ コンプ済み"],["almost","🔸 あと1種でコンプ"],["unowned","🔎 未所持あり"],["none","⬜ 全部未所持"]];
+      setStatusHtml=`<div class="panel stats-year-panel set-status-panel" style="${statsVars}"><h3>セットごとの状況</h3><p class="set-status-lead">押すと、そのセットだけの一覧を開きます。</p>${rows.map(([key,label])=>`<button type="button" class="set-status-row" data-set-status="${key}"><span>${label}</span><b>${tally[key]}セット</b><i>›</i></button>`).join("")}</div>`;
+    }
+    $("statsPage").innerHTML=`<div class="page-head stats-themed-head" style="${statsVars}"><div class="stats-title-row">${title}</div></div><div class="page-filter dual-filter"><select id="pageMemberFilter">${pageMemberOptions()}</select><button id="statsOshiToggle" class="oshi-toggle ${state.oshiOnly?"on":""}">👑 推しだけ</button></div><div class="stat-grid stats-color-grid" style="${statsVars}"><div class="big-stat"><b>${all.total}</b><span>総所持枚数</span></div><div class="big-stat"><b>${all.types}</b><span>所持種類数</span></div><div class="big-stat"><b>${all.signed}</b><span>直筆あり</span></div><div class="big-stat"><b>${all.rate}%</b><span>全体コンプ率</span></div></div>${setStatusHtml}<div class="panel stats-year-panel" style="${statsVars}"><h3>カテゴリ別コンプ率</h3>${categoryHtml}</div><div class="panel stats-year-panel" style="${statsVars}"><h3>年代別コンプ率</h3>${yearHtml}</div>`;
     bindPageMemberFilter();
     document.getElementById("statsOshiToggle").onclick=()=>{state.oshiOnly=!state.oshiOnly;savePreferences();renderStats()};
+    if(singleMember)$("statsPage").querySelectorAll("[data-set-status]").forEach(button=>button.onclick=()=>{
+      saveScrollPosition();
+      pendingMemberDestination="collection";
+      openMember(singleMember.id,{ownership:button.dataset.setStatus});
+    });
+  }
+  // ===== Ver1.01.07：欲しい一覧・提供可能一覧・未所持一覧から、一覧のそのセットへ移動する =====
+  function jumpButtonHtml(m,e){
+    return `<button type="button" class="item-jump-button" data-jump-member="${esc(m.id)}" data-jump-event="${esc(e.id)}">一覧で開く ›</button>`;
+  }
+  function openEventInCollection(memberId,eventId){
+    const member=MEMBERS.find(m=>m.id===memberId),event=eventById(eventId);
+    if(!member||!event||!eventAvailableForMember(event,member))return;
+    saveScrollPosition(); // 元の一覧の位置を覚えておく（下のメニューから戻った時に同じ場所へ戻る）
+    state.mode="member";
+    state.memberId=memberId;
+    state.pageMemberId=memberId;
+    resetCollectionView(); // 絞り込みが残っていると、目的のセットが一覧に出ないことがあるため
+    savePreferences();
+    theme(member);
+    pendingScrollTarget=eventId;
+    showPage("collection",true);
   }
   function groupedWantedItems(){
     const map=new Map();
@@ -1691,7 +1957,7 @@ function openMember(id){
   function renderGroupedWantItem(x){
     const tags=x.positions.map(v=>`<span class="pill">♡ ${v.p.name}${v.count>0?`（所持 ${v.count}枚）`:""}</span>`).join("");
     return `<div class="item">
-      <div class="item-title">${x.m.emoji} ${x.m.name}</div>
+      <div class="item-title">${jumpButtonHtml(x.m,x.e)}${x.m.emoji} ${x.m.name}</div>
       <div class="item-meta">${esc(x.e.period)}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
       <div class="item-tags">${tags}${officialLinkHtml(x.e)}</div>
     </div>`;
@@ -1699,7 +1965,7 @@ function openMember(id){
   function renderGroupedTradeItem(x){
     const tags=x.positions.map(v=>`<span class="pill">${v.p.name}：提供 ${v.extra}枚（所持 ${v.total}枚）</span>`).join("");
     return `<div class="item">
-      <div class="item-title">${x.m.emoji} ${x.m.name}</div>
+      <div class="item-title">${jumpButtonHtml(x.m,x.e)}${x.m.emoji} ${x.m.name}</div>
       <div class="item-meta">${esc(x.e.period)}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
       <div class="item-tags">${tags}</div>
     </div>`;
@@ -1750,7 +2016,7 @@ function openMember(id){
         </div>
         <div class="missing-event-list">${group.items.map(x=>`
           <div class="item missing-event-item">
-            <div class="item-title">${isNewEvent(x.e)?'<span class="inline-new">NEW</span>':''}${esc(x.e.period)}</div>
+            <div class="item-title">${jumpButtonHtml(group.m,x.e)}${isNewEvent(x.e)?'<span class="inline-new">NEW</span>':''}${esc(x.e.period)}</div>
             <div class="item-meta">${esc(x.e.work)}｜${esc(x.e.category)}</div>
             <div class="item-tags">${x.positions.map(p=>`<span class="pill missing-pill">${p.name}</span>`).join("")}${officialLinkHtml(x.e)}</div>
           </div>`).join("")}
@@ -1939,9 +2205,9 @@ function openMember(id){
       <div class="guide-list">
         <section class="panel guide-card"><span>1</span><div><h3>メンバーを選ぶ</h3><p>TOPからメンバーを選択します。「全メンバー」ではイベント単位でまとめて確認できます。</p></div></section>
         <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>通常一覧のほか、クイック入力とイベント別チェック表が使えます。イベントカードの「一括操作」からコンプ登録や欲しい一括追加もできます。</p></div></section>
-        <section class="panel guide-card"><span>3</span><div><h3>一覧を絞り込む</h3><p>検索欄と「絞り込み」「並び順」を使います。選択中の条件はチップで表示され、個別に解除できます。</p></div></section>
-        <section class="panel guide-card"><span>4</span><div><h3>未所持・提供可能を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。設定の「未所持・欲しい一括操作」から、未所持の一括表示や欲しいへの一括追加もできます。2枚目以降は提供可能として表示されます。</p></div></section>
-        <section class="panel guide-card"><span>5</span><div><h3>推しを設定する</h3><p>最推し・推し・気になるの3段階です。メンバーカードの推しバッジや、推しだけの統計・未所持確認に使えます。</p></div></section>
+        <section class="panel guide-card"><span>3</span><div><h3>一覧を絞り込む</h3><p>検索欄と「絞り込み」「並び順」を使います。選択中の条件はチップで表示され、個別に解除できます。メンバーごとの一覧では、上に並ぶ「未所持あり・あと1種・全部未所持・所持あり・コンプ」のボタンで所持状況を切り替えられます。「未所持あり」は、ヨリ・チュウ・ヒキのうち1種でも持っていないセットです。年の見出しを押すと、別の年へ移動できます。</p></div></section>
+        <section class="panel guide-card"><span>4</span><div><h3>未所持・提供可能を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。設定の「未所持・欲しい一括操作」から、未所持の一括表示や欲しいへの一括追加もできます。2枚目以降は提供可能として表示されます。欲しい一覧・提供可能一覧・未所持一覧の「一覧で開く」を押すと、そのセットの登録画面へ移動します。</p></div></section>
+        <section class="panel guide-card"><span>5</span><div><h3>推しを設定する</h3><p>最推し・推し・気になるの3段階です。メンバーカードの推しバッジや、推しだけの統計・未所持確認に使えます。設定したメンバーはTOPに近道が出て、1タップで一覧や「未所持あり」を開けます。</p></div></section>
         <section class="panel guide-card"><span>6</span><div><h3>メンバー画像を設定する</h3><p>TOP右上の設定から、端末内の好きな画像をメンバーごとに登録できます。画像は編集画面で表示範囲を確認しながら位置調整でき、外部送信もされません。</p></div></section>
         <section class="panel guide-card important"><span>7</span><div><h3>定期的にバックアップする</h3><p>端末変更、Safariのデータ削除、ブラウザ変更に備えてJSONを保存してください。復元前には日時と件数を確認できます。</p></div></section>
         <section class="panel guide-card"><span>8</span><div><h3>iPhoneでアプリ化する</h3><p>Safariの共有ボタンから「ホーム画面に追加」を選択します。一度読み込めばオフラインでも閲覧できます。</p></div></section>
@@ -2019,7 +2285,9 @@ function openMember(id){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.06</h3>
+        <h3>公開版Ver1.01.07</h3>
+        <p>「未所持」の絞り込みを、1種でも持っていないセットが出る「未所持あり」に変更しました。一覧の上のボタンから1タップで「未所持あり／あと1種／全部未所持／所持あり／コンプ」を切り替えられます（件数つき）。スクロール中に上へ残る部分を小さくして、一度に見えるカードを増やしました。持っている種類に色が付き、長いセット名は省略せず表示します。年の見出しと年への移動、TOPの推しメンバーへの近道、欲しい一覧などからそのセットを開く「一覧で開く」、クイック入力の「未所持ありだけ」を追加しました。端末の「戻る」操作で、アプリを閉じずにTOPへ戻ります。</p>
+        <h3>Ver1.01.06</h3>
         <p>封入生写真の一覧の作り方を、より安全な方式に変更しました。見た目と使い方は変わりません。</p>
         <h3>Ver1.01.05</h3>
         <p>一覧の上に「すべて／通常／イベント／コラボ」の切り替えを追加しました。統計にカテゴリ別コンプ率、未所持一覧にカテゴリの絞り込みが増えています。CDの封入など一覧に無い生写真を写真で記録できる「封入生写真」を追加しました。枠はヨリ・チュウ・ヒキ、A・B・C…、1・2・3…から選べます。</p>
@@ -2244,7 +2512,7 @@ function openMember(id){
       out[key]=value[key]==="asc"?"asc":"desc";
     });
     ["search","missingSearch","quickSearch","matrixSearch"].forEach(key=>{out[key]=cleanShortText(value[key]||"","").slice(0,200)});
-    out.ownership=["","owned","unowned"].includes(value.ownership)?value.ownership:"";
+    out.ownership=OWNERSHIP_VALUES.includes(value.ownership)?value.ownership:"";
     out.newFilter=value.newFilter==="new"?"new":"";
     out.oshiOnly=value.oshiOnly===true;
     return out;
@@ -3124,6 +3392,89 @@ function openMember(id){
     $("graduatedMemberGrid").innerHTML="";
     rankedMembers(MEMBERS.filter(m=>!isGraduated(m))).forEach(m=>$("memberGrid").appendChild(createMemberButton(m)));
     rankedMembers(MEMBERS.filter(isGraduated)).forEach(m=>$("graduatedMemberGrid").appendChild(createMemberButton(m)));
+    renderHomeShortcuts();
+  }
+  // ===== Ver1.01.07：TOPから推しメンバーの一覧・未所持へ1タップで行ける近道 =====
+  function shortcutMembers(){
+    const weight=m=>(OSHI_RANKS[oshiRank(m.id)]||{}).weight||0;
+    return MEMBERS.filter(m=>isOshi(m.id))
+      .sort((a,b)=>weight(b)-weight(a)||(a.kana||a.name).localeCompare(b.kana||b.name,"ja"))
+      .slice(0,3);
+  }
+  function shortcutTextNode(tag,text){
+    const node=document.createElement(tag);
+    node.textContent=text;
+    return node;
+  }
+  function renderHomeShortcuts(){
+    const box=$("homeShortcuts");
+    if(!box)return;
+    box.textContent="";
+    box.classList.remove("hidden");
+    const members=shortcutMembers();
+    if(!members.length){
+      const hint=document.createElement("button");
+      hint.type="button";
+      hint.className="home-shortcut-hint";
+      hint.textContent="👑 推しを設定すると、ここから1タップで一覧・未所持を開けます ›";
+      hint.onclick=()=>showPage("oshi");
+      box.appendChild(hint);
+      return;
+    }
+    members.forEach(m=>{
+      const rank=OSHI_RANKS[oshiRank(m.id)],stats=statsFor([m]);
+      let missingSets=0;
+      eligibleEventsForMember(m).forEach(e=>{if(ownershipState(e,m.id).missing>0)missingSets++});
+      const card=document.createElement("div");
+      card.className="home-shortcut";
+      applyMemberVars(card,m);
+
+      const open=document.createElement("button");
+      open.type="button";
+      open.className="home-shortcut-main";
+      const avatar=document.createElement("span");
+      const record=memberImageRecord(m.id),url=memberImageUrl(m.id);
+      if(record&&url){
+        avatar.className="home-shortcut-avatar has-photo";
+        const image=document.createElement("img");
+        image.src=url;
+        image.alt="";
+        image.style.cssText=memberImageStyle(record);
+        avatar.appendChild(image);
+      }else{
+        avatar.className="home-shortcut-avatar";
+        avatar.textContent=m.emoji;
+      }
+      const text=document.createElement("span");
+      text.className="home-shortcut-text";
+      text.appendChild(shortcutTextNode("small",`${rank.icon} ${rank.label}`));
+      text.appendChild(shortcutTextNode("b",m.name));
+      text.appendChild(shortcutTextNode("i",`所持 ${stats.total}枚・コンプ率 ${stats.rate}%`));
+      open.appendChild(avatar);
+      open.appendChild(text);
+      open.appendChild(shortcutTextNode("em","›"));
+      open.setAttribute("aria-label",`${m.name}の一覧を開く`);
+      open.onclick=()=>{pendingMemberDestination="collection";openMember(m.id)};
+
+      const missing=document.createElement("button");
+      missing.type="button";
+      missing.className="home-shortcut-missing";
+      if(missingSets){
+        missing.appendChild(shortcutTextNode("b","未所持あり"));
+        missing.appendChild(shortcutTextNode("small",`${missingSets}セット ›`));
+        missing.setAttribute("aria-label",`${m.name}の未所持があるセットを開く（${missingSets}セット）`);
+        missing.onclick=()=>{pendingMemberDestination="collection";openMember(m.id,{ownership:"unowned"})};
+      }else{
+        missing.classList.add("is-complete");
+        missing.appendChild(shortcutTextNode("b","🎉 コンプ"));
+        missing.appendChild(shortcutTextNode("small","全セット ›"));
+        missing.setAttribute("aria-label",`${m.name}は全セットコンプ済み。一覧を開く`);
+        missing.onclick=()=>{pendingMemberDestination="collection";openMember(m.id,{ownership:"complete"})};
+      }
+      card.appendChild(open);
+      card.appendChild(missing);
+      box.appendChild(card);
+    });
   }
   renderHomeMembers();
   loadMemberImages();
@@ -3203,17 +3554,82 @@ function openMember(id){
   },{passive:true});
 
   selectorSheet.addEventListener("touchcancel",resetSelectorSwipe,{passive:true});
-  document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMemberSelector();closeUtilitySheet("filterSheetOverlay");closeUtilitySheet("sortSheetOverlay");closeUtilitySheet("bulkSheetOverlay");closeUtilitySheet("settingsSheetOverlay");closeImageAdjustSheet();closeUtilitySheet("enclosedEditSheetOverlay");closeEnclosedViewer()}});
+  // ===== Ver1.01.07：開いているシートをまとめて閉じる（Escキーと、端末の「戻る」操作で使う） =====
+  function closeAllSheets(){
+    const wasOpen=[...document.querySelectorAll(".utility-sheet-overlay,.member-selector-overlay")].some(node=>!node.classList.contains("hidden"));
+    closeMemberSelector();closeUtilitySheet("filterSheetOverlay");closeUtilitySheet("sortSheetOverlay");closeUtilitySheet("bulkSheetOverlay");closeUtilitySheet("settingsSheetOverlay");closeImageAdjustSheet();closeUtilitySheet("enclosedEditSheetOverlay");closeEnclosedViewer();
+    return wasOpen;
+  }
+  document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAllSheets()});
+
+  // ===== Ver1.01.07：端末の「戻る」操作（画面左端からのスワイプ・戻るボタン）で、アプリを閉じずにTOPへ戻る =====
+  // TOPより奥の画面に入った時に、ブラウザの履歴へ目印を1つだけ積む。戻る操作でその目印が外れたらTOPを出す。
+  const HISTORY_MARK="photoManagerScreen";
+  let historyIgnoreUntil=0;
+  function historyMarked(){
+    try{return !!(history.state&&history.state[HISTORY_MARK])}catch(error){return false}
+  }
+  function pushManagerHistory(){
+    try{if(!historyMarked())history.pushState({[HISTORY_MARK]:true},"")}catch(error){}
+  }
+  function leaveManagerHistory(){
+    if(!historyMarked())return;
+    historyIgnoreUntil=Date.now()+1000; // 自分で戻した分の通知は、下の処理で読み飛ばす
+    try{history.back()}catch(error){historyIgnoreUntil=0}
+  }
+  window.addEventListener("popstate",()=>{
+    const managerOpen=!$("managerScreen").classList.contains("hidden");
+    if(Date.now()<historyIgnoreUntil){
+      historyIgnoreUntil=0;
+      // 戻し終わる前に、もう次の画面を開いていた場合は、目印を積み直す
+      if(managerOpen)pushManagerHistory();
+      return;
+    }
+    if(historyMarked()){
+      // 「進む」で戻ってきた時は、直前に見ていた画面をもう一度開く
+      if(!managerOpen){
+        $("homeScreen").classList.add("hidden");
+        $("managerScreen").classList.remove("hidden");
+        showPage(state.page,true);
+      }
+      return;
+    }
+    if(!managerOpen)return;
+    // シートを開いている時は、シートを閉じるだけにして今の画面に残る
+    if(closeAllSheets()){pushManagerHistory();return}
+    goHome(true);
+  });
+  // 戻る・進むの時のスクロール位置は、アプリ側で覚えている位置を使う
+  try{if("scrollRestoration" in history)history.scrollRestoration="manual"}catch(error){}
+
+  // ===== Ver1.01.07：名前の行の高さを測り、そのすぐ下にカテゴリ・所持状況の行を固定する =====
+  // 高さが変わった時だけブラウザから知らせてもらう（画面を切り替えるたびに自分で測ると、配置計算が余分に走って遅くなる）
+  function syncTopbarHeight(){
+    const bar=document.querySelector(".topbar");
+    if(bar&&bar.offsetHeight)document.documentElement.style.setProperty("--topbar-h",`${bar.offsetHeight}px`);
+  }
+  if("ResizeObserver" in window){
+    const bar=document.querySelector(".topbar");
+    if(bar)new ResizeObserver(syncTopbarHeight).observe(bar);
+  }else{
+    window.addEventListener("resize",()=>requestAnimationFrame(syncTopbarHeight));
+    window.addEventListener("scroll",function once(){window.removeEventListener("scroll",once);syncTopbarHeight()},{passive:true});
+  }
+  // iPhoneでは、画面に指を置いた合図を受け取る処理が1つ無いと、ボタンの「押している間の見た目」が出ないため、空の処理を登録しておく
+  document.addEventListener("touchstart",()=>{},{passive:true});
   $("searchInput").value=state.search;
   // Ver1.01.04：「← 戻る」と下部ナビ中央のホームボタンで同じ処理を使う
-  function goHome(){
+  function goHome(fromHistory=false){
     saveScrollPosition();
     $("managerScreen").classList.add("hidden");
     $("homeScreen").classList.remove("hidden");
     window.scrollTo(0,0);
     updateBackupReminder();
+    renderHomeShortcuts(); // 登録して戻った時に、枚数やコンプ率が古いままにならないようにする
+    // Ver1.01.07：画面のボタンで戻った時は、端末の「戻る」用に積んだ履歴も1つ戻しておく
+    if(fromHistory!==true)leaveManagerHistory();
   }
-  $("backButton").onclick=goHome;
+  $("backButton").onclick=()=>goHome();
   if($("backupReminderOpen"))$("backupReminderOpen").onclick=()=>showPage("backup");
   if($("backupReminderLater"))$("backupReminderLater").onclick=()=>{
     try{localStorage.setItem(REMINDER_SNOOZE_KEY,String(Date.now()+7*DAY_MS))}catch(error){}
@@ -3225,6 +3641,18 @@ function openMember(id){
     navigator.storage.persist().catch(()=>{});
   }
   bindDeferredSearch($("searchInput"),value=>{state.search=value;savePreferences();renderCollection()});
+  // Ver1.01.07：検索語をワンタップで消す
+  if($("clearSearchButton")){
+    $("searchInput").addEventListener("input",()=>$("clearSearchButton").classList.toggle("hidden",!$("searchInput").value));
+    $("clearSearchButton").onclick=()=>{
+      const input=$("searchInput");
+      input.value="";
+      state.search="";
+      savePreferences();
+      renderCollection();
+      input.focus();
+    };
+  }
   $("openCollectionFilterButton").onclick=()=>openFilterSheet("collection");
   $("openCollectionSortButton").onclick=()=>openSortSheet("collection");
   $("resetCollectionViewButton").onclick=()=>resetCollectionView({render:true,scrollTop:true,smooth:true});
@@ -3245,6 +3673,11 @@ function openMember(id){
   setupUtilitySheetSwipe("imageAdjustSheetOverlay");
   setupEnclosedSheets();
   document.querySelectorAll("[data-home-page]").forEach(button=>button.onclick=()=>showPage(button.dataset.homePage));
+  // Ver1.01.07：欲しい一覧・提供可能一覧・未所持一覧の「一覧で開く」
+  ["wishlistPage","tradePage","missingPage"].forEach(id=>$(id).addEventListener("click",event=>{
+    const button=event.target instanceof Element?event.target.closest("[data-jump-event]"):null;
+    if(button)openEventInCollection(button.dataset.jumpMember,button.dataset.jumpEvent);
+  }));
   document.querySelectorAll(".bottom-nav button").forEach(b=>b.onclick=()=>b.dataset.page==="home"?goHome():showPage(b.dataset.page));
   const topButton=document.createElement("button");
   topButton.id="backToTop";
@@ -3253,7 +3686,15 @@ function openMember(id){
   topButton.textContent="↑";
   topButton.onclick=()=>window.scrollTo({top:0,behavior:"smooth"});
   document.body.appendChild(topButton);
-  const toggleTopButton=()=>topButton.classList.toggle("visible",window.scrollY>500);
+  // Ver1.01.07：下へ読み進めている間は出さず、少し上へ戻した時だけ出す（＋ボタンや公式サイトのリンクに重なるため）
+  let topButtonLastY=0,topButtonUp=false;
+  const toggleTopButton=()=>{
+    const y=Math.max(0,window.scrollY);
+    if(y<topButtonLastY-6)topButtonUp=true;
+    else if(y>topButtonLastY+6)topButtonUp=false;
+    topButtonLastY=y;
+    topButton.classList.toggle("visible",y>500&&topButtonUp);
+  };
   let scrollSaveTimer=0;
   window.addEventListener("scroll",()=>{toggleTopButton();clearTimeout(scrollSaveTimer);scrollSaveTimer=setTimeout(saveScrollPosition,160)},{passive:true});
   window.addEventListener("pagehide",saveScrollPosition);

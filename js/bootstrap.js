@@ -29,7 +29,7 @@
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.01.06", {scope: "./"});
+      const registration = await navigator.serviceWorker.register("./service-worker.js?v=1.01.07", {scope: "./"});
       if (!registration) return;
       const showUpdate = worker => {
         if (!worker || !updateBanner || !updateButton) return;
