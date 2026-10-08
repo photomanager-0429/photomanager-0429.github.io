@@ -111,6 +111,7 @@ async function loadEventAdditions() {
       .map(value => cleanEventText(value, 40))
       .filter(value => memberIds.has(value));
     const positions = cleanPositionList(item.positions);
+    const eventName = cleanEventText(item.eventName, 80); // Ver1.01.08：ツアー名・イベント名（任意）
 
     usedIds.add(id);
     events.push({
@@ -119,6 +120,7 @@ async function loadEventAdditions() {
       sort,
       category,
       period,
+      ...(eventName ? {eventName} : {}),
       work: work || officialName,
       officialUrl: cleanEventText(item.officialUrl, 300),
       addedDate: addedDate || "",
@@ -139,10 +141,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.07",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.07",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.07",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.07",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.08",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.08",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.08",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.08",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -322,6 +324,8 @@ function initializeApp() {
     if(derived.officialUrl===undefined)derived.officialUrl=safeOfficialUrl(event.officialUrl);
     return derived.officialUrl;
   }
+  // Ver1.01.08：一覧の上の行に出す名前。ツアー・イベントのセットは、時期（2022-tour など）の代わりに正式なツアー名・イベント名を出す
+  function eventLabel(e){return e.eventName||e.period||e.officialName||e.id}
   let newestSortThresholdCache=null;
   let yearListCache=null;
   let eventByIdCache=null;
@@ -918,7 +922,7 @@ function initializeApp() {
     if(derived.searchText===undefined){
       const parts=String(e.id||"").match(/(20\d{2})-(\d{2})/);
       const aliases=parts?[`${parts[1]}/${Number(parts[2])}`,`${parts[1]}年${Number(parts[2])}月`,`${parts[1]}${parts[2]}`]:[];
-      derived.searchText=normalizeText([e.period,e.work,e.officialName,e.id,e.category,...aliases].join(" "));
+      derived.searchText=normalizeText([e.period,e.eventName,e.work,e.officialName,e.id,e.category,...aliases].join(" "));
     }
     return derived.searchText;
   }
@@ -1145,7 +1149,8 @@ function initializeApp() {
       const detail=page==="wishlist"
         ?x.positions.map(v=>v.p.name).join("・")
         :x.positions.map(v=>`${v.p.name}×${v.extra}`).join("・");
-      const title=String(x.e.period||"").includes(x.e.work)?x.e.period:`${x.e.period} ${x.e.work}`;
+      const label=eventLabel(x.e);
+      const title=String(label).includes(x.e.work)?label:`${label} ${x.e.work}`;
       byMember.get(x.m.id).lines.push(`・${title}：${detail}`);
     });
     const head=page==="wishlist"?"【欲しい】":"【提供できます】";
@@ -1487,7 +1492,7 @@ function openMember(id,preset=null){
     if(!list.some(e=>e.id===state[key]))state[key]=list[0].id;
     return list.find(e=>e.id===state[key])||list[0];
   }
-  function eventSelectOptions(list,selected){return list.map(e=>`<option value="${esc(e.id)}" ${e.id===selected?"selected":""}>${esc(e.period)}｜${esc(e.work||e.officialName)}</option>`).join("")}
+  function eventSelectOptions(list,selected){return list.map(e=>`<option value="${esc(e.id)}" ${e.id===selected?"selected":""}>${esc(eventLabel(e))}｜${esc(e.work||e.officialName)}</option>`).join("")}
   function openQuickInput(){
     if(state.mode!=="member"||!state.memberId){openMemberSelector("quick");return}
     showPage("quick");
@@ -1527,7 +1532,7 @@ function openMember(id,preset=null){
     const list=modeEventList("quick"),event=ensureSelectedEvent("quick",list),index=event?list.findIndex(e=>e.id===event.id):-1;
     body.innerHTML=list.length?`<select id="quickEventSelect" class="mode-event-select">${eventSelectOptions(list,event.id)}</select>
       <article id="quickSwipeCard" class="quick-input-card">
-        <div class="quick-event-head"><div><span>${esc(event.period)}</span><h3>${esc(event.work||event.officialName)}</h3><small>${esc(event.category)}｜${index+1}/${list.length}</small></div><button id="quickBulkButton" class="card-bulk-button">⋯ 一括操作</button></div>
+        <div class="quick-event-head"><div><span>${esc(eventLabel(event))}</span><h3>${esc(event.work||event.officialName)}</h3><small>${esc(event.category)}｜${index+1}/${list.length}</small></div><button id="quickBulkButton" class="card-bulk-button">⋯ 一括操作</button></div>
         <div id="quickPositionList" class="quick-position-list"></div>
         <div class="quick-nav-row"><button id="quickPreviousButton" ${index<=0?"disabled":""}>← 前へ</button><button id="quickNextButton" ${index>=list.length-1?"disabled":""}>次へ →</button></div>
       </article>`:state.quickMissingOnly&&!state.quickSearch&&!state.quickYear
@@ -1574,7 +1579,7 @@ function openMember(id,preset=null){
     const list=modeEventList("matrix"),event=ensureSelectedEvent("matrix",list),members=event?matrixMembersForEvent(event):[];
     const positions=event?eventPositions(event):[];
     body.innerHTML=list.length?`<select id="matrixEventSelect" class="mode-event-select">${eventSelectOptions(list,event.id)}</select>
-      <div class="matrix-event-summary"><div><b>${esc(event.period)}</b><span>${esc(event.work||event.officialName)}</span></div><button id="matrixBulkButton" class="card-bulk-button">⋯ イベント一括操作</button></div>
+      <div class="matrix-event-summary"><div><b>${esc(eventLabel(event))}</b><span>${esc(event.work||event.officialName)}</span></div><button id="matrixBulkButton" class="card-bulk-button">⋯ イベント一括操作</button></div>
       <div class="matrix-help">＋／−で枚数を変更。「${positions.length}種」はそのメンバーの未所持だけを1枚にします。</div>
       <div class="matrix-table-wrap"><table class="matrix-table"${positions.length>3?` style="min-width:${104+positions.length*86}px"`:""}><thead><tr><th>メンバー</th>${positions.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>${members.map(m=>`<tr><th><span>${m.emoji} ${esc(m.name)}</span>${isGraduated(m)?'<small>卒業</small>':''}<button data-matrix-complete="${esc(m.id)}">${positions.length}種</button></th>${positions.map(p=>`<td><div class="matrix-stepper count-${Math.min(2,getCount(event.id,m.id,p.id))}"><button class="matrix-minus" data-member="${esc(m.id)}" data-position="${esc(p.id)}">−</button><b>${getCount(event.id,m.id,p.id)}</b><button class="matrix-plus" data-member="${esc(m.id)}" data-position="${esc(p.id)}">＋</button></div></td>`).join("")}</tr>`).join("")}</tbody></table></div>`:'<div class="empty-state"><span>🔍</span><h3>該当するイベントがありません</h3><p>検索語または年代を変更してください。</p></div>';
     if(!event)return;
@@ -1598,7 +1603,7 @@ function openMember(id,preset=null){
     if(!event)return;
     bulkTarget={eventId,memberId};
     $("bulkSheetTitle").textContent=member?`${member.emoji} ${member.name}の一括操作`:"イベント一括操作";
-    $("bulkSheetDescription").textContent=`${event.period}｜${event.work||event.officialName}`;
+    $("bulkSheetDescription").textContent=`${eventLabel(event)}｜${event.work||event.officialName}`;
     const scope=member?"このメンバー":"対象メンバー全員";
     $("bulkSheetBody").innerHTML=`<div class="bulk-action-list">
       <button data-bulk-action="complete"><span>✅</span><div><b>${eventPositions(event).length}種を所持済みにする</b><small>${scope}の未所持だけを1枚にします</small></div><i>›</i></button>
@@ -1730,9 +1735,10 @@ function openMember(id,preset=null){
     row.querySelector(".want").onclick=()=>{toggleWant(e.id,m.id,p.id);refreshCollectionCell(row,e,m,p)};
     return row;
   }
-  function renderMemberCard(e,m){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div></div><div class="badges"><span class="badge">${esc(e.category)}</span>${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}${complete(e,m)?'<span class="badge complete">COMPLETE</span>':''}</div></div></div><div class="member-line">${m.emoji} ${m.name}</div><div class="positions"></div><div class="event-footer"></div>`;
+  function periodLineHtml(e){return `<div class="period${e.eventName?" is-event-name":""}">${esc(eventLabel(e))}</div>`}
+  function renderMemberCard(e,m){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;card.innerHTML=`<div class="event-head"><div class="event-topline"><div>${periodLineHtml(e)}<div class="work">${esc(e.work)}</div></div><div class="badges"><span class="badge">${esc(e.category)}</span>${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}${complete(e,m)?'<span class="badge complete">COMPLETE</span>':''}</div></div></div><div class="member-line">${m.emoji} ${m.name}</div><div class="positions"></div><div class="event-footer"></div>`;
   eventPositions(e).forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;f.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);return card}
-  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e);card.innerHTML=`<div class="event-head"><div class="event-topline"><div><div class="period">${esc(e.period||e.officialName)}</div><div class="work">${esc(e.work)}</div><div class="all-summary">${allCardSummaryText(e,eligible)}</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];card.replaceWith(renderAllCard(e))};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;eventPositions(e).forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
+  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e);card.innerHTML=`<div class="event-head"><div class="event-topline"><div>${periodLineHtml(e)}<div class="work">${esc(e.work)}</div><div class="all-summary">${allCardSummaryText(e,eligible)}</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];card.replaceWith(renderAllCard(e))};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;eventPositions(e).forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
   // Ver1.01.04：画面に見える分（戻す予定のスクロール位置まで）を先に描き、残りは少しずつ足す
   let collectionRenderToken=0;
   let collectionEntering=false; // ほかの画面から一覧へ入った直後かどうか（showPageが立てる）
@@ -1958,7 +1964,7 @@ function openMember(id,preset=null){
     const tags=x.positions.map(v=>`<span class="pill">♡ ${v.p.name}${v.count>0?`（所持 ${v.count}枚）`:""}</span>`).join("");
     return `<div class="item">
       <div class="item-title">${jumpButtonHtml(x.m,x.e)}${x.m.emoji} ${x.m.name}</div>
-      <div class="item-meta">${esc(x.e.period)}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
+      <div class="item-meta">${esc(eventLabel(x.e))}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
       <div class="item-tags">${tags}${officialLinkHtml(x.e)}</div>
     </div>`;
   }
@@ -1966,7 +1972,7 @@ function openMember(id,preset=null){
     const tags=x.positions.map(v=>`<span class="pill">${v.p.name}：提供 ${v.extra}枚（所持 ${v.total}枚）</span>`).join("");
     return `<div class="item">
       <div class="item-title">${jumpButtonHtml(x.m,x.e)}${x.m.emoji} ${x.m.name}</div>
-      <div class="item-meta">${esc(x.e.period)}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
+      <div class="item-meta">${esc(eventLabel(x.e))}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
       <div class="item-tags">${tags}</div>
     </div>`;
   }
@@ -2016,7 +2022,7 @@ function openMember(id,preset=null){
         </div>
         <div class="missing-event-list">${group.items.map(x=>`
           <div class="item missing-event-item">
-            <div class="item-title">${jumpButtonHtml(group.m,x.e)}${isNewEvent(x.e)?'<span class="inline-new">NEW</span>':''}${esc(x.e.period)}</div>
+            <div class="item-title">${jumpButtonHtml(group.m,x.e)}${isNewEvent(x.e)?'<span class="inline-new">NEW</span>':''}${esc(eventLabel(x.e))}</div>
             <div class="item-meta">${esc(x.e.work)}｜${esc(x.e.category)}</div>
             <div class="item-tags">${x.positions.map(p=>`<span class="pill missing-pill">${p.name}</span>`).join("")}${officialLinkHtml(x.e)}</div>
           </div>`).join("")}
@@ -2285,7 +2291,9 @@ function openMember(id,preset=null){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.07</h3>
+        <h3>公開版Ver1.01.08</h3>
+        <p>ツアー・コンサート・フェスのセットは、一覧の上の行に正式なツアー名・イベント名を出すようにしました（例：「2022-tour」→「全国ツアー2022「どう考えても、君ってイコラブのこと好きじゃん」」）。ツアー名・イベント名でも検索できます。</p>
+        <h3>Ver1.01.07</h3>
         <p>「未所持」の絞り込みを、1種でも持っていないセットが出る「未所持あり」に変更しました。一覧の上のボタンから1タップで「未所持あり／あと1種／全部未所持／所持あり／コンプ」を切り替えられます（件数つき）。スクロール中に上へ残る部分を小さくして、一度に見えるカードを増やしました。持っている種類に色が付き、長いセット名は省略せず表示します。年の見出しと年への移動、TOPの推しメンバーへの近道、欲しい一覧などからそのセットを開く「一覧で開く」、クイック入力の「未所持ありだけ」を追加しました。端末の「戻る」操作で、アプリを閉じずにTOPへ戻ります。</p>
         <h3>Ver1.01.06</h3>
         <p>封入生写真の一覧の作り方を、より安全な方式に変更しました。見た目と使い方は変わりません。</p>
