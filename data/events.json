@@ -606,7 +606,8 @@
     "sort": 53,
     "category": "イベント",
     "period": "2020.tour",
-    "work": "冬の全国ツアー(866)",
+    "eventName": "冬の全国ツアー「866」",
+    "work": "ツアーTシャツ",
     "officialUrl": "https://sp.equal-love.jp/news/detail/2495",
     "addedDate": "2026-07-14"
   },
@@ -626,6 +627,7 @@
     "sort": 55,
     "category": "通常",
     "period": "2020-tourⅡ",
+    "eventName": "冬の全国ツアー「866」",
     "work": "振袖アザーカット",
     "officialUrl": "https://sp.equal-love.jp/news/detail/2496",
     "addedDate": "2026-07-14"
@@ -676,6 +678,7 @@
     "sort": 60,
     "category": "通常",
     "period": "2020-tourⅢ",
+    "eventName": "関東ツアー〜We are \"Sweetie pie\"♡〜",
     "work": "袴2020アザーカット",
     "officialUrl": "https://sp.equal-love.jp/news/detail/2747",
     "addedDate": "2026-07-14"
@@ -696,7 +699,8 @@
     "sort": 62,
     "category": "イベント",
     "period": "2020-tourⅣ",
-    "work": "=LOVE 関東ツアー〜We are\"Sweetie pie“♡～",
+    "eventName": "関東ツアー〜We are \"Sweetie pie\"♡〜",
+    "work": "ツアーTシャツ",
     "officialUrl": "https://sp.equal-love.jp/news/detail/2769",
     "addedDate": "2026-07-14"
   },
@@ -752,21 +756,22 @@
   },
   {
     "officialName": "2020.June-Ⅱ 生写真セット（「CAMEO」歌唱衣装②）",
-    "id": "2020-06-02",
+    "id": "2020-tour-cameo-costume-02",
     "sort": 68,
     "category": "通常",
     "period": "2020.June-II",
-    "work": "ツアー866衣装アザーカット",
+    "work": "「CAMEO」歌唱衣装②",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=26100",
     "addedDate": "2020-06-02"
   },
   {
     "officialName": "生写真セット（ツアー866衣装アザーカット）",
-    "id": "2020-tour-cameo-costume-02",
+    "id": "2020-06-02",
     "sort": 69,
     "category": "イベント",
     "period": "2020-tourⅤ",
-    "work": "CAMEO(歌唱衣装②)",
+    "eventName": "無観客LIVE『次に会えた時 何を話そうかな』",
+    "work": "ツアー866衣装アザーカット",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=26145",
     "addedDate": "2026-07-14"
   },
@@ -896,6 +901,7 @@
     "sort": 82,
     "category": "イベント",
     "period": "2020-tourⅥ",
+    "eventName": "WINTER TOUR『You all are \"My ideal\"』",
     "work": "3周年コンサート衣装②",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=33693",
     "addedDate": "2026-07-14"
@@ -916,6 +922,7 @@
     "sort": 84,
     "category": "イベント",
     "period": "2020-tourⅦ",
+    "eventName": "WINTER TOUR『You all are \"My ideal\"』",
     "work": "ツアーTシャツ",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=34124",
     "addedDate": "2026-07-14"
@@ -946,6 +953,7 @@
     "sort": 87,
     "category": "イベント",
     "period": "2021-tour",
+    "eventName": "WINTER TOUR『You all are \"My ideal\"』",
     "work": "振袖アザーカット",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=34806",
     "addedDate": "2026-07-14"
@@ -956,6 +964,7 @@
     "sort": 88,
     "category": "イベント",
     "period": "2021-tourⅡ",
+    "eventName": "WINTER TOUR『You all are \"My ideal\"』",
     "work": "8thCW「しゅきぴ」衣装①",
     "officialUrl": "",
     "addedDate": "2026-07-14"
@@ -996,6 +1005,7 @@
     "sort": 92,
     "category": "イベント",
     "period": "2021.graduation",
+    "eventName": "佐竹のん乃卒業コンサート 〜君のいる世界〜",
     "work": "袴2021",
     "officialUrl": "https://sp.equal-love.jp/news/detail/3779",
     "addedDate": "2026-07-14"
@@ -1102,6 +1112,7 @@
     "sort": 100,
     "category": "通常",
     "period": "2021-tourⅢ",
+    "eventName": "全国ツアー「全部、内緒。」",
     "work": "「桜の咲く音がした」歌唱衣装A",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=36968",
     "addedDate": "2026-07-14"
@@ -1132,6 +1143,7 @@
     "sort": 103,
     "category": "イベント",
     "period": "2021-tourⅣ",
+    "eventName": "全国ツアー「全部、内緒。」",
     "work": "「桜の咲く音がした」歌唱衣装B",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=38042",
     "addedDate": "2026-07-14"
@@ -1162,6 +1174,7 @@
     "sort": 106,
     "category": "イベント",
     "period": "2021-tourⅤ",
+    "eventName": "全国ツアー「全部、内緒。」",
     "work": "「桜の咲く音がした」MV衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=39110",
     "addedDate": "2026-07-14"
@@ -1314,6 +1327,7 @@
     "sort": 116,
     "category": "イベント",
     "period": "2021-tourⅥ",
+    "eventName": "4th ANNIVERSARY PREMIUM CONCERT",
     "work": "=LOVE 4th ANNIVERSARY PHOTO BOOK",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=41928",
     "addedDate": "2026-07-14"
@@ -1334,6 +1348,7 @@
     "sort": 118,
     "category": "イベント",
     "period": "2021-tourⅦ",
+    "eventName": "イコノイフェス 2021",
     "work": "制服衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=42481",
     "addedDate": "2026-07-14"
@@ -1579,6 +1594,7 @@
     "sort": 136,
     "category": "イベント",
     "period": "2022-tour",
+    "eventName": "全国ツアー2022「どう考えても、君ってイコラブのこと好きじゃん」",
     "work": "「The 5th」歌唱衣装②",
     "officialUrl": "https://sp.equal-love.jp/news/detail/5279",
     "addedDate": "2026-07-14"
@@ -1609,6 +1625,7 @@
     "sort": 139,
     "category": "イベント",
     "period": "2022-tour",
+    "eventName": "全国ツアー2022「どう考えても、君ってイコラブのこと好きじゃん」",
     "work": "「あの子コンプレックス」歌唱衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=48200",
     "addedDate": "2026-07-14"
@@ -1659,6 +1676,7 @@
     "sort": 144,
     "category": "イベント",
     "period": "2022-tour",
+    "eventName": "イコノイジョイ 2022",
     "work": "浴衣2022",
     "officialUrl": "https://sp.equal-love.jp/news/detail/5541",
     "addedDate": "2026-07-14"
@@ -1719,6 +1737,7 @@
     "sort": 150,
     "category": "イベント",
     "period": "2022-tour",
+    "eventName": "5th ANNIVERSARY PREMIUM CONCERT",
     "work": "「=LOVE 5th ANNIVERSARY PHOTO BOOK」",
     "officialUrl": "https://equal-love.jp/feature/specialsite_5thconcert",
     "addedDate": "2026-07-14"
@@ -1749,6 +1768,7 @@
     "sort": 153,
     "category": "イベント",
     "period": "2022-tour",
+    "eventName": "イコノイジョイ大運動会 2022",
     "work": "「イコノイジョイ2022」オープニング衣装",
     "officialUrl": "https://equal-love.jp/feature/specialsite_ikonoijoy_sports_2022",
     "addedDate": "2026-07-14"
@@ -1829,6 +1849,7 @@
     "sort": 161,
     "category": "イベント",
     "period": "2023-tour",
+    "eventName": "全国ツアー2023「Today is your Trigger」",
     "work": "「この空がトリガー」歌唱衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/6278",
     "addedDate": "2026-07-14"
@@ -1869,7 +1890,8 @@
     "sort": 165,
     "category": "イベント",
     "period": "2023-tour",
-    "work": "=LOVE全国ツアー2023「Today is your Trigger」日本武道館",
+    "eventName": "全国ツアー2023「Today is your Trigger」日本武道館",
+    "work": "ツアー衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/6422",
     "addedDate": "2026-07-14"
   },
@@ -1969,6 +1991,7 @@
     "sort": 175,
     "category": "イベント",
     "period": "2023-tour",
+    "eventName": "イコノイジョイ 2023",
     "work": "浴衣2023",
     "officialUrl": "https://equal-love.jp/feature/specialsite_ikonoijoy2023",
     "addedDate": "2026-07-14"
@@ -2019,6 +2042,7 @@
     "sort": 180,
     "category": "イベント",
     "period": "2023-tour",
+    "eventName": "6th ANNIVERSARY PREMIUM CONCERT",
     "work": "「=LOVE 6th ANNIVERSARY PHOTO BOOK」",
     "officialUrl": "https://sp.equal-love.jp/news/detail/7388",
     "addedDate": "2026-07-14"
@@ -2029,6 +2053,7 @@
     "sort": 181,
     "category": "イベント",
     "period": "2023-tour",
+    "eventName": "イコノイジョイ 2023",
     "work": "「イコノイジョイ2023衣装」",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=66091",
     "addedDate": "2026-07-14"
@@ -2109,6 +2134,7 @@
     "sort": 189,
     "category": "イベント",
     "period": "2024.tour",
+    "eventName": "アリーナツアー2024「Tell me what's more than \"LOVE\"」",
     "work": "6周年コンサート衣装②",
     "officialUrl": "https://sp.equal-love.jp/news/detail/8377",
     "addedDate": "2026-07-14"
@@ -2169,6 +2195,7 @@
     "sort": 195,
     "category": "イベント",
     "period": "2024.tour",
+    "eventName": "アリーナツアー2024「Tell me what's more than \"LOVE\"」",
     "work": "アリーナツアー2024衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/8377",
     "addedDate": "2026-07-14"
@@ -2269,6 +2296,7 @@
     "sort": 205,
     "category": "イベント",
     "period": "2024.7th",
+    "eventName": "7th ANNIVERSARY PREMIUM CONCERT",
     "work": "「=LOVE 7th ANNIVERSARY PHOTO BOOK」",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=78540",
     "addedDate": "2026-07-14"
@@ -2279,6 +2307,7 @@
     "sort": 206,
     "category": "イベント",
     "period": "2024.7th-Ⅱ",
+    "eventName": "7th ANNIVERSARY PREMIUM CONCERT",
     "work": "「絶対アイドル辞めないで」歌唱衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/8916",
     "addedDate": "2026-07-14"
@@ -2299,6 +2328,7 @@
     "sort": 208,
     "category": "イベント",
     "period": "2024.tour",
+    "eventName": "イコノイジョイ 2024",
     "work": "「イコノイジョイ2023」オープニング衣装",
     "officialUrl": "https://equal-love.jp/feature/specialsite_ikonoijoy2024",
     "addedDate": "2026-07-14"
@@ -2409,6 +2439,7 @@
     "sort": 219,
     "category": "イベント",
     "period": "2025.tour",
+    "eventName": "ARENA TOUR 2025「～Timeless Tales～」",
     "work": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」",
     "officialUrl": "https://sp.equal-love.jp/news/detail/9629",
     "addedDate": "2026-07-16"
@@ -2459,6 +2490,7 @@
     "sort": 224,
     "category": "イベント",
     "period": "2025.tour",
+    "eventName": "ARENA TOUR 2025「～Timeless Tales～」",
     "work": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」②",
     "officialUrl": "https://sp.equal-love.jp/news/detail/9909",
     "addedDate": "2026-07-16"
@@ -2509,6 +2541,7 @@
     "sort": 229,
     "category": "イベント",
     "period": "2025.tour",
+    "eventName": "ARENA TOUR 2025「～Timeless Tales～」",
     "work": "アリーナツアー2025衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/10040",
     "addedDate": "2026-07-16"
@@ -2559,6 +2592,7 @@
     "sort": 234,
     "category": "イベント",
     "period": "2025.tour",
+    "eventName": "ARENA TOUR 2025「～Timeless Tales～」",
     "work": "アリーナツアー2025衣装②",
     "officialUrl": "https://sp.equal-love.jp/news/detail/10297",
     "addedDate": "2026-07-16"
@@ -2719,6 +2753,7 @@
     "sort": 250,
     "category": "イベント",
     "period": "2026.tour",
+    "eventName": "8th ANNIVERSARY PREMIUM TOUR",
     "work": "8周年ツアー衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=108054",
     "addedDate": "2026-07-14"
@@ -2749,6 +2784,7 @@
     "sort": 253,
     "category": "イベント",
     "period": "2026.kokuritsu",
+    "eventName": "STADIUM LIVE「Beyond \"KYUN\"♡」",
     "work": "キービジュアル衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/11551",
     "addedDate": "2026-07-14"
