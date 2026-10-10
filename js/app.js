@@ -141,10 +141,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.11",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.11",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.11",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.11",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.12",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.12",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.12",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.12",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -2022,12 +2022,36 @@ function openMember(id,preset=null){
       .filter(x=>!state.tradeYear||yearOf(x.e)===state.tradeYear)
       .sort((a,b)=>state.tradeOrder==="asc"?a.e.sort-b.e.sort:b.e.sort-a.e.sort);
   }
+  // Ver1.01.12：カードの裏に写真を付けたセットは、欲しい一覧・未所持一覧の右側に小窓で出す。
+  // 画像そのものは、一覧を描いた後に1枚ずつ入れる（大きな文字列をHTMLに混ぜると、描くのが遅くなるため）
+  function itemPhotoHtml(m,e){
+    if(!setPhotoThumbs.has(setKey(e.id,m.id)))return "";
+    return `<button type="button" class="item-photo" data-photo-member="${esc(m.id)}" data-photo-event="${esc(e.id)}" aria-label="${esc(e.work)}の写真を大きく表示"><img alt=""><i aria-hidden="true">🔍</i></button>`;
+  }
+  function bindItemPhotos(root){
+    if(!root)return;
+    // 未所持一覧は少しずつ描き足すので、まだ画像を入れていない小窓だけを扱う
+    root.querySelectorAll(".item-photo:not([data-ready])").forEach(button=>{
+      const m=MEMBERS.find(x=>x.id===button.dataset.photoMember),e=eventById(button.dataset.photoEvent);
+      const thumb=m&&e?setPhotoThumbs.get(setKey(e.id,m.id)):"";
+      if(!thumb){
+        const item=button.closest(".item");
+        if(item)item.classList.remove("has-set-photo");
+        button.remove();
+        return;
+      }
+      button.dataset.ready="1";
+      button.querySelector("img").src=thumb;
+      button.onclick=()=>openSetPhotoViewer(e,m);
+    });
+  }
   function renderGroupedWantItem(x){
     const tags=x.positions.map(v=>`<span class="pill">♡ ${v.p.name}${v.count>0?`（所持 ${v.count}枚）`:""}</span>`).join("");
-    return `<div class="item">
+    const photo=itemPhotoHtml(x.m,x.e);
+    return `<div class="item${photo?" has-set-photo":""}">
       <div class="item-title">${jumpButtonHtml(x.m,x.e)}${x.m.emoji} ${x.m.name}</div>
       <div class="item-meta">${esc(eventLabel(x.e))}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
-      <div class="item-tags">${tags}${officialLinkHtml(x.e)}</div>
+      <div class="item-tags">${tags}${officialLinkHtml(x.e)}</div>${photo}
     </div>`;
   }
   function renderGroupedTradeItem(x){
@@ -2043,6 +2067,7 @@ function openMember(id,preset=null){
     const typeCount=groups.reduce((sum,g)=>sum+g.positions.length,0);
     $("wishlistPage").innerHTML=`<div class="page-head"><h2>♡ 欲しい生写真一覧</h2><p>${groups.length}イベント・${typeCount}種類を登録中</p></div>${listToolbarHtml("wishlist")}<div class="list-page">${groups.length?groups.map(renderGroupedWantItem).join(""):'<div class="empty">条件に該当する欲しい生写真はありません。</div>'}</div>`;
     bindListToolbar("wishlist");
+    bindItemPhotos($("wishlistPage"));
   }
   function renderTrade(){
     const groups=groupedTradeItems();
@@ -2082,12 +2107,12 @@ function openMember(id,preset=null){
           <div><b>${group.m.emoji} ${group.m.name}</b>${isGraduated(group.m)?'<span class="mini-graduated">卒業</span>':''}</div>
           <span>${group.items.reduce((s,x)=>s+x.positions.length,0)}種類</span>
         </div>
-        <div class="missing-event-list">${group.items.map(x=>`
-          <div class="item missing-event-item">
+        <div class="missing-event-list">${group.items.map(x=>{const photo=itemPhotoHtml(group.m,x.e);return `
+          <div class="item missing-event-item${photo?" has-set-photo":""}">
             <div class="item-title">${jumpButtonHtml(group.m,x.e)}${isNewEvent(x.e)?'<span class="inline-new">NEW</span>':''}${esc(eventLabel(x.e))}</div>
             <div class="item-meta">${esc(x.e.work)}｜${esc(x.e.category)}</div>
-            <div class="item-tags">${x.positions.map(p=>`<span class="pill missing-pill">${p.name}</span>`).join("")}${officialLinkHtml(x.e)}</div>
-          </div>`).join("")}
+            <div class="item-tags">${x.positions.map(p=>`<span class="pill missing-pill">${p.name}</span>`).join("")}${officialLinkHtml(x.e)}</div>${photo}
+          </div>`}).join("")}
         </div>
       </section>`).join(""):'<div class="empty">条件に該当する未所持データはありません。</div>';
   }
@@ -2104,13 +2129,16 @@ function openMember(id,preset=null){
     const savedTop=Number(getScrollMemory()[scrollContextKey()]||0);
     if(memberGroups.length<=1||savedTop>0||window.scrollY>window.innerHeight){
       list.innerHTML=missingResultsHtml(memberGroups);
+      bindItemPhotos(list);
       return;
     }
     list.innerHTML=missingResultsHtml(memberGroups.slice(0,1));
+    bindItemPhotos(list);
     let index=1;
     const step=()=>{
       if(token!==missingRenderToken)return;
       list.insertAdjacentHTML("beforeend",missingResultsHtml([memberGroups[index++]]));
+      bindItemPhotos(list);
       if(index<memberGroups.length)setTimeout(step,16);
     };
     setTimeout(step,16);
@@ -2272,7 +2300,7 @@ function openMember(id,preset=null){
       <div class="page-head"><h2>📖 使い方</h2><p>基本操作とデータを安全に使うための案内です</p></div>
       <div class="guide-list">
         <section class="panel guide-card"><span>1</span><div><h3>メンバーを選ぶ</h3><p>TOPからメンバーを選択します。「全メンバー」ではイベント単位でまとめて確認できます。</p></div></section>
-        <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>メンバーの一覧では、マスの「＋」で1枚増やします。マスを長押し（または「⋯」）すると「1枚減らす・直筆・欲しい」を選べます。押したあと画面の下に出る「↶ 取り消す」で、すぐ元に戻せます。カードの上の部分をタップすると裏返り、写真1枚・メモ・一括操作（コンプ登録や欲しい一括追加）・公式サイトがあります。クイック入力とイベント別チェック表も使えます。</p></div></section>
+        <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>メンバーの一覧では、マスの「＋」で1枚増やします。マスを長押し（または「⋯」）すると「1枚減らす・直筆・欲しい」を選べます。押したあと画面の下に出る「↶ 取り消す」で、すぐ元に戻せます。カードの上の部分をタップすると裏返り、写真1枚・メモ・一括操作（コンプ登録や欲しい一括追加）・公式サイトがあります。裏に付けた写真は、欲しい一覧・未所持一覧にも小窓で出ます（押すと大きく見られます）。クイック入力とイベント別チェック表も使えます。</p></div></section>
         <section class="panel guide-card"><span>3</span><div><h3>一覧を絞り込む</h3><p>検索欄と「絞り込み」「並び順」を使います。選択中の条件はチップで表示され、個別に解除できます。一覧の上の「全カテゴリ ▾」を押すと、カテゴリ（通常・イベント・コラボ）を選べます。メンバーごとの一覧では、その右に並ぶ「未所持あり・あと1種・全部未所持・所持あり・コンプ」のボタンで所持状況を切り替えられます。「未所持あり」は、ヨリ・チュウ・ヒキのうち1種でも持っていないセットです。年の見出しを押すと、別の年へ移動できます。</p></div></section>
         <section class="panel guide-card"><span>4</span><div><h3>未所持・提供可能を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。設定の「未所持・欲しい一括操作」から、未所持の一括表示や欲しいへの一括追加もできます。2枚目以降は提供可能として表示されます。欲しい一覧・提供可能一覧・未所持一覧の「一覧で開く」を押すと、そのセットの登録画面へ移動します。</p></div></section>
         <section class="panel guide-card"><span>5</span><div><h3>推しを設定する</h3><p>最推し・推し・気になるの3段階です。メンバーカードの推しバッジや、推しだけの統計・未所持確認に使えます。設定したメンバーはTOPに近道が出て、1タップで一覧や「未所持あり」を開けます。</p></div></section>
@@ -2353,7 +2381,9 @@ function openMember(id,preset=null){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.11</h3>
+        <h3>公開版Ver1.01.12</h3>
+        <p>欲しい生写真一覧と未所持一覧で、カードの裏に写真を付けたセットは、右側に写真を小窓で表示するようにしました。押すと大きく見られます。「ツアー生写真セット(8thCW「しゅきぴ」衣装①)」に公式通販のURLを登録しました。</p>
+        <h3>Ver1.01.11</h3>
         <p>TOPの推しの近道を、横いっぱいの1行にしました。一覧の上で2行に分かれていたカテゴリと所持状況のボタンを1行にまとめ、カテゴリは左端の「全カテゴリ ▾」から選ぶようにしました。あわせて、使われなくなった見た目の指定などを整理しました（見た目は変わりません）。</p>
         <h3>Ver1.01.10</h3>
         <p>メンバーの一覧のカードを新しくしました。＋を押すと数字がくるっと回って推しのファンマークが飛び、3種そろうとCOMPLETEのハンコが押されます。押したあとは画面の下の「↶ 取り消す」で元に戻せます。「1枚減らす・直筆・欲しい」はマスの長押し（または「⋯」）から選びます。カードの上の部分をタップすると裏返り、写真を1枚（商品ページのスクショなど）とメモを付けられます。写真とメモはこの端末の中だけに保存されます。</p>
@@ -4117,7 +4147,13 @@ function openMember(id,preset=null){
         if(record&&typeof record.key==="string"&&validSetPhotoKeyPart(record.eventId)&&validSetPhotoKeyPart(record.memberId)&&record.key===setKey(record.eventId,record.memberId)&&validEnclosedImage(record.thumb,ENCLOSED_THUMB_MAX_CHARS))setPhotoThumbs.set(record.key,record.thumb);
       });
     }catch(error){console.warn("カードの裏の写真を読み込めませんでした",error)}
-    if(setPhotoThumbs.size)refreshAllSetCardThumbs();
+    if(setPhotoThumbs.size){
+      refreshAllSetCardThumbs();
+      if(!$("managerScreen").classList.contains("hidden")){
+        if(state.page==="wishlist")renderWishlist();
+        if(state.page==="missing")updateMissingResults();
+      }
+    }
   }
   function refreshAllSetCardThumbs(){
     const m=currentCollectionMember(),list=$("eventList");
