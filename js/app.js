@@ -141,10 +141,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.09",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.09",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.09",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.09",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.10",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.10",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.10",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.10",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -208,6 +208,7 @@ function initializeApp() {
   const HISTORY_KEY="equal-love-photo-manager-auto-backups-v102";
   const RECENT_KEY="equal-love-photo-manager-recent-edits-v102";
   const SCROLL_KEY="equal-love-photo-manager-scroll-memory-v102";
+  const NOTE_KEY="equal-love-photo-manager-notes-v110"; // Ver1.01.10：カードのメモ（"イベントID__メンバーID" → 文）
   const SCHEMA_VERSION=2;
   function safeStorageObject(key){
     try{
@@ -259,6 +260,7 @@ function initializeApp() {
     signs:safeStorageObject(SIGN_KEY),
     wants:safeStorageObject(WANT_KEY),
     oshis:safeStorageObject(OSHI_KEY),
+    notes:safeStorageObject(NOTE_KEY),
     expanded:{}
   };
   function savePreferences(){
@@ -294,6 +296,25 @@ function initializeApp() {
     },{silent:true});
   }
   const $=id=>document.getElementById(id);
+
+  // ===== Ver1.01.10：カードのメモ・カードの裏の写真・操作の取り消し（ここでは入れ物だけを用意し、処理は後ろの方にまとめてある） =====
+  const SLOT_HINT_KEY="equal-love-photo-manager-slot-hint-v110"; // 長押しの案内を1回だけ出したかどうか
+  const NOTE_MAX=200;
+  const UNDO_SNACK_MS=6000;
+  const SET_PHOTO_DB_NAME="equal-love-photo-manager-set-photos";
+  const SET_THUMB_STORE="thumbs"; // 一覧用の小さい画像（起動時にまとめて読む）
+  const SET_FULL_STORE="fulls";   // 裏面・拡大用の大きい画像（開いた時だけ読む）
+  const SET_PHOTO_FULL_SIDE=1600;
+  const SET_PHOTO_THUMB_SIDE=320;
+  const SET_PHOTO_MAX=5000;
+  const setPhotoThumbs=new Map();
+  let setPhotoDbPromise=null;
+  let setPhotoBusy=false;
+  let undoSnackBox=null,undoSnackTimer=0,undoSnackAction=null;
+  let slotMenuOverlay=null,slotMenuOpenedAt=0,slotMenuReturn=null;
+  let setPhotoViewer=null;
+  let fxLayer=null;
+  let setCardSeq=0;
 
   // ===== Ver1.01.04：端末内への保存に失敗した時（容量不足など）に気づけるようにする =====
   let storageErrorShownAt=0;
@@ -1453,6 +1474,7 @@ function openMember(id,preset=null){
     }
   }
   function showPage(page,skipScrollSave=false){
+    hideUndoSnack();closeSlotMenu(false);closeSetPhotoViewer();
     if(!skipScrollSave)saveScrollPosition();
     if($("homeScreen").classList.contains("hidden")===false){state.mode="all";state.memberId=null;theme(null);$("homeScreen").classList.add("hidden");$("managerScreen").classList.remove("hidden")}
     pushManagerHistory();
@@ -1688,27 +1710,37 @@ function openMember(id,preset=null){
     return `所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人`;
   }
   function syncCompleteBadge(card,e,m){
-    const badges=card.querySelector(".badges");
+    const badges=card.querySelector(".card-front .badges")||card.querySelector(".badges");
     if(!badges)return;
     const done=complete(e,m);
     let badge=badges.querySelector(".badge.complete");
     if(done&&!badge){
       badge=document.createElement("span");
-      badge.className="badge complete";
-      badge.textContent="COMPLETE";
+      badge.className="badge complete complete-stamp";
+      badge.textContent=`${m.emoji||""} COMPLETE`.trim();
       badges.appendChild(badge);
     }else if(!done&&badge){
       badge.remove();
     }
   }
   const prefersReducedMotion=window.matchMedia?window.matchMedia("(prefers-reduced-motion: reduce)"):null;
-  function refreshCollectionCell(row,e,m,p,countChanged=false){
+  function refreshCollectionCell(row,e,m,p,countChanged=false,delta=0){
     const num=row.querySelector(".num"),count=getCount(e.id,m.id,p.id);
     if(num)num.textContent=count;
     // Ver1.01.07：持っている種類は色を付けて、ひと目で分かるようにする
     row.classList.toggle("owned",count>0);
+    if(row.classList.contains("slot-cell")){
+      // Ver1.01.10：メンバーの一覧のマスは、直筆・欲しいをボタンではなく印で出す
+      const signedNow=isSigned(e.id,m.id,p.id);
+      row.classList.toggle("signed",count>0&&signedNow);
+      const signMark=row.querySelector(".mk-sign"),wantMark=row.querySelector(".mk-want");
+      if(signMark)signMark.hidden=!signedNow;
+      if(wantMark)wantMark.hidden=!isWanted(e.id,m.id,p.id);
+    }
     if(countChanged&&num&&num.animate&&!(prefersReducedMotion&&prefersReducedMotion.matches)){
-      num.animate([{transform:"scale(1.4)"},{transform:"scale(1)"}],{duration:170,easing:"ease-out"});
+      // Ver1.01.10：増えた時は下から、減った時は上から、数字がくるっと入れ替わる
+      if(delta)num.animate([{transform:`translateY(${delta>0?75:-75}%)`,opacity:0},{transform:"translateY(0)",opacity:1}],{duration:320,easing:"cubic-bezier(.2,1.4,.4,1)"});
+      else num.animate([{transform:"scale(1.4)"},{transform:"scale(1)"}],{duration:170,easing:"ease-out"});
     }
     const sign=row.querySelector(".sign"),want=row.querySelector(".want");
     if(sign){sign.classList.toggle("on",isSigned(e.id,m.id,p.id));sign.setAttribute("aria-pressed",String(isSigned(e.id,m.id,p.id)))}
@@ -1728,24 +1760,40 @@ function openMember(id,preset=null){
   function renderPositionRow(e,m,p,compact=false){
     const row=document.createElement("div");
     const count=getCount(e.id,m.id,p.id),signed=isSigned(e.id,m.id,p.id),wanted=isWanted(e.id,m.id,p.id),name=esc(p.name);
-    row.className=(compact?"mini-pos":"pos-row")+(count>0?" owned":"");
+    row.className=(compact?"mini-pos":"pos-row slot-cell")+(count>0?" owned":"")+(!compact&&count>0&&signed?" signed":"");
+    row.dataset.pos=p.id;
+    row.dataset.member=m.id;
     // Ver1.01.07：読み上げ（VoiceOver）で、どのボタンか分かるように名前を付ける
-    const minus=`<button class="minus" aria-label="${name}を1枚減らす">−</button>`,plus=`<button class="plus" aria-label="${name}を1枚増やす">＋</button>`;
-    row.innerHTML=compact
-      ?`<div class="mini-label">${name}</div><div class="mini-actions">${minus}<b class="num">${count}</b>${plus}<button class="wide sign ${signed?"on":""}" aria-label="${name}を直筆ありにする" aria-pressed="${signed}">✍️</button><button class="wide want ${wanted?"on":""}" aria-label="${name}を欲しいに登録" aria-pressed="${wanted}">♡</button></div>`
-      :`<span>${name}</span><div class="pos-actions"><button class="icon-btn want ${wanted?"on":""}" aria-label="${name}を欲しいに登録" aria-pressed="${wanted}">♡</button><button class="icon-btn sign ${signed?"on":""}" aria-label="${name}を直筆ありにする" aria-pressed="${signed}">✍️</button><div class="counter">${minus}<span class="count num">${count}</span>${plus}</div></div>`;
-    row.querySelector(".minus").onclick=()=>{
-      if(getCount(e.id,m.id,p.id)<=0)return; // 0枚の時は何も変わらないので、保存も描き直しもしない
-      setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)-1);refreshCollectionCell(row,e,m,p,true);
-    };
-    row.querySelector(".plus").onclick=()=>{setCount(e.id,m.id,p.id,getCount(e.id,m.id,p.id)+1);refreshCollectionCell(row,e,m,p,true)};
-    row.querySelector(".sign").onclick=()=>{toggleSign(e.id,m.id,p.id);refreshCollectionCell(row,e,m,p)};
-    row.querySelector(".want").onclick=()=>{toggleWant(e.id,m.id,p.id);refreshCollectionCell(row,e,m,p)};
+    const plus=`<button class="plus" aria-label="${name}を1枚増やす">＋</button>`;
+    if(compact){
+      const minus=`<button class="minus" aria-label="${name}を1枚減らす">−</button>`;
+      row.innerHTML=`<div class="mini-label">${name}</div><div class="mini-actions">${minus}<b class="num">${count}</b>${plus}<button class="wide sign ${signed?"on":""}" aria-label="${name}を直筆ありにする" aria-pressed="${signed}">✍️</button><button class="wide want ${wanted?"on":""}" aria-label="${name}を欲しいに登録" aria-pressed="${wanted}">♡</button></div>`;
+      row.querySelector(".minus").onclick=()=>changeSlotCount(row,e,m,p,-1);
+      row.querySelector(".sign").onclick=()=>toggleSlotFlag(row,e,m,p,"sign");
+      row.querySelector(".want").onclick=()=>toggleSlotFlag(row,e,m,p,"want");
+    }else{
+      // Ver1.01.10：メンバーの一覧のマス。減らす・直筆・欲しいは、長押しか ⋯ のメニューから
+      row.innerHTML=`<div class="slot-top"><span class="slot-label">${name}</span><button type="button" class="slot-more" aria-label="${name}のメニュー（1枚減らす・直筆・欲しい）" aria-haspopup="dialog">⋯</button></div><div class="slot-count"><b class="num">${count}</b></div><div class="slot-marks"><span class="mk-sign"${signed?"":" hidden"}>✍️直筆</span><span class="mk-want"${wanted?"":" hidden"}>♡欲しい</span></div>${plus}`;
+      row.querySelector(".slot-more").onclick=event=>{
+        const r=event.currentTarget.getBoundingClientRect();
+        openSlotMenu(row,e,m,p,r.left+r.width/2,r.top+r.height/2,event.currentTarget);
+      };
+    }
+    row.querySelector(".plus").onclick=event=>changeSlotCount(row,e,m,p,1,event.currentTarget);
     return row;
   }
   function periodLineHtml(e){return `<div class="period${e.eventName?" is-event-name":""}">${esc(eventLabel(e))}</div>`}
-  function renderMemberCard(e,m){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;card.innerHTML=`<div class="event-head"><div class="event-topline"><div>${periodLineHtml(e)}<div class="work">${esc(e.work)}</div></div><div class="badges"><span class="badge">${esc(e.category)}</span>${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}${complete(e,m)?'<span class="badge complete">COMPLETE</span>':''}</div></div></div><div class="member-line">${m.emoji} ${m.name}</div><div class="positions"></div><div class="event-footer"></div>`;
-  eventPositions(e).forEach(p=>card.querySelector(".positions").appendChild(renderPositionRow(e,m,p)));const f=card.querySelector(".event-footer");f.innerHTML=`<button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}`;f.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);return card}
+  // Ver1.01.10：表＝写真の小さい画像・セット名・マス。上の部分をタップすると裏（写真・メモ・一括操作・公式サイト）へ
+  function renderMemberCard(e,m){
+    const card=document.createElement("article");
+    card.className="event-card set-card";
+    card.dataset.eventId=e.id;
+    card.innerHTML=`<div class="card-face card-front"><div class="event-head card-flip-head" role="button" tabindex="0" aria-label="${esc(e.work)}：タップで裏返す（写真・メモ・一括操作・公式サイト）"><div class="event-topline">${frontThumbHtml(setKey(e.id,m.id))}<div>${periodLineHtml(e)}<div class="work">${esc(e.work)}</div><span class="flip-hint">${esc(frontHintText(e,m))}</span></div><div class="badges"><span class="badge">${esc(e.category)}</span>${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}${complete(e,m)?`<span class="badge complete complete-stamp">${esc(`${m.emoji||""} COMPLETE`.trim())}</span>`:''}</div></div></div><div class="positions"></div></div>`;
+    const positions=card.querySelector(".positions");
+    eventPositions(e).forEach(p=>positions.appendChild(renderPositionRow(e,m,p)));
+    bindFlipHead(card.querySelector(".card-flip-head"),card,e,m,true);
+    return card;
+  }
   function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e);card.innerHTML=`<div class="event-head"><div class="event-topline"><div>${periodLineHtml(e)}<div class="work">${esc(e.work)}</div><div class="all-summary">${allCardSummaryText(e,eligible)}</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];card.replaceWith(renderAllCard(e))};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;eventPositions(e).forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
   // Ver1.01.04：画面に見える分（戻す予定のスクロール位置まで）を先に描き、残りは少しずつ足す
   let collectionRenderToken=0;
@@ -1876,6 +1924,7 @@ function openMember(id,preset=null){
       container.appendChild(frag);
     };
     collectionRun={token,list,appendChunk,position:()=>index};
+    if(member)setTimeout(maybeShowSlotHint,700);
     // 欲しい一覧などから「一覧で開く」で来た時は、目的のセットまで先に描く
     const targetIndex=pendingScrollTarget?list.findIndex(e=>e.id===pendingScrollTarget):-1;
     const contentBottom=()=>{const last=container.lastElementChild;return last?last.getBoundingClientRect().bottom+window.scrollY:0};
@@ -2218,7 +2267,7 @@ function openMember(id,preset=null){
       <div class="page-head"><h2>📖 使い方</h2><p>基本操作とデータを安全に使うための案内です</p></div>
       <div class="guide-list">
         <section class="panel guide-card"><span>1</span><div><h3>メンバーを選ぶ</h3><p>TOPからメンバーを選択します。「全メンバー」ではイベント単位でまとめて確認できます。</p></div></section>
-        <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>通常一覧のほか、クイック入力とイベント別チェック表が使えます。イベントカードの「一括操作」からコンプ登録や欲しい一括追加もできます。</p></div></section>
+        <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>メンバーの一覧では、マスの「＋」で1枚増やします。マスを長押し（または「⋯」）すると「1枚減らす・直筆・欲しい」を選べます。押したあと画面の下に出る「↶ 取り消す」で、すぐ元に戻せます。カードの上の部分をタップすると裏返り、写真1枚・メモ・一括操作（コンプ登録や欲しい一括追加）・公式サイトがあります。クイック入力とイベント別チェック表も使えます。</p></div></section>
         <section class="panel guide-card"><span>3</span><div><h3>一覧を絞り込む</h3><p>検索欄と「絞り込み」「並び順」を使います。選択中の条件はチップで表示され、個別に解除できます。メンバーごとの一覧では、上に並ぶ「未所持あり・あと1種・全部未所持・所持あり・コンプ」のボタンで所持状況を切り替えられます。「未所持あり」は、ヨリ・チュウ・ヒキのうち1種でも持っていないセットです。年の見出しを押すと、別の年へ移動できます。</p></div></section>
         <section class="panel guide-card"><span>4</span><div><h3>未所持・提供可能を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。設定の「未所持・欲しい一括操作」から、未所持の一括表示や欲しいへの一括追加もできます。2枚目以降は提供可能として表示されます。欲しい一覧・提供可能一覧・未所持一覧の「一覧で開く」を押すと、そのセットの登録画面へ移動します。</p></div></section>
         <section class="panel guide-card"><span>5</span><div><h3>推しを設定する</h3><p>最推し・推し・気になるの3段階です。メンバーカードの推しバッジや、推しだけの統計・未所持確認に使えます。設定したメンバーはTOPに近道が出て、1タップで一覧や「未所持あり」を開けます。</p></div></section>
@@ -2299,7 +2348,9 @@ function openMember(id,preset=null){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.09</h3>
+        <h3>公開版Ver1.01.10</h3>
+        <p>メンバーの一覧のカードを新しくしました。＋を押すと数字がくるっと回って推しのファンマークが飛び、3種そろうとCOMPLETEのハンコが押されます。押したあとは画面の下の「↶ 取り消す」で元に戻せます。「1枚減らす・直筆・欲しい」はマスの長押し（または「⋯」）から選びます。カードの上の部分をタップすると裏返り、写真を1枚（商品ページのスクショなど）とメモを付けられます。写真とメモはこの端末の中だけに保存されます。</p>
+        <h3>Ver1.01.09</h3>
         <p>公式サイトのお知らせ・公式通販の商品名と照らし合わせて、セットの名前・並び順・種類の構成を直しました（例：「とくべちゅ」→「とくべチュ」、ARENA TOUR 2025 の衣装名、2025年10月の歌唱衣装とMV衣装の順番、はなまるうどんコラボの種類）。登録済みのデータは、今までと同じ衣装名のセットに残ります。検索で、ひらがな・カタカナ、全角・半角の違いを区別しないようにしました。</p>
         <h3>Ver1.01.08</h3>
         <p>ツアー・コンサート・フェスのセットは、一覧の上の行に正式なツアー名・イベント名を出すようにしました（例：「2022-tour」→「全国ツアー2022「どう考えても、君ってイコラブのこと好きじゃん」」）。ツアー名・イベント名でも検索できます。</p>
@@ -2355,7 +2406,7 @@ function openMember(id,preset=null){
       exportedAt:new Date().toISOString(),
       sourceVersion:APP_CONFIG.version,
       dataVersion:APP_CONFIG.dataVersion||APP_CONFIG.dataUpdatedAt||"",
-      data:{counts:state.counts,signs:state.signs,wants:state.wants,oshis:state.oshis,preferences:currentPreferences()}
+      data:{counts:state.counts,signs:state.signs,wants:state.wants,oshis:state.oshis,notes:state.notes,preferences:currentPreferences()}
     };
   }
   // ===== Ver1.01.04：しばらくバックアップを保存していない時に、TOPで知らせる =====
@@ -2447,6 +2498,17 @@ function openMember(id,preset=null){
     localStorage.setItem(WANT_KEY,JSON.stringify(wants.data));
     localStorage.setItem(OSHI_KEY,JSON.stringify(backup.oshis||{}));
     localStorage.setItem(PREF_KEY,JSON.stringify(backup.preferences||{}));
+    // Ver1.01.10：メモ。メモの無い古いバックアップから戻す時は、今のメモを消さずに残す
+    if(backup.notes){
+      const migrations=APP_CONFIG.eventIdMigrations&&typeof APP_CONFIG.eventIdMigrations==="object"?APP_CONFIG.eventIdMigrations:{};
+      const notes={};
+      Object.entries(backup.notes).forEach(([key,text])=>{
+        const [eventId,memberId]=key.split("__");
+        const target=typeof migrations[eventId]==="string"&&migrations[eventId]?migrations[eventId]:eventId;
+        notes[`${target}__${memberId}`]=text;
+      });
+      localStorage.setItem(NOTE_KEY,JSON.stringify(notes));
+    }
     return counts.migrationCount+signs.migrationCount+wants.migrationCount;
   }
   function restoreAutoBackup(index){
@@ -2555,6 +2617,7 @@ function openMember(id,preset=null){
       counts:sanitizeBackupMap(payload.data.counts,"所持",report),
       signs:sanitizeBackupMap(payload.data.signs,"直筆",report),
       wants:sanitizeBackupMap(payload.data.wants,"欲しい",report),
+      notes:sanitizeBackupNotes(payload.data.notes),
       unknownCount:report.unknown,
       oshis,
       preferences:sanitizePreferences(payload.data.preferences),
@@ -2594,7 +2657,7 @@ function openMember(id,preset=null){
           <div class="backup-preview-counts">
             <span>所持 ${Object.keys(pendingBackup.counts).length}件</span>
             <span>直筆 ${Object.keys(pendingBackup.signs).length}件</span>
-            <span>欲しい ${Object.keys(pendingBackup.wants).length}件</span><span>推し ${Object.keys(pendingBackup.oshis||{}).length}人</span>
+            <span>欲しい ${Object.keys(pendingBackup.wants).length}件</span><span>推し ${Object.keys(pendingBackup.oshis||{}).length}人</span>${pendingBackup.notes?`<span>メモ ${Object.keys(pendingBackup.notes).length}件</span>`:""}
           </div>
           ${pendingBackup.unknownCount?`<div class="backup-preview-note">今のデータに無いセットの項目が${pendingBackup.unknownCount}件あります。消さずにそのまま保持します。</div>`:""}
           <button id="restoreBackupButton" class="primary-action">このバックアップを復元</button>`;
@@ -2620,7 +2683,7 @@ function openMember(id,preset=null){
   }
   function restorePendingBackup(){
     if(!pendingBackup)return;
-    const summary=`作成日時：${formatBackupDate(pendingBackup.exportedAt)}\n作成元：Ver ${pendingBackup.sourceVersion}\n所持 ${Object.keys(pendingBackup.counts).length}件\n直筆 ${Object.keys(pendingBackup.signs).length}件\n欲しい ${Object.keys(pendingBackup.wants).length}件\n推し設定 ${Object.keys(pendingBackup.oshis||{}).length}人`;
+    const summary=`作成日時：${formatBackupDate(pendingBackup.exportedAt)}\n作成元：Ver ${pendingBackup.sourceVersion}\n所持 ${Object.keys(pendingBackup.counts).length}件\n直筆 ${Object.keys(pendingBackup.signs).length}件\n欲しい ${Object.keys(pendingBackup.wants).length}件\n推し設定 ${Object.keys(pendingBackup.oshis||{}).length}人${pendingBackup.notes?`\nメモ ${Object.keys(pendingBackup.notes).length}件`:""}`;
     if(!confirm(`現在のデータを上書きします。\n\n${summary}\n\n復元しますか？`))return;
     if(!ensureAutoBackup("ファイル復元の直前"))return;
     let migrated=0;
@@ -2631,7 +2694,7 @@ function openMember(id,preset=null){
     location.reload();
   }
   function deleteAllUserData(){
-    if(!confirm("所持枚数・直筆・欲しい情報・フィルター設定をすべて削除します。\nこの操作は元に戻せません。\n\n続けますか？"))return;
+    if(!confirm("所持枚数・直筆・欲しい情報・カードのメモ・フィルター設定をすべて削除します。\nこの操作は元に戻せません。\n\n続けますか？"))return;
     const answer=prompt("最終確認です。\n削除する場合は「全削除」と入力してください。");
     if(answer!=="全削除"){
       const msg=document.getElementById("backupMessage");
@@ -2639,7 +2702,7 @@ function openMember(id,preset=null){
       return;
     }
     if(!ensureAutoBackup("全削除の直前"))return;
-    [COUNT_KEY,SIGN_KEY,WANT_KEY,OSHI_KEY,PREF_KEY,RECENT_KEY,LAST_EXPORT_KEY,REMINDER_SNOOZE_KEY].forEach(key=>localStorage.removeItem(key));
+    [COUNT_KEY,SIGN_KEY,WANT_KEY,OSHI_KEY,PREF_KEY,NOTE_KEY,RECENT_KEY,LAST_EXPORT_KEY,REMINDER_SNOOZE_KEY].forEach(key=>localStorage.removeItem(key));
     sessionStorage.removeItem(SCROLL_KEY);
     alert("すべての保存データを削除しました。画面を再読み込みします。");
     location.reload();
@@ -2656,7 +2719,7 @@ function openMember(id,preset=null){
       <div class="panel backup-panel">
         <div class="backup-icon">📤</div>
         <h3>バックアップを保存</h3>
-        <p>所持枚数・直筆・欲しい・推し・フィルター設定を、1つのJSONファイルに保存します。端末内のメンバー画像と封入生写真は含まれません（封入生写真は、そのページにある「写真つきバックアップ」で保存します）。</p>
+        <p>所持枚数・直筆・欲しい・カードのメモ・推し・フィルター設定を、1つのJSONファイルに保存します。端末内のメンバー画像・封入生写真・カードの裏の写真は含まれません（封入生写真はそのページの「写真つきバックアップ」、カードの裏の写真はこのページの下の「カードの裏の写真」で保存します）。</p>
         <button id="exportBackupButton" class="primary-action">バックアップファイルを保存</button>
       </div>
       <div class="panel backup-panel">
@@ -2668,6 +2731,17 @@ function openMember(id,preset=null){
         <div id="backupPreview" class="backup-preview"></div>
         <div class="backup-warning">⚠️ 壊れたJSON・別形式のJSON・不正な値を含むファイルは復元できません。</div>
       </div>
+      <div class="panel backup-panel set-photo-backup-panel">
+        <div class="backup-icon">📷</div>
+        <h3>カードの裏の写真</h3>
+        <p>カードの裏に登録した写真は、ファイルが大きくなるため、上のバックアップとは別のファイルに保存します（メモは上のバックアップに入ります）。</p>
+        <p id="setPhotoBackupStatus" class="enclosed-backup-status">写真の枚数を確認しています…</p>
+        <button type="button" id="setPhotoExportButton" class="primary-action">写真のバックアップを保存</button>
+        <input id="setPhotoImportInput" class="file-input" type="file" accept=".json,application/json">
+        <label for="setPhotoImportInput" class="secondary-action">写真のバックアップから読み込む</label>
+        <div class="backup-warning">読み込みは「追加」です。同じセット・メンバーの写真は上書きします。ファイルには写真が入るので、SNSや公開の場所へ置かないでください。</div>
+        <button type="button" id="setPhotoDeleteAllButton" class="text-danger-button">カードの裏の写真をすべて削除</button>
+      </div>
       <div class="panel backup-panel">
         <div class="backup-icon">🕘</div>
         <h3>自動バックアップ履歴</h3>
@@ -2678,7 +2752,7 @@ function openMember(id,preset=null){
       <div class="panel danger-panel">
         <div class="backup-icon">🗑️</div>
         <h3>保存データを全削除</h3>
-        <p>所持枚数・直筆・欲しい情報・保存済みフィルター設定を削除します。メンバー画像は画像設定から別途削除できます。確認は2段階です。</p>
+        <p>所持枚数・直筆・欲しい情報・カードのメモ・保存済みフィルター設定を削除します。メンバー画像は画像設定から、カードの裏の写真は上の「カードの裏の写真」から、別途削除できます。確認は2段階です。</p>
         <button id="deleteAllDataButton" class="danger-action">すべての保存データを削除</button>
       </div>
       <div id="backupMessage" class="backup-message"></div>`;
@@ -2690,6 +2764,7 @@ function openMember(id,preset=null){
     if(saveHistoryButton)saveHistoryButton.onclick=()=>{const saved=saveAutoBackup("手動履歴保存");renderBackup();showActionToast(saved?"現在の状態を履歴へ保存しました":"⚠️ 容量が足りず、履歴へ保存できませんでした")};
     const clearHistoryButton=document.getElementById("clearHistoryButton");
     if(clearHistoryButton)clearHistoryButton.onclick=clearAutoBackups;
+    setupSetPhotoBackupPanel();
   }
 
   // =====================================================================
@@ -3572,9 +3647,712 @@ function openMember(id,preset=null){
   },{passive:true});
 
   selectorSheet.addEventListener("touchcancel",resetSelectorSwipe,{passive:true});
+  // =====================================================================
+  // Ver1.01.10：生写真カードの新しい操作
+  //   ・＋：数字がくるっと回り、そのメンバーのファンマークが飛ぶ
+  //   ・3種そろった瞬間に COMPLETE のハンコ（ファンマーク入り）と紙吹雪
+  //   ・操作のあと、画面の下に「取り消す」の帯を出す
+  //   ・マスの長押し（または ⋯ ボタン）で「1枚減らす・直筆・欲しい」
+  //   ・カードの上の部分をタップで裏返す（写真1枚・メモ・一括操作・公式サイト）。裏も同じ場所で表に戻る
+  //   ・写真はこの端末の中（IndexedDB）だけに保存し、外部へは送らない
+  // =====================================================================
+  function motionReduced(){return !!(prefersReducedMotion&&prefersReducedMotion.matches)}
+  function setKey(eventId,memberId){return `${eventId}__${memberId}`}
+  function currentCollectionMember(){return state.mode==="member"?MEMBERS.find(x=>x.id===state.memberId)||null:null}
+  function slotInfo(row){
+    const card=row.closest(".event-card");
+    if(!card)return null;
+    const e=eventById(card.dataset.eventId),m=currentCollectionMember();
+    if(!e||!m)return null;
+    const p=eventPositions(e).find(item=>item.id===row.dataset.pos);
+    return p?{e,m,p}:null;
+  }
+  // 取り消す時に、操作したマスがまだ画面にあればそこを、描き直されていれば同じマスを探して書き換える
+  function findLiveRow(row,e,m,p){
+    if(row&&row.isConnected)return row;
+    const list=$("eventList");
+    if(!list)return null;
+    for(const card of list.querySelectorAll(".event-card")){
+      if(card.dataset.eventId!==e.id)continue;
+      const found=[...card.querySelectorAll("[data-pos]")].find(r=>r.dataset.pos===p.id&&r.dataset.member===m.id);
+      if(found)return found;
+    }
+    return null;
+  }
+  function syncAfterUndo(row,e,m,p,delta,countChanged){
+    const live=findLiveRow(row,e,m,p);
+    if(live){refreshCollectionCell(live,e,m,p,countChanged,delta);return}
+    updateSummary();
+    if(countChanged)updateOwnershipChipCounts();
+  }
+
+  // ---------- 枚数・直筆・欲しいの変更（取り消しの帯つき） ----------
+  function changeSlotCount(row,e,m,p,delta,button){
+    const before=getCount(e.id,m.id,p.id),after=Math.max(0,before+delta);
+    if(after===before){
+      if(delta<0)showUndoSnack({main:`${p.name}は0枚です`,sub:e.work,mark:m.emoji});
+      return; // 0枚の時は何も変わらないので、保存も描き直しもしない
+    }
+    const wasComplete=complete(e,m);
+    setCount(e.id,m.id,p.id,after);
+    refreshCollectionCell(row,e,m,p,true,delta);
+    if(delta>0&&button){pressBounce(button);fanBurst(m,button)}
+    if(!wasComplete&&row.classList.contains("slot-cell")&&complete(e,m))playCompleteStamp(row.closest(".event-card"),m);
+    showUndoSnack({
+      main:delta>0?`${p.name}を1枚追加しました`:`${p.name}を1枚減らしました`,
+      sub:`${state.mode==="all"?`${m.name}｜`:""}${e.work}｜いま${after}枚`,
+      mark:m.emoji,
+      undo:()=>{
+        setCount(e.id,m.id,p.id,before);
+        syncAfterUndo(row,e,m,p,-delta,true);
+        return `${e.work}｜${p.name}は${before}枚に戻りました`;
+      }
+    });
+  }
+  function toggleSlotFlag(row,e,m,p,kind){
+    const flip=()=>kind==="sign"?toggleSign(e.id,m.id,p.id):toggleWant(e.id,m.id,p.id);
+    flip();
+    refreshCollectionCell(row,e,m,p);
+    const on=kind==="sign"?isSigned(e.id,m.id,p.id):isWanted(e.id,m.id,p.id);
+    const what=kind==="sign"?"直筆":"欲しい";
+    showUndoSnack({
+      main:`${p.name}の${what}を${on?"付けました":"外しました"}`,
+      sub:`${state.mode==="all"?`${m.name}｜`:""}${e.work}`,
+      mark:m.emoji,
+      undo:()=>{flip();syncAfterUndo(row,e,m,p,0,false);return `${p.name}の${what}を元に戻しました`}
+    });
+  }
+
+  // ---------- 演出（動きを減らす設定の端末では出さない） ----------
+  function effectLayer(){
+    if(fxLayer&&fxLayer.isConnected)return fxLayer;
+    fxLayer=document.createElement("div");
+    fxLayer.className="fx-layer";
+    fxLayer.setAttribute("aria-hidden","true");
+    document.body.appendChild(fxLayer);
+    return fxLayer;
+  }
+  function pressBounce(button){
+    if(motionReduced()||!button.animate)return;
+    button.animate([{transform:"scale(1)"},{transform:"scale(.8)"},{transform:"scale(1.08)"},{transform:"scale(1)"}],{duration:340,easing:"ease-out"});
+  }
+  function fanBurst(m,anchor){
+    if(motionReduced()||!anchor.animate||!m.emoji)return;
+    const r=anchor.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2-8,layer=effectLayer();
+    for(let i=0;i<5;i++){
+      const s=document.createElement("span");
+      s.className="fx-fan";
+      s.textContent=m.emoji;
+      s.style.left=`${Math.round(x-10)}px`;s.style.top=`${Math.round(y-10)}px`;
+      layer.appendChild(s);
+      const dx=(Math.random()-.5)*110,dy=-(50+Math.random()*70),rot=(Math.random()-.5)*70;
+      s.animate([
+        {transform:"translate(0,0) scale(.3)",opacity:1},
+        {transform:`translate(${Math.round(dx*.6)}px,${Math.round(dy*.8)}px) scale(1.15) rotate(${Math.round(rot*.6)}deg)`,opacity:1,offset:.6},
+        {transform:`translate(${Math.round(dx)}px,${Math.round(dy)}px) scale(1) rotate(${Math.round(rot)}deg)`,opacity:0}
+      ],{duration:750+Math.random()*350,easing:"cubic-bezier(.2,.7,.3,1)"}).onfinish=()=>s.remove();
+    }
+  }
+  function confettiBurst(x,y,m){
+    if(motionReduced())return;
+    const layer=effectLayer(),colors=[m.accent,memberAccent2(m),"#ffd34d","#ef7fad","#8fd3ff"];
+    for(let i=0;i<28;i++){
+      const fan=i%4===0&&m.emoji;
+      const c=document.createElement("span");
+      if(fan){c.className="fx-fan";c.textContent=m.emoji}else{c.className="fx-confetti";c.style.background=colors[i%colors.length]}
+      c.style.left=`${Math.round(x)}px`;c.style.top=`${Math.round(y)}px`;
+      layer.appendChild(c);
+      const angle=Math.random()*Math.PI*2,speed=60+Math.random()*120,dx=Math.cos(angle)*speed,up=-(40+Math.random()*110);
+      c.animate([
+        {transform:"translate(0,0) rotate(0deg)",opacity:1},
+        {transform:`translate(${Math.round(dx*.7)}px,${Math.round(up)}px) rotate(${Math.round(Math.random()*(fan?60:360))}deg)`,opacity:1,offset:.45},
+        {transform:`translate(${Math.round(dx)}px,${Math.round(up+160+Math.random()*80)}px) rotate(${Math.round(Math.random()*(fan?120:720))}deg)`,opacity:0}
+      ],{duration:1200+Math.random()*600,easing:"cubic-bezier(.2,.6,.4,1)"}).onfinish=()=>c.remove();
+    }
+  }
+  function playCompleteStamp(card,m){
+    if(!card)return;
+    const stamp=card.querySelector(".complete-stamp");
+    if(!stamp||motionReduced()||!stamp.animate)return;
+    stamp.animate([
+      {transform:"rotate(-10deg) scale(2.6)",opacity:0},
+      {transform:"rotate(-10deg) scale(.92)",opacity:1,offset:.55},
+      {transform:"rotate(-10deg) scale(1.05)",offset:.78},
+      {transform:"rotate(-10deg) scale(1)",opacity:1}
+    ],{duration:620,easing:"cubic-bezier(.3,.7,.3,1)"});
+    card.animate([{transform:"translateY(0)"},{transform:"translateY(4px)"},{transform:"translateY(-2px)"},{transform:"translateY(0)"}],{duration:280,delay:320,easing:"ease-out"});
+    setTimeout(()=>{
+      if(!stamp.isConnected)return;
+      const r=stamp.getBoundingClientRect();
+      confettiBurst(r.left+r.width/2,r.top+r.height/2,m);
+    },340);
+  }
+
+  // ---------- 画面の下の「取り消す」の帯 ----------
+  function undoSnackElement(){
+    if(undoSnackBox&&undoSnackBox.isConnected)return undoSnackBox;
+    const box=document.createElement("div");
+    box.className="undo-snack";
+    box.setAttribute("role","status");
+    box.setAttribute("aria-live","polite");
+    const mark=document.createElement("span");
+    mark.className="undo-snack-mark";
+    mark.setAttribute("aria-hidden","true");
+    const text=document.createElement("span");
+    text.className="undo-snack-text";
+    text.append(document.createElement("b"),document.createElement("small"));
+    const button=document.createElement("button");
+    button.type="button";
+    button.className="undo-snack-button";
+    button.textContent="↶ 取り消す";
+    button.onclick=()=>{
+      const action=undoSnackAction;
+      undoSnackAction=null;
+      if(!action)return;
+      let message="";
+      try{message=action()||""}catch(error){console.warn("取り消せませんでした",error)}
+      if(!motionReduced()&&button.animate)button.animate([{transform:"rotate(0)"},{transform:"rotate(-16deg)"},{transform:"rotate(0)"}],{duration:280});
+      showUndoSnack({main:"取り消しました",sub:message,mark:"↶"});
+    };
+    const timer=document.createElement("span");
+    timer.className="undo-snack-timer";
+    timer.setAttribute("aria-hidden","true");
+    box.append(mark,text,button,timer);
+    document.body.appendChild(box);
+    undoSnackBox=box;
+    return box;
+  }
+  function showUndoSnack({main,sub="",mark="",undo=null,duration=0}){
+    const box=undoSnackElement();
+    box.querySelector(".undo-snack-text b").textContent=main;
+    box.querySelector(".undo-snack-text small").textContent=sub;
+    box.querySelector(".undo-snack-mark").textContent=mark||"✓";
+    undoSnackAction=typeof undo==="function"?undo:null;
+    box.querySelector(".undo-snack-button").hidden=!undoSnackAction;
+    box.classList.toggle("has-undo",!!undoSnackAction);
+    // 残り時間の線を最初から動かし直す（配置の計算をその場でさせないよう、次の描画で戻す）
+    const timer=box.querySelector(".undo-snack-timer");
+    timer.style.animation="none";
+    requestAnimationFrame(()=>{timer.style.animation=""});
+    box.classList.add("open");
+    document.body.classList.add("undo-open");
+    clearTimeout(undoSnackTimer);
+    undoSnackTimer=setTimeout(hideUndoSnack,duration||(undoSnackAction?UNDO_SNACK_MS:2600));
+  }
+  function hideUndoSnack(){
+    clearTimeout(undoSnackTimer);
+    undoSnackAction=null;
+    if(undoSnackBox)undoSnackBox.classList.remove("open");
+    document.body.classList.remove("undo-open");
+  }
+
+  // ---------- 長押し・⋯ のメニュー（1枚減らす・直筆・欲しい） ----------
+  function openSlotMenu(row,e,m,p,x,y,returnFocus){
+    closeSlotMenu(false);
+    const overlay=document.createElement("div");
+    overlay.className="slot-menu-overlay";
+    overlay.setAttribute("role","dialog");
+    overlay.setAttribute("aria-label",`${p.name}のメニュー`);
+    const items=[
+      {action:"minus",icon:"−",label:"1枚減らす",on:false,run:()=>changeSlotCount(row,e,m,p,-1)},
+      {action:"sign",icon:"✍️",label:"直筆",on:isSigned(e.id,m.id,p.id),run:()=>toggleSlotFlag(row,e,m,p,"sign")},
+      {action:"want",icon:"♡",label:"欲しい",on:isWanted(e.id,m.id,p.id),run:()=>toggleSlotFlag(row,e,m,p,"want")}
+    ];
+    // 花びらが画面の端で切れないよう、中心を少し内側へ寄せる（半径84px＋花びら34px＋余白）
+    const cx=Math.min(Math.max(x,118),window.innerWidth-118),cy=Math.min(Math.max(y,150),window.innerHeight-80);
+    const caption=document.createElement("div");
+    caption.className="slot-menu-caption";
+    caption.textContent=`${p.name}・いま${getCount(e.id,m.id,p.id)}枚`;
+    caption.style.left=`${Math.round(cx)}px`;caption.style.top=`${Math.round(cy+30)}px`;
+    overlay.appendChild(caption);
+    const angles=[-150,-90,-30],radius=84;
+    items.forEach((item,index)=>{
+      const b=document.createElement("button");
+      b.type="button";
+      b.className=`slot-petal${item.on?" on":""}`;
+      b.dataset.slotAction=item.action;
+      const icon=document.createElement("i");icon.textContent=item.icon;
+      const label=document.createElement("span");label.textContent=item.label;
+      b.append(icon,label);
+      if(item.action==="minus")b.setAttribute("aria-label",`${p.name}を1枚減らす`);
+      else{b.setAttribute("aria-label",`${p.name}の${item.label}`);b.setAttribute("aria-pressed",String(item.on))}
+      const a=angles[index]*Math.PI/180,px=cx+Math.cos(a)*radius,py=cy+Math.sin(a)*radius;
+      b.style.left=`${Math.round(px)}px`;b.style.top=`${Math.round(py)}px`;
+      b.onclick=event=>{
+        event.stopPropagation();
+        if(Date.now()-slotMenuOpenedAt<300)return; // 長押しを離した指で、そのまま押してしまわないように
+        closeSlotMenu();
+        item.run();
+      };
+      overlay.appendChild(b);
+      if(!motionReduced()&&b.animate)b.animate([{transform:`translate(${Math.round(cx-px)}px,${Math.round(cy-py)}px) scale(.2)`,opacity:0},{transform:"translate(0,0) scale(1)",opacity:1}],{duration:340,delay:index*40,easing:"cubic-bezier(.3,1.5,.5,1)",fill:"backwards"});
+    });
+    overlay.onclick=event=>{if(event.target===overlay&&Date.now()-slotMenuOpenedAt>400)closeSlotMenu()};
+    document.body.appendChild(overlay);
+    slotMenuOverlay=overlay;
+    slotMenuOpenedAt=Date.now();
+    slotMenuReturn=returnFocus||null;
+    const first=overlay.querySelector("button");
+    if(first)first.focus({preventScroll:true});
+  }
+  function closeSlotMenu(restoreFocus=true){
+    if(!slotMenuOverlay)return false;
+    slotMenuOverlay.remove();
+    slotMenuOverlay=null;
+    if(restoreFocus&&slotMenuReturn&&slotMenuReturn.isConnected)slotMenuReturn.focus({preventScroll:true});
+    slotMenuReturn=null;
+    return true;
+  }
+  // 長押しは一覧全体で1回だけ受け付ける（マスごとに登録すると、何百個もの登録になって重くなるため）
+  function setupSlotLongPress(){
+    const list=$("eventList");
+    if(!list||list.dataset.longPressReady)return;
+    list.dataset.longPressReady="1";
+    let timer=0,start=null,target=null;
+    const cancel=()=>{clearTimeout(timer);timer=0;if(target)target.classList.remove("pressing");target=null;start=null};
+    list.addEventListener("pointerdown",event=>{
+      if(event.button>0)return;
+      const row=event.target.closest(".slot-cell");
+      if(!row||event.target.closest("button"))return;
+      cancel();
+      target=row;start=[event.clientX,event.clientY];
+      row.classList.add("pressing");
+      timer=setTimeout(()=>{
+        const r=target,point=start;
+        cancel();
+        if(!r||!r.isConnected||!point)return;
+        const info=slotInfo(r);
+        if(info)openSlotMenu(r,info.e,info.m,info.p,point[0],point[1],r.querySelector(".slot-more"));
+      },450);
+    },{passive:true});
+    list.addEventListener("pointermove",event=>{if(start&&Math.hypot(event.clientX-start[0],event.clientY-start[1])>10)cancel()},{passive:true});
+    ["pointerup","pointercancel","pointerleave"].forEach(type=>list.addEventListener(type,cancel,{passive:true}));
+    window.addEventListener("scroll",()=>{if(target)cancel()},{passive:true});
+    list.addEventListener("contextmenu",event=>{if(event.target.closest(".slot-cell"))event.preventDefault()});
+  }
+  // 1回だけ、長押しと裏返しの使い方を知らせる
+  function maybeShowSlotHint(){
+    if(state.mode!=="member"||state.page!=="collection")return;
+    try{
+      if(localStorage.getItem(SLOT_HINT_KEY))return;
+      localStorage.setItem(SLOT_HINT_KEY,new Date().toISOString());
+    }catch(error){return}
+    const m=currentCollectionMember();
+    showUndoSnack({main:"マスを長押し（または ⋯）で、減らす・直筆・欲しい",sub:"カードの上をタップすると裏返って、写真やメモを付けられます",mark:m?m.emoji:"💡",duration:7000});
+  }
+
+  // ---------- カードの裏返し ----------
+  function frontHintText(e,m){
+    const key=setKey(e.id,m.id);
+    const extra=[setPhotoThumbs.has(key)?"写真":"",state.notes[key]?"メモ":""].filter(Boolean);
+    return extra.length?`↻ 裏を見る（${extra.join("・")}あり）`:"↻ タップで裏を見る";
+  }
+  function frontThumbHtml(key){
+    const thumb=setPhotoThumbs.get(key);
+    return thumb?`<span class="set-thumb"><img alt="" src="${esc(thumb)}"></span>`:"";
+  }
+  function findSetCard(eventId){
+    const list=$("eventList");
+    return list?[...list.querySelectorAll(".set-card")].find(card=>card.dataset.eventId===eventId)||null:null;
+  }
+  function updateFrontHint(card,e,m){
+    const hint=card.querySelector(".card-front .flip-hint");
+    if(hint)hint.textContent=frontHintText(e,m);
+  }
+  function updateFrontThumb(card,e,m){
+    const line=card.querySelector(".card-front .event-topline");
+    if(!line)return;
+    const old=line.querySelector(".set-thumb");
+    if(old)old.remove();
+    const thumb=setPhotoThumbs.get(setKey(e.id,m.id));
+    if(thumb){
+      const span=document.createElement("span");
+      span.className="set-thumb";
+      const img=document.createElement("img");
+      img.alt="";
+      img.src=thumb;
+      span.appendChild(img);
+      line.insertBefore(span,line.firstChild);
+    }
+    updateFrontHint(card,e,m);
+  }
+  function refreshSetCardPhoto(e,m){
+    if(currentCollectionMember()?.id!==m.id)return;
+    const card=findSetCard(e.id);
+    if(!card)return;
+    updateFrontThumb(card,e,m);
+    if(card.querySelector(".card-back"))renderSetPhotoArea(card,e,m);
+  }
+  function bindFlipHead(head,card,e,m,toBack){
+    head.onclick=()=>flipSetCard(card,e,m,toBack);
+    head.onkeydown=event=>{if(event.target===head&&(event.key==="Enter"||event.key===" ")){event.preventDefault();flipSetCard(card,e,m,toBack)}};
+  }
+  function flipSetCard(card,e,m,toBack){
+    if(card.classList.contains("flipped")===toBack)return;
+    const swap=()=>{
+      if(toBack&&!card.querySelector(".card-back")){
+        card.appendChild(renderCardBack(card,e,m));
+      }
+      card.classList.toggle("flipped",toBack);
+      if(toBack)renderSetPhotoArea(card,e,m);
+      else updateFrontHint(card,e,m);
+      const head=card.querySelector(toBack?".card-back .card-flip-head":".card-front .card-flip-head");
+      if(head)head.focus({preventScroll:true});
+    };
+    if(motionReduced()||!card.animate){swap();return}
+    card.animate([{transform:"perspective(1200px) rotateY(0deg)"},{transform:"perspective(1200px) rotateY(90deg)"}],{duration:160,easing:"ease-in"}).onfinish=()=>{
+      swap();
+      card.animate([{transform:"perspective(1200px) rotateY(-90deg)"},{transform:"perspective(1200px) rotateY(0deg)"}],{duration:260,easing:"cubic-bezier(.2,.9,.3,1.15)"});
+    };
+  }
+  function renderCardBack(card,e,m){
+    const back=document.createElement("div");
+    back.className="card-face card-back";
+    const noteId=`setNote${++setCardSeq}`;
+    const official=eventOfficialUrl(e);
+    back.innerHTML=`<div class="event-head card-flip-head" role="button" tabindex="0" aria-label="カードを表に戻す"><div class="event-topline"><div>${periodLineHtml(e)}<div class="work">${esc(e.work)}</div><span class="flip-hint">↻ タップで表に戻す</span></div></div></div><div class="card-back-body"><div class="set-photo-area"></div><label class="set-note-label" for="${noteId}">メモ</label><textarea id="${noteId}" class="set-note" rows="2" maxlength="${NOTE_MAX}" placeholder="例）会場で交換した・表情がお気に入り"></textarea><div class="card-back-actions"><button type="button" class="card-bulk-button">⋯ 一括操作</button>${official?`<a href="${esc(official)}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div></div>`;
+    bindFlipHead(back.querySelector(".card-flip-head"),card,e,m,false);
+    const note=back.querySelector(".set-note");
+    note.value=state.notes[setKey(e.id,m.id)]||"";
+    let saveTimer=0;
+    const save=()=>{clearTimeout(saveTimer);saveSetNote(e,m,note.value)};
+    note.addEventListener("input",()=>{clearTimeout(saveTimer);saveTimer=setTimeout(save,500)});
+    note.addEventListener("blur",save);
+    back.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,m.id);
+    return back;
+  }
+  function cleanNoteText(value){
+    return String(value??"").replace(/\r\n?/g,"\n").replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g,"").trim().slice(0,NOTE_MAX);
+  }
+  function saveSetNote(e,m,value){
+    const key=setKey(e.id,m.id),text=cleanNoteText(value);
+    if((state.notes[key]||"")===text)return;
+    if(text)state.notes[key]=text;else delete state.notes[key];
+    writeStorage(NOTE_KEY,state.notes);
+    const card=findSetCard(e.id);
+    if(card&&currentCollectionMember()?.id===m.id)updateFrontHint(card,e,m);
+  }
+
+  // ---------- カードの裏の写真（1枚） ----------
+  function renderSetPhotoArea(card,e,m){
+    const area=card.querySelector(".set-photo-area");
+    if(!area)return;
+    const key=setKey(e.id,m.id),thumb=setPhotoThumbs.get(key);
+    area.textContent="";
+    if(!thumb){
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="set-photo-empty";
+      const plus=document.createElement("b");plus.textContent="＋";
+      const title=document.createElement("span");title.textContent="写真を1枚登録";
+      const note=document.createElement("small");note.textContent="商品ページのスクショなど。横長でも全体が表示されます";
+      button.append(plus,title,note);
+      button.onclick=()=>chooseSetPhoto(e,m);
+      area.appendChild(button);
+      return;
+    }
+    const photo=document.createElement("button");
+    photo.type="button";
+    photo.className="set-photo";
+    photo.setAttribute("aria-label","写真を大きく見る");
+    const img=document.createElement("img");
+    img.alt=`${e.work}の写真`;
+    img.src=thumb;
+    photo.appendChild(img);
+    photo.onclick=()=>openSetPhotoViewer(e,m);
+    const actions=document.createElement("div");
+    actions.className="set-photo-actions";
+    const change=document.createElement("button");change.type="button";change.textContent="写真を変える";change.onclick=()=>chooseSetPhoto(e,m);
+    const remove=document.createElement("button");remove.type="button";remove.textContent="外す";remove.onclick=()=>removeSetPhoto(e,m);
+    actions.append(change,remove);
+    area.append(photo,actions);
+    // 先に小さい画像を出しておき、大きい画像が読めたら差し替える
+    readSetPhotoFull(key).then(full=>{if(full&&img.isConnected)img.src=full}).catch(()=>{});
+  }
+  function openSetPhotoDb(){
+    if(setPhotoDbPromise)return setPhotoDbPromise;
+    setPhotoDbPromise=new Promise((resolve,reject)=>{
+      if(!("indexedDB" in window)){reject(new Error("このブラウザは端末内への写真保存に対応していません"));return}
+      const request=indexedDB.open(SET_PHOTO_DB_NAME,1);
+      request.onupgradeneeded=()=>{
+        const db=request.result;
+        if(!db.objectStoreNames.contains(SET_THUMB_STORE))db.createObjectStore(SET_THUMB_STORE,{keyPath:"key"});
+        if(!db.objectStoreNames.contains(SET_FULL_STORE))db.createObjectStore(SET_FULL_STORE,{keyPath:"key"});
+      };
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>reject(request.error||new Error("写真の保存領域を開けませんでした"));
+      request.onblocked=()=>reject(new Error("写真の保存領域の準備がブロックされています"));
+    });
+    setPhotoDbPromise.catch(()=>{setPhotoDbPromise=null});
+    return setPhotoDbPromise;
+  }
+  // 1回のまとまった読み書き。途中で失敗したら全部取り消されるので、小さい画像と大きい画像が食い違わない
+  function setPhotoTransaction(mode,work){
+    return openSetPhotoDb().then(db=>new Promise((resolve,reject)=>{
+      const transaction=db.transaction([SET_THUMB_STORE,SET_FULL_STORE],mode);
+      let output,settled=false;
+      const fail=error=>{if(settled)return;settled=true;reject(error||new Error("写真データを処理できませんでした"))};
+      try{output=work(transaction.objectStore(SET_THUMB_STORE),transaction.objectStore(SET_FULL_STORE))}
+      catch(error){try{transaction.abort()}catch(abortError){}fail(error);return}
+      transaction.oncomplete=()=>{
+        if(settled)return;settled=true;
+        resolve(typeof output==="function"?output():output instanceof IDBRequest?output.result:output);
+      };
+      transaction.onerror=()=>fail(transaction.error);
+      transaction.onabort=()=>fail(transaction.error||new Error("保存できませんでした。端末の空き容量を確認してください"));
+    }));
+  }
+  function writeSetPhotos(records){
+    return setPhotoTransaction("readwrite",(thumbs,fulls)=>{
+      records.forEach(record=>{
+        thumbs.put({key:record.key,eventId:record.eventId,memberId:record.memberId,thumb:record.thumb,size:record.full.length,updatedAt:record.updatedAt});
+        fulls.put({key:record.key,full:record.full});
+      });
+    });
+  }
+  function deleteSetPhoto(key){return setPhotoTransaction("readwrite",(thumbs,fulls)=>{thumbs.delete(key);fulls.delete(key)})}
+  function readSetPhotoFull(key){
+    return setPhotoTransaction("readonly",(thumbs,fulls)=>fulls.get(key)).then(record=>record&&validEnclosedImage(record.full,ENCLOSED_FULL_MAX_CHARS)?record.full:"");
+  }
+  function readSetPhotoRecord(key){
+    return setPhotoTransaction("readonly",(thumbs,fulls)=>{
+      const a=thumbs.get(key),b=fulls.get(key);
+      return ()=>a.result&&b.result?{...a.result,full:b.result.full}:null;
+    });
+  }
+  function validSetPhotoKeyPart(value){return typeof value==="string"&&BACKUP_KEY_PART.test(value)&&!DANGEROUS_KEYS.has(value)}
+  async function loadSetPhotoThumbs(){
+    try{
+      const records=await setPhotoTransaction("readonly",thumbs=>thumbs.getAll());
+      setPhotoThumbs.clear();
+      (records||[]).forEach(record=>{
+        if(record&&typeof record.key==="string"&&validSetPhotoKeyPart(record.eventId)&&validSetPhotoKeyPart(record.memberId)&&record.key===setKey(record.eventId,record.memberId)&&validEnclosedImage(record.thumb,ENCLOSED_THUMB_MAX_CHARS))setPhotoThumbs.set(record.key,record.thumb);
+      });
+    }catch(error){console.warn("カードの裏の写真を読み込めませんでした",error)}
+    if(setPhotoThumbs.size)refreshAllSetCardThumbs();
+  }
+  function refreshAllSetCardThumbs(){
+    const m=currentCollectionMember(),list=$("eventList");
+    if(!m||!list)return;
+    list.querySelectorAll(".set-card").forEach(card=>{
+      const has=setPhotoThumbs.has(setKey(card.dataset.eventId,m.id)),shown=!!card.querySelector(".card-front .set-thumb");
+      if(has===shown)return;
+      const e=eventById(card.dataset.eventId);
+      if(e)updateFrontThumb(card,e,m);
+    });
+  }
+  function chooseSetPhoto(e,m){
+    if(setPhotoBusy)return;
+    const input=document.createElement("input");
+    input.type="file";
+    input.accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
+    input.onchange=async()=>{
+      const file=input.files?.[0];
+      if(!file)return;
+      setPhotoBusy=true;
+      showUndoSnack({main:"写真を保存しています…",sub:e.work,mark:m.emoji});
+      try{
+        const image=await loadCheckedImage(file);
+        const full=scaledImageDataUrl(image,SET_PHOTO_FULL_SIDE,0.82),thumb=scaledImageDataUrl(image,SET_PHOTO_THUMB_SIDE,0.72);
+        if(!validEnclosedImage(full,ENCLOSED_FULL_MAX_CHARS)||!validEnclosedImage(thumb,ENCLOSED_THUMB_MAX_CHARS))throw new Error("画像を保存用に変換できませんでした");
+        const key=setKey(e.id,m.id);
+        await writeSetPhotos([{key,eventId:e.id,memberId:m.id,thumb,full,updatedAt:new Date().toISOString()}]);
+        setPhotoThumbs.set(key,thumb);
+        refreshSetCardPhoto(e,m);
+        showUndoSnack({main:"写真を登録しました",sub:e.work,mark:m.emoji});
+      }catch(error){
+        showUndoSnack({main:"写真を登録できませんでした",sub:error.message||"",mark:"⚠️",duration:5000});
+      }finally{
+        setPhotoBusy=false;
+      }
+    };
+    input.click();
+  }
+  async function removeSetPhoto(e,m){
+    if(setPhotoBusy)return;
+    const key=setKey(e.id,m.id);
+    try{
+      const saved=await readSetPhotoRecord(key);
+      await deleteSetPhoto(key);
+      setPhotoThumbs.delete(key);
+      refreshSetCardPhoto(e,m);
+      showUndoSnack({main:"写真を外しました",sub:e.work,mark:m.emoji,undo:saved?()=>{
+        writeSetPhotos([saved]).then(()=>{setPhotoThumbs.set(key,saved.thumb);refreshSetCardPhoto(e,m)}).catch(()=>showUndoSnack({main:"写真を戻せませんでした",mark:"⚠️"}));
+        return `${e.work}の写真を元に戻しました`;
+      }:null});
+    }catch(error){
+      showUndoSnack({main:"写真を外せませんでした",sub:error.message||"",mark:"⚠️",duration:5000});
+    }
+  }
+  function openSetPhotoViewer(e,m){
+    closeSetPhotoViewer();
+    const key=setKey(e.id,m.id);
+    const overlay=document.createElement("div");
+    overlay.className="set-photo-viewer";
+    overlay.setAttribute("role","dialog");
+    overlay.setAttribute("aria-label","写真を大きく表示");
+    const figure=document.createElement("figure");
+    const img=document.createElement("img");
+    img.alt=`${e.work}の写真`;
+    img.src=setPhotoThumbs.get(key)||"";
+    const caption=document.createElement("figcaption");
+    caption.textContent=`${eventLabel(e)}｜${e.work}`;
+    const close=document.createElement("button");
+    close.type="button";
+    close.textContent="閉じる";
+    figure.append(img,caption,close);
+    overlay.appendChild(figure);
+    overlay.onclick=()=>closeSetPhotoViewer();
+    document.body.appendChild(overlay);
+    setPhotoViewer=overlay;
+    close.focus({preventScroll:true});
+    readSetPhotoFull(key).then(full=>{if(full&&img.isConnected)img.src=full}).catch(()=>{});
+  }
+  function closeSetPhotoViewer(){
+    if(!setPhotoViewer)return false;
+    setPhotoViewer.remove();
+    setPhotoViewer=null;
+    return true;
+  }
+
+  // ---------- カードの裏の写真のバックアップ（バックアップのページ） ----------
+  async function updateSetPhotoBackupStatus(){
+    const status=$("setPhotoBackupStatus");
+    if(!status)return;
+    try{
+      const records=await setPhotoTransaction("readonly",thumbs=>thumbs.getAll());
+      const bytes=(records||[]).reduce((sum,record)=>sum+Math.round((Number(record.size)||0)*0.75)+Math.round(String(record.thumb||"").length*0.75),0);
+      status.textContent=records.length?`写真 ${records.length}枚・端末内使用量 ${formatImageBytes(bytes)}`:"カードの裏に登録した写真はまだありません。";
+    }catch(error){
+      status.textContent=`写真の保存領域を読み込めませんでした：${error.message||""}`;
+    }
+  }
+  async function exportSetPhotoBackup(){
+    if(setPhotoBusy)return;
+    const button=$("setPhotoExportButton");
+    const label=button?button.textContent:"";
+    setPhotoBusy=true;
+    if(button){button.disabled=true;button.textContent="写真をまとめています…"}
+    try{
+      const records=await setPhotoTransaction("readonly",thumbs=>thumbs.getAll());
+      if(!records.length){showActionToast("保存する写真がありません");return}
+      const head={app:"equal-love-photo-manager-set-photos",backupVersion:1,exportedAt:new Date().toISOString(),sourceVersion:APP_CONFIG.version};
+      // 1枚ずつ文字にして順番に足していく（全部を一度に大きな文字列にしないため、メモリを使いすぎない）
+      const parts=[JSON.stringify(head).slice(0,-1)+',"photos":['];
+      let count=0;
+      for(const record of records){
+        const full=await readSetPhotoFull(record.key);
+        if(!full||!validEnclosedImage(record.thumb,ENCLOSED_THUMB_MAX_CHARS))continue;
+        parts.push((count?",":"")+JSON.stringify({eventId:record.eventId,memberId:record.memberId,updatedAt:record.updatedAt,thumb:record.thumb,full}));
+        count++;
+      }
+      parts.push("]}");
+      const blob=new Blob(parts,{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement("a");
+      const d=new Date(),pad=n=>String(n).padStart(2,"0");
+      link.href=url;
+      link.download=`equal-love-card-photos-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),4000);
+      showActionToast(`写真${count}枚を保存しました`);
+    }catch(error){
+      alert(`写真のバックアップを保存できませんでした：${error.message}`);
+    }finally{
+      setPhotoBusy=false;
+      if(button){button.disabled=false;button.textContent=label}
+    }
+  }
+  function validateSetPhotoBackup(payload){
+    if(!validObject(payload)||payload.app!=="equal-love-photo-manager-set-photos")throw new Error("カードの裏の写真のバックアップではありません");
+    if(Number(payload.backupVersion)!==1)throw new Error("対応していないバックアップの形式です");
+    if(!Array.isArray(payload.photos))throw new Error("写真が見つかりません");
+    if(payload.photos.length>SET_PHOTO_MAX)throw new Error("写真の枚数が多すぎます");
+    const seen=new Set(),records=[];
+    let unknown=0;
+    payload.photos.forEach(raw=>{
+      if(!validObject(raw))throw new Error("写真の形式が正しくありません");
+      if(!validSetPhotoKeyPart(raw.eventId)||!validSetPhotoKeyPart(raw.memberId))throw new Error("写真のセット名・メンバー名が正しくありません");
+      if(!validEnclosedImage(raw.thumb,ENCLOSED_THUMB_MAX_CHARS)||!validEnclosedImage(raw.full,ENCLOSED_FULL_MAX_CHARS))throw new Error("写真データが正しくありません");
+      const key=setKey(raw.eventId,raw.memberId);
+      if(seen.has(key))return;
+      seen.add(key);
+      if(!eventById(raw.eventId)||!MEMBERS.some(member=>member.id===raw.memberId))unknown++;
+      records.push({key,eventId:raw.eventId,memberId:raw.memberId,thumb:raw.thumb,full:raw.full,updatedAt:validDateString(raw.updatedAt)?raw.updatedAt:new Date().toISOString()});
+    });
+    return {records,unknown,exportedAt:validDateString(payload.exportedAt)?new Date(payload.exportedAt):null};
+  }
+  async function importSetPhotoBackup(file){
+    if(!file||setPhotoBusy)return;
+    if(file.size<=0||file.size>ENCLOSED_BACKUP_MAX_BYTES){alert("読み込みを中止しました：ファイルが空か、大きすぎます。");return}
+    if(!String(file.name||"").toLowerCase().endsWith(".json")){alert("読み込みを中止しました：JSONファイルを選択してください。");return}
+    setPhotoBusy=true;
+    showActionToast("バックアップを確認しています…");
+    try{
+      const backup=validateSetPhotoBackup(JSON.parse(await file.text()));
+      if(!backup.records.length)throw new Error("読み込める写真がありません");
+      const existing=new Set(await setPhotoTransaction("readonly",thumbs=>thumbs.getAllKeys()));
+      const overwrite=backup.records.filter(record=>existing.has(record.key)).length;
+      const summary=`${backup.exportedAt?`作成日時：${formatBackupDate(backup.exportedAt)}\n`:""}写真 ${backup.records.length}枚（新しく追加 ${backup.records.length-overwrite}枚／上書き ${overwrite}枚）${backup.unknown?`\n今のデータに無いセットの写真${backup.unknown}枚も、消さずに保持します`:""}`;
+      if(!confirm(`カードの裏の写真のバックアップを読み込みます。\n\n${summary}\n\n読み込みますか？`))return;
+      for(let start=0;start<backup.records.length;start+=20)await writeSetPhotos(backup.records.slice(start,start+20));
+      await loadSetPhotoThumbs();
+      refreshAllSetCardThumbs();
+      updateSetPhotoBackupStatus();
+      showActionToast(`写真${backup.records.length}枚を読み込みました`);
+    }catch(error){
+      alert(`読み込みを中止しました：${error instanceof SyntaxError?"ファイルの中身を読めませんでした（壊れている可能性があります）":error.message}`);
+    }finally{
+      setPhotoBusy=false;
+    }
+  }
+  async function deleteAllSetPhotos(){
+    if(setPhotoBusy)return;
+    let count=0;
+    try{count=(await setPhotoTransaction("readonly",thumbs=>thumbs.getAllKeys())).length}catch(error){}
+    if(!count){showActionToast("削除する写真がありません");return}
+    if(!confirm(`カードの裏に登録した写真${count}枚を、この端末からすべて削除します。\n所持枚数やメモは削除されません。\n\n続けますか？`))return;
+    if(prompt("最終確認です。\n削除する場合は「全削除」と入力してください。")!=="全削除"){showActionToast("入力が一致しなかったため、削除を中止しました");return}
+    try{
+      await setPhotoTransaction("readwrite",(thumbs,fulls)=>{thumbs.clear();fulls.clear()});
+      setPhotoThumbs.clear();
+      refreshAllSetCardThumbs();
+      updateSetPhotoBackupStatus();
+      showActionToast("カードの裏の写真をすべて削除しました");
+    }catch(error){
+      alert(`削除できませんでした：${error.message}`);
+    }
+  }
+  function setupSetPhotoBackupPanel(){
+    if(!$("setPhotoExportButton"))return;
+    $("setPhotoExportButton").onclick=exportSetPhotoBackup;
+    $("setPhotoImportInput").onchange=event=>{const file=event.target.files?.[0];event.target.value="";importSetPhotoBackup(file)};
+    $("setPhotoDeleteAllButton").onclick=deleteAllSetPhotos;
+    updateSetPhotoBackupStatus();
+  }
+  // バックアップのメモ（"イベントID__メンバーID" → 文）を確かめる。古い版のバックアップには無いので、その時は null
+  function sanitizeBackupNotes(value){
+    if(value===undefined||value===null)return null;
+    if(!validObject(value))throw new Error("メモデータがオブジェクトではありません");
+    const entries=Object.entries(value);
+    if(entries.length>backupEntryLimit())throw new Error("メモデータの件数が多すぎます");
+    const clean=Object.create(null);
+    for(const [key,text] of entries){
+      const parts=String(key).split("__");
+      if(parts.length!==2||!parts.every(validSetPhotoKeyPart))throw new Error("メモデータに不正なキーがあります");
+      if(typeof text!=="string")throw new Error("メモデータの値が不正です");
+      const cleaned=cleanNoteText(text);
+      if(cleaned)clean[key]=cleaned;
+    }
+    return clean;
+  }
+
   // ===== Ver1.01.07：開いているシートをまとめて閉じる（Escキーと、端末の「戻る」操作で使う） =====
   function closeAllSheets(){
-    const wasOpen=[...document.querySelectorAll(".utility-sheet-overlay,.member-selector-overlay")].some(node=>!node.classList.contains("hidden"));
+    const menuOpen=closeSlotMenu(),viewerOpen=closeSetPhotoViewer(); // Ver1.01.10：長押しメニュー・写真の拡大表示
+    const wasOpen=menuOpen||viewerOpen||[...document.querySelectorAll(".utility-sheet-overlay,.member-selector-overlay")].some(node=>!node.classList.contains("hidden"));
     closeMemberSelector();closeUtilitySheet("filterSheetOverlay");closeUtilitySheet("sortSheetOverlay");closeUtilitySheet("bulkSheetOverlay");closeUtilitySheet("settingsSheetOverlay");closeImageAdjustSheet();closeUtilitySheet("enclosedEditSheetOverlay");closeEnclosedViewer();
     return wasOpen;
   }
@@ -3638,6 +4416,7 @@ function openMember(id,preset=null){
   $("searchInput").value=state.search;
   // Ver1.01.04：「← 戻る」と下部ナビ中央のホームボタンで同じ処理を使う
   function goHome(fromHistory=false){
+    hideUndoSnack();closeSlotMenu(false);closeSetPhotoViewer();
     saveScrollPosition();
     $("managerScreen").classList.add("hidden");
     $("homeScreen").classList.remove("hidden");
@@ -3740,6 +4519,9 @@ function openMember(id,preset=null){
   });
 
   toggleTopButton();
+  // Ver1.01.10：マスの長押し・カードの裏の写真（写真の読み込みは、最初の画面を出した後に回す）
+  setupSlotLongPress();
+  setTimeout(loadSetPhotoThumbs,300);
 }
 
 loadAppData().catch(error => {
