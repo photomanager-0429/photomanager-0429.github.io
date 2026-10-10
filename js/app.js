@@ -141,10 +141,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.10",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.10",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.10",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.10",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.11",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.11",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.11",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.11",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -218,10 +218,6 @@ function initializeApp() {
       console.warn(`保存データ ${key} を読み込めませんでした`,error);
       return {};
     }
-  }
-  function safeStorageArray(key){
-    try{const value=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(value)?value:[]}
-    catch(error){return []}
   }
   const savedPrefs=safeStorageObject(PREF_KEY);
   const state={
@@ -1026,14 +1022,20 @@ function initializeApp() {
   function renderOwnershipChips(base){
     const box=$("collectionOwnershipChips");
     if(!box)return;
-    const show=state.mode==="member"&&!!state.memberId;
-    box.classList.toggle("hidden",!show);
-    if(!show){box.innerHTML="";return}
-    const counts=ownershipCounts(base||collectionBaseList());
-    box.innerHTML=OWNERSHIP_FILTERS.map(([value,label])=>{
-      const selected=state.ownership===value;
-      return `<button type="button" class="ownership-chip${selected?" selected":""}" aria-pressed="${selected}" data-ownership="${value}"><b>${label}</b><small>${counts[value]}</small></button>`;
-    }).join("");
+    box.classList.remove("hidden");
+    // Ver1.01.11：カテゴリ（すべて・通常・イベント・コラボ）は、行の左端の1つのボタンにまとめた。押すとシートで選ぶ
+    const categoryLabel=state.category?((CATEGORY_TABS.find(([value])=>value===state.category)||[])[1]||state.category):"全カテゴリ";
+    let html=`<button type="button" class="ownership-chip category-chip${state.category?" selected":""}" data-category-menu aria-haspopup="dialog" aria-label="カテゴリ：${esc(categoryLabel)}（押すと選べます）"><b>${esc(categoryLabel)}</b><i aria-hidden="true">▾</i></button>`;
+    // 所持状況のボタンは、メンバーごとの一覧の時だけ
+    if(state.mode==="member"&&state.memberId){
+      const counts=ownershipCounts(base||collectionBaseList());
+      html+='<span class="chip-divider" aria-hidden="true"></span>'+OWNERSHIP_FILTERS.map(([value,label])=>{
+        const selected=state.ownership===value;
+        return `<button type="button" class="ownership-chip${selected?" selected":""}" aria-pressed="${selected}" data-ownership="${value}"><b>${label}</b><small>${counts[value]}</small></button>`;
+      }).join("");
+    }
+    box.innerHTML=html;
+    box.querySelector("[data-category-menu]").onclick=openCategorySheet;
     box.querySelectorAll("[data-ownership]").forEach(button=>button.onclick=()=>{
       // 選択中のボタンをもう一度押したら「すべて」に戻す
       const next=state.ownership===button.dataset.ownership?"":button.dataset.ownership;
@@ -1046,7 +1048,7 @@ function initializeApp() {
     // 横に並びきらない時、選択中のボタンが見える位置まで横に送る。
     // 位置を測ると画面全体の配置計算が走るので、一覧を描き終えた後（次の描画の直前）に回す
     requestAnimationFrame(()=>{
-      const selected=box.querySelector(".ownership-chip.selected");
+      const selected=box.querySelector(".ownership-chip.selected[data-ownership]");
       if(!selected)return;
       const left=selected.offsetLeft-box.offsetLeft,right=left+selected.offsetWidth;
       if(left<box.scrollLeft||right>box.scrollLeft+box.clientWidth)box.scrollLeft=Math.max(0,left-12);
@@ -1127,30 +1129,33 @@ function initializeApp() {
   function categoryOptions(selected){
     return CATEGORY_TABS.map(([value,label])=>`<option value="${value}" ${selected===value?"selected":""}>${value?label:"すべてのカテゴリ"}</option>`).join("");
   }
-  function renderCategoryTabs(){
-    const box=$("collectionCategoryTabs");
-    if(!box)return;
+  // Ver1.01.11：カテゴリを選ぶシート（一覧の上の「全カテゴリ ▾」から開く）。並び順と同じシートを使う
+  function openCategorySheet(){
     const member=state.mode==="member"?MEMBERS.find(m=>m.id===state.memberId):null;
     const base=member?eligibleEventsForMember(member):EVENTS;
-    box.innerHTML=CATEGORY_TABS.map(([value,label])=>{
+    setSortSheetHeading("カテゴリを選ぶ","一覧に出すカテゴリを選択してください");
+    const body=$("sortSheetBody");
+    body.innerHTML=`<div class="sort-choice-list">${CATEGORY_TABS.map(([value,label])=>{
       const count=value?base.filter(e=>e.category===value).length:base.length;
       const selected=state.category===value;
-      return `<button type="button" role="tab" aria-selected="${selected}" class="category-tab${selected?" selected":""}" data-category="${value}"><b>${label}</b><small>${count}</small></button>`;
-    }).join("");
-    box.querySelectorAll("[data-category]").forEach(button=>button.onclick=()=>{
-      if(state.category===button.dataset.category)return;
-      state.category=button.dataset.category;
+      return `<button type="button" class="sort-choice category-choice${selected?" selected":""}" data-category-choice="${value}"><span>${esc(value?label:"全カテゴリ")}</span><small class="year-jump-count">${count}セット</small><i>${selected?"✓":""}</i></button>`;
+    }).join("")}</div>`;
+    body.querySelectorAll("[data-category-choice]").forEach(button=>button.onclick=()=>{
+      closeUtilitySheet("sortSheetOverlay");
+      const next=button.dataset.categoryChoice;
+      if(state.category===next)return;
+      state.category=next;
       savePreferences();
       resetCollectionScroll();
       renderCollection();
     });
+    openUtilitySheet("sortSheetOverlay");
   }
   function collectionViewChanged(){
     return !!(state.category||state.yearFilter||state.search||state.newFilter||state.sort!=="desc"
       ||(state.mode==="all"?state.oshiOnly:state.ownership));
   }
   function renderCollectionFilterUi(base){
-    renderCategoryTabs();
     renderOwnershipChips(base);
     const reset=$("resetCollectionViewButton");
     if(reset)reset.classList.toggle("is-idle",!collectionViewChanged());
@@ -1839,7 +1844,7 @@ function openMember(id,preset=null){
     const text=heading.parentElement?heading.parentElement.querySelector("p"):null;
     if(text)text.textContent=lead;
   }
-  // 画面の上に残る帯（名前の行＋カテゴリ・所持状況の行）の高さ。この下に目的の場所が来るように移動する
+  // 画面の上に残る帯（名前の行＋カテゴリ・所持状況の1行）の高さ。この下に目的の場所が来るように移動する
   function collectionStickyOffset(){
     const bar=document.querySelector(".topbar"),tools=$("collectionStickyTools");
     return (bar?bar.offsetHeight:0)+(tools&&!tools.classList.contains("hidden")?tools.offsetHeight:0)+10;
@@ -2268,7 +2273,7 @@ function openMember(id,preset=null){
       <div class="guide-list">
         <section class="panel guide-card"><span>1</span><div><h3>メンバーを選ぶ</h3><p>TOPからメンバーを選択します。「全メンバー」ではイベント単位でまとめて確認できます。</p></div></section>
         <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>メンバーの一覧では、マスの「＋」で1枚増やします。マスを長押し（または「⋯」）すると「1枚減らす・直筆・欲しい」を選べます。押したあと画面の下に出る「↶ 取り消す」で、すぐ元に戻せます。カードの上の部分をタップすると裏返り、写真1枚・メモ・一括操作（コンプ登録や欲しい一括追加）・公式サイトがあります。クイック入力とイベント別チェック表も使えます。</p></div></section>
-        <section class="panel guide-card"><span>3</span><div><h3>一覧を絞り込む</h3><p>検索欄と「絞り込み」「並び順」を使います。選択中の条件はチップで表示され、個別に解除できます。メンバーごとの一覧では、上に並ぶ「未所持あり・あと1種・全部未所持・所持あり・コンプ」のボタンで所持状況を切り替えられます。「未所持あり」は、ヨリ・チュウ・ヒキのうち1種でも持っていないセットです。年の見出しを押すと、別の年へ移動できます。</p></div></section>
+        <section class="panel guide-card"><span>3</span><div><h3>一覧を絞り込む</h3><p>検索欄と「絞り込み」「並び順」を使います。選択中の条件はチップで表示され、個別に解除できます。一覧の上の「全カテゴリ ▾」を押すと、カテゴリ（通常・イベント・コラボ）を選べます。メンバーごとの一覧では、その右に並ぶ「未所持あり・あと1種・全部未所持・所持あり・コンプ」のボタンで所持状況を切り替えられます。「未所持あり」は、ヨリ・チュウ・ヒキのうち1種でも持っていないセットです。年の見出しを押すと、別の年へ移動できます。</p></div></section>
         <section class="panel guide-card"><span>4</span><div><h3>未所持・提供可能を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。設定の「未所持・欲しい一括操作」から、未所持の一括表示や欲しいへの一括追加もできます。2枚目以降は提供可能として表示されます。欲しい一覧・提供可能一覧・未所持一覧の「一覧で開く」を押すと、そのセットの登録画面へ移動します。</p></div></section>
         <section class="panel guide-card"><span>5</span><div><h3>推しを設定する</h3><p>最推し・推し・気になるの3段階です。メンバーカードの推しバッジや、推しだけの統計・未所持確認に使えます。設定したメンバーはTOPに近道が出て、1タップで一覧や「未所持あり」を開けます。</p></div></section>
         <section class="panel guide-card"><span>6</span><div><h3>メンバー画像を設定する</h3><p>TOP右上の設定から、端末内の好きな画像をメンバーごとに登録できます。画像は編集画面で表示範囲を確認しながら位置調整でき、外部送信もされません。</p></div></section>
@@ -2348,7 +2353,9 @@ function openMember(id,preset=null){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.10</h3>
+        <h3>公開版Ver1.01.11</h3>
+        <p>TOPの推しの近道を、横いっぱいの1行にしました。一覧の上で2行に分かれていたカテゴリと所持状況のボタンを1行にまとめ、カテゴリは左端の「全カテゴリ ▾」から選ぶようにしました。あわせて、使われなくなった見た目の指定などを整理しました（見た目は変わりません）。</p>
+        <h3>Ver1.01.10</h3>
         <p>メンバーの一覧のカードを新しくしました。＋を押すと数字がくるっと回って推しのファンマークが飛び、3種そろうとCOMPLETEのハンコが押されます。押したあとは画面の下の「↶ 取り消す」で元に戻せます。「1枚減らす・直筆・欲しい」はマスの長押し（または「⋯」）から選びます。カードの上の部分をタップすると裏返り、写真を1枚（商品ページのスクショなど）とメモを付けられます。写真とメモはこの端末の中だけに保存されます。</p>
         <h3>Ver1.01.09</h3>
         <p>公式サイトのお知らせ・公式通販の商品名と照らし合わせて、セットの名前・並び順・種類の構成を直しました（例：「とくべちゅ」→「とくべチュ」、ARENA TOUR 2025 の衣装名、2025年10月の歌唱衣装とMV衣装の順番、はなまるうどんコラボの種類）。登録済みのデータは、今までと同じ衣装名のセットに残ります。検索で、ひらがな・カタカナ、全角・半角の違いを区別しないようにしました。</p>
@@ -3509,15 +3516,13 @@ function openMember(id,preset=null){
       const hint=document.createElement("button");
       hint.type="button";
       hint.className="home-shortcut-hint";
-      hint.textContent="👑 推しを設定すると、ここから1タップで一覧・未所持を開けます ›";
+      hint.textContent="👑 推しを設定すると、ここから1タップで一覧を開けます ›";
       hint.onclick=()=>showPage("oshi");
       box.appendChild(hint);
       return;
     }
     members.forEach(m=>{
       const rank=OSHI_RANKS[oshiRank(m.id)],stats=statsFor([m]);
-      let missingSets=0;
-      eligibleEventsForMember(m).forEach(e=>{if(ownershipState(e,m.id).missing>0)missingSets++});
       const card=document.createElement("div");
       card.className="home-shortcut";
       applyMemberVars(card,m);
@@ -3548,24 +3553,7 @@ function openMember(id,preset=null){
       open.appendChild(shortcutTextNode("em","›"));
       open.setAttribute("aria-label",`${m.name}の一覧を開く`);
       open.onclick=()=>{pendingMemberDestination="collection";openMember(m.id)};
-
-      const missing=document.createElement("button");
-      missing.type="button";
-      missing.className="home-shortcut-missing";
-      if(missingSets){
-        missing.appendChild(shortcutTextNode("b","未所持あり"));
-        missing.appendChild(shortcutTextNode("small",`${missingSets}セット ›`));
-        missing.setAttribute("aria-label",`${m.name}の未所持があるセットを開く（${missingSets}セット）`);
-        missing.onclick=()=>{pendingMemberDestination="collection";openMember(m.id,{ownership:"unowned"})};
-      }else{
-        missing.classList.add("is-complete");
-        missing.appendChild(shortcutTextNode("b","🎉 コンプ"));
-        missing.appendChild(shortcutTextNode("small","全セット ›"));
-        missing.setAttribute("aria-label",`${m.name}は全セットコンプ済み。一覧を開く`);
-        missing.onclick=()=>{pendingMemberDestination="collection";openMember(m.id,{ownership:"complete"})};
-      }
       card.appendChild(open);
-      card.appendChild(missing);
       box.appendChild(card);
     });
   }
