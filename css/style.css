@@ -2553,3 +2553,152 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
   color:#5f4d57;
   overflow-wrap:anywhere;
 }
+
+/* =====================================================================
+   Ver1.01.10：生写真カードの新しい操作
+   （＋の手ごたえ・COMPLETEのハンコ・取り消しの帯・長押しメニュー・カードの裏返し）
+   メモ：ボタンやマスに position:relative を付けると、数百〜数千個がそれぞれ別の描画単位になり、
+   スクロールや入力のたびの画面更新が遅くなる（Ver1.01.07で計測済み）。付けないこと。
+   ===================================================================== */
+
+/* --- マス：名前と ⋯ ／ 枚数 ／ 直筆・欲しいの印 ／ ＋ --- */
+#collectionPage .slot-cell{
+  gap:3px;
+  padding:6px 6px 8px;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+  transition:transform .3s ease,background-color .3s,border-color .3s;
+}
+#collectionPage .slot-cell.pressing{transform:scale(.95)}
+.slot-top{display:flex;align-items:center;justify-content:space-between;gap:2px;min-height:28px}
+.slot-label{flex:1;min-width:0;padding-left:4px;text-align:left;font-size:12px;font-weight:900;color:#8a7f89;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#collectionPage .slot-cell.owned .slot-label{color:var(--accent)}
+#collectionPage .slot-cell.owned .slot-label::before{content:"✓ "}
+.slot-more{flex:none;width:32px;height:28px;padding:0;border:0;border-radius:9px;background:transparent;color:#7f7480;font-size:17px;font-weight:900;line-height:1;-webkit-tap-highlight-color:transparent}
+.slot-more:active{background:rgba(45,39,48,.07)}
+.slot-count{height:34px;overflow:hidden;text-align:center}
+.slot-count .num{display:block;font-size:26px;line-height:34px;font-weight:900;color:#b3a8b1;font-variant-numeric:tabular-nums}
+#collectionPage .slot-cell.owned .slot-count .num{color:#2d2730}
+.slot-marks{display:flex;justify-content:center;gap:6px;min-height:16px;font-size:10px;font-weight:900;line-height:16px}
+.slot-marks [hidden]{display:none}
+.mk-sign{color:#8a5d07}
+.mk-want{color:#b8336c}
+#collectionPage .slot-cell .plus{
+  width:100%;
+  height:38px;
+  margin-top:2px;
+  border:0;
+  border-radius:999px;
+  background:var(--accent);
+  color:#fff;
+  font-size:22px;
+  font-weight:900;
+  line-height:1;
+  box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 68%,black);
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .08s ease-out,box-shadow .08s ease-out;
+}
+#collectionPage .slot-cell .plus:active{transform:translateY(2px);box-shadow:0 1px 0 color-mix(in srgb,var(--accent) 68%,black)}
+#collectionPage .slot-cell.signed{border-color:#d6a640;box-shadow:inset 0 0 0 1px #d6a640}
+
+/* --- カードの上の部分（タップで裏返す） --- */
+.set-card .card-flip-head{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.set-card .card-flip-head:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.set-card .event-topline>div:not(.badges){flex:1;min-width:0}
+.flip-hint{display:block;margin-top:5px;font-size:11px;font-weight:700;color:#75697a}
+.set-thumb{flex:none;align-self:center;width:62px;height:42px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.set-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+.set-card .card-back{display:none}
+.set-card.flipped .card-front{display:none}
+.set-card.flipped .card-back{display:block}
+.card-back .card-flip-head{background:linear-gradient(135deg,#fff,var(--soft))}
+.card-back-body{display:grid;gap:10px;padding:12px 14px 14px}
+.set-photo-empty{display:grid;place-content:center;justify-items:center;gap:3px;width:100%;aspect-ratio:16/9;padding:10px;border:2px dashed color-mix(in srgb,var(--accent) 45%,white);border-radius:14px;background:#fff;color:#6f6470;text-align:center}
+.set-photo-empty b{font-size:24px;line-height:1;color:#2d2730}
+.set-photo-empty span{font-size:13px;font-weight:900;color:#2d2730}
+.set-photo-empty small{font-size:11px;line-height:1.5}
+.set-photo{display:block;width:100%;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#f6f1f4}
+.set-photo img{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain}
+.set-photo-actions{display:flex;justify-content:flex-end;gap:18px;margin-top:-4px}
+.set-photo-actions button{min-height:32px;padding:4px 0;border:0;background:none;color:#6f6470;font-size:12px;text-decoration:underline}
+.set-note-label{font-size:12px;font-weight:900}
+/* 16px未満だと、iPhoneで入力欄を押した時に画面が拡大されてしまう */
+.set-note{width:100%;min-height:52px;resize:vertical;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#fff;color:#2d2730;font:inherit;font-size:16px;line-height:1.5}
+.card-back-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+.card-back-actions a{text-decoration:none;border:1px solid var(--accent);color:var(--accent);border-radius:11px;padding:8px 11px;font-size:12px;font-weight:900}
+
+/* --- COMPLETE のハンコ（ファンマーク入り） --- */
+.badges .badge.complete.complete-stamp{
+  margin-top:4px;
+  padding:4px 8px 3px;
+  border:3px double #d2384f;
+  border-radius:8px;
+  background:rgba(255,255,255,.85);
+  color:#bd2c45;
+  font-size:12px;
+  letter-spacing:.05em;
+  transform:rotate(-10deg);
+}
+
+/* --- 飛ぶファンマーク・紙吹雪 --- */
+.fx-layer{position:fixed;inset:0;z-index:120;pointer-events:none;overflow:hidden}
+.fx-fan{position:absolute;font-size:20px;line-height:1}
+.fx-confetti{position:absolute;width:7px;height:11px;border-radius:2px}
+
+/* --- 画面の下の「取り消す」の帯 --- */
+.undo-snack{
+  position:fixed;
+  left:12px;
+  right:12px;
+  bottom:calc(74px + env(safe-area-inset-bottom));
+  z-index:90;
+  max-width:520px;
+  margin-inline:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 10px 12px 14px;
+  overflow:hidden;
+  border-radius:16px;
+  background:#231a20;
+  color:#fff;
+  box-shadow:0 10px 30px rgba(35,26,32,.35);
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(24px);
+  transition:transform .35s cubic-bezier(.3,1.3,.5,1),opacity .2s;
+}
+.undo-snack.open{opacity:1;pointer-events:auto;transform:translateY(0)}
+.undo-snack-mark{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:var(--soft,#ffe3ef);color:#2d2730;font-size:18px}
+.undo-snack-text{flex:1;min-width:0}
+.undo-snack-text b{display:block;font-size:14px;line-height:1.35}
+.undo-snack-text small{display:block;margin-top:1px;font-size:11px;color:#ddcfd7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.undo-snack-button{flex:none;min-height:44px;padding:0 14px;border:0;border-radius:12px;background:#fff;color:#231a20;font-size:14px;font-weight:900}
+.undo-snack-button[hidden]{display:none}
+.undo-snack-timer{position:absolute;left:0;bottom:0;width:100%;height:3px;background:var(--accent,#ef7fad);transform-origin:left center;animation:undoSnackShrink 6s linear forwards}
+.undo-snack:not(.has-undo) .undo-snack-timer{display:none}
+@keyframes undoSnackShrink{to{transform:scaleX(0)}}
+/* 帯が出ている間は、上へ戻るボタンを帯の上へよける */
+body.undo-open .back-to-top{bottom:calc(150px + env(safe-area-inset-bottom))}
+
+/* --- 長押し・⋯ のメニュー --- */
+.slot-menu-overlay{position:fixed;inset:0;z-index:100;background:rgba(45,25,35,.22)}
+.slot-petal{position:absolute;width:68px;height:68px;margin:-34px 0 0 -34px;padding:0;border:0;border-radius:50%;background:#fff;color:#2d2730;box-shadow:0 8px 22px rgba(94,61,79,.3);display:grid;place-content:center;gap:1px;font-size:11px;font-weight:900}
+.slot-petal i{font-style:normal;font-size:20px;line-height:1.1}
+.slot-petal.on{background:var(--soft,#ffe3ef);box-shadow:0 0 0 3px var(--accent,#ef7fad),0 8px 22px rgba(94,61,79,.3)}
+.slot-menu-caption{position:absolute;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:rgba(35,26,32,.85);color:#fff;font-size:12px;font-weight:900;white-space:nowrap;pointer-events:none}
+
+/* --- 写真の拡大表示 --- */
+.set-photo-viewer{position:fixed;inset:0;z-index:110;display:grid;place-items:center;padding:calc(20px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));background:rgba(25,18,22,.9)}
+.set-photo-viewer figure{margin:0;display:grid;justify-items:center;gap:12px;max-width:100%}
+.set-photo-viewer img{max-width:min(94vw,900px);max-height:76vh;border-radius:12px;background:#fff;object-fit:contain}
+.set-photo-viewer figcaption{color:#fff;font-size:13px;line-height:1.5;text-align:center}
+.set-photo-viewer button{min-height:44px;padding:10px 18px;border:0;border-radius:12px;background:#fff;color:#2d2730;font-weight:900}
+
+@media(prefers-reduced-motion:reduce){
+  #collectionPage .slot-cell,
+  #collectionPage .slot-cell .plus,
+  .undo-snack{transition:none}
+  .undo-snack-timer{animation-duration:.01s}
+}
