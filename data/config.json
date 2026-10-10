@@ -1,5 +1,5 @@
 {
-  "version": "1.01.09",
+  "version": "1.01.10",
   "releaseDate": "2026-10-10",
   "dataVersion": "2026-10-10.1",
   "newItemCount": 12,
@@ -17,6 +17,6 @@
   "securityHardening": "2026-07-18-audit-final",
   "releaseCandidate": false,
   "memberColorTheme": "pattern-a-final",
-  "uiTuning": "ownership-chips-and-compact-header",
+  "uiTuning": "set-card-flip-undo-and-long-press",
   "eventAdditionsFile": "data/events-add.json"
 }
