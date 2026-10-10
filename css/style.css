@@ -2430,3 +2430,48 @@ body.undo-open .back-to-top{bottom:calc(150px + env(safe-area-inset-bottom))}
 
 /* 上に残る帯が1行分低くなったので、カードへ移動した時の余白も合わせる */
 .event-card{scroll-margin-top:calc(var(--topbar-h) + 66px)}
+
+/* =====================================================================
+   Ver1.01.12：欲しい一覧・未所持一覧に、カードの裏の写真を小窓で出す
+   ===================================================================== */
+/* 写真があるセットだけ、右側に小窓の列を作る（見出しの行は横いっぱいのまま） */
+/* 小窓の高さの余りは、いちばん下の行（タグの行）の下に回す。説明文とタグはつぶれたり伸びたりしない */
+.item.has-set-photo{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto 1fr;column-gap:12px}
+.item.has-set-photo>.item-title{grid-column:1/-1}
+.item.has-set-photo>.item-meta,
+.item.has-set-photo>.item-tags{grid-column:1;align-self:start}
+.item-photo{
+  grid-column:2;
+  grid-row:2/span 2;
+  align-self:start;
+  position:relative;
+  width:104px;
+  height:70px;
+  margin-top:7px;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  background:#f6eef2;
+  box-shadow:0 3px 10px rgba(94,61,79,.1);
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .08s ease-out;
+}
+.item-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.item-photo i{
+  position:absolute;
+  right:4px;
+  bottom:4px;
+  display:grid;
+  place-items:center;
+  width:20px;
+  height:20px;
+  border-radius:999px;
+  background:rgba(255,255,255,.9);
+  font-size:10px;
+  font-style:normal;
+  line-height:1;
+}
+.item-photo:active{transform:scale(.96)}
+@media(max-width:360px){.item-photo{width:86px;height:58px}}
+@media(prefers-reduced-motion:reduce){.item-photo{transition:none}}
