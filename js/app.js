@@ -141,10 +141,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.08",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.08",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.08",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.08",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.09",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.09",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.09",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.09",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -916,7 +916,15 @@ function initializeApp() {
     const years=yearListCache;
     return `<option value="">${allLabel}</option>`+years.map(y=>`<option value="${y}" ${String(selected)===String(y)?"selected":""}>${y}年</option>`).join("");
   }
-  function normalizeText(value){return String(value||"").toLowerCase().replace(/[\s　・･「」『』（）()【】\-_.]/g,"")}
+  // Ver1.01.09：検索では、全角・半角（ＡＢＣ／ABC、Ⅱ／II）とカタカナ・ひらがな（とくべチュ／とくべちゅ）を区別しない。
+  // 「、」「／」「！」「〜」などの記号も、入れても入れなくても見つかるように取り除く（「2025/10」は「202510」として探す）。
+  function normalizeText(value){
+    let text=String(value||"");
+    if(typeof text.normalize==="function")text=text.normalize("NFKC");
+    return text.toLowerCase()
+      .replace(/[\u30a1-\u30f6]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0x60))
+      .replace(/[\s　・･「」『』（）()【】\-_./、。,!?~〜♡♪"']/g,"");
+  }
   function eventSearchText(e){
     const derived=eventDerived(e);
     if(derived.searchText===undefined){
@@ -2291,7 +2299,9 @@ function openMember(id,preset=null){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.08</h3>
+        <h3>公開版Ver1.01.09</h3>
+        <p>公式サイトのお知らせ・公式通販の商品名と照らし合わせて、セットの名前・並び順・種類の構成を直しました（例：「とくべちゅ」→「とくべチュ」、ARENA TOUR 2025 の衣装名、2025年10月の歌唱衣装とMV衣装の順番、はなまるうどんコラボの種類）。登録済みのデータは、今までと同じ衣装名のセットに残ります。検索で、ひらがな・カタカナ、全角・半角の違いを区別しないようにしました。</p>
+        <h3>Ver1.01.08</h3>
         <p>ツアー・コンサート・フェスのセットは、一覧の上の行に正式なツアー名・イベント名を出すようにしました（例：「2022-tour」→「全国ツアー2022「どう考えても、君ってイコラブのこと好きじゃん」」）。ツアー名・イベント名でも検索できます。</p>
         <h3>Ver1.01.07</h3>
         <p>「未所持」の絞り込みを、1種でも持っていないセットが出る「未所持あり」に変更しました。一覧の上のボタンから1タップで「未所持あり／あと1種／全部未所持／所持あり／コンプ」を切り替えられます（件数つき）。スクロール中に上へ残る部分を小さくして、一度に見えるカードを増やしました。持っている種類に色が付き、長いセット名は省略せず表示します。年の見出しと年への移動、TOPの推しメンバーへの近道、欲しい一覧などからそのセットを開く「一覧で開く」、クイック入力の「未所持ありだけ」を追加しました。端末の「戻る」操作で、アプリを閉じずにTOPへ戻ります。</p>
