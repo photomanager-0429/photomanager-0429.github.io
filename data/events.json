@@ -167,18 +167,18 @@
         "group": "yori"
       },
       {
-        "id": "yori3",
-        "name": "ヨリ3",
-        "group": "yori"
-      },
-      {
         "id": "chuu",
         "name": "チュウ",
         "group": "chuu"
       },
       {
         "id": "hiki",
-        "name": "ヒキ",
+        "name": "ヒキ1",
+        "group": "hiki"
+      },
+      {
+        "id": "yori3",
+        "name": "ヒキ2",
         "group": "hiki"
       }
     ]
@@ -225,27 +225,27 @@
     "positions": [
       {
         "id": "yori",
-        "name": "ヨリ1",
-        "group": "yori"
-      },
-      {
-        "id": "yori2",
-        "name": "ヨリ2",
-        "group": "yori"
-      },
-      {
-        "id": "yori3",
-        "name": "ヨリ3",
+        "name": "①ヨリ",
         "group": "yori"
       },
       {
         "id": "chuu",
-        "name": "チュウ",
+        "name": "①チュウ",
         "group": "chuu"
       },
       {
         "id": "hiki",
-        "name": "ヒキ",
+        "name": "①ヒキ",
+        "group": "hiki"
+      },
+      {
+        "id": "yori2",
+        "name": "②ヨリ",
+        "group": "yori"
+      },
+      {
+        "id": "yori3",
+        "name": "②ヒキ",
         "group": "hiki"
       }
     ]
@@ -871,7 +871,7 @@
     "sort": 79,
     "category": "通常",
     "period": "2020.November",
-    "work": "3周年コンサート衣装",
+    "work": "3周年記念コンサート衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=32770",
     "addedDate": "2020-11-01"
   },
@@ -902,7 +902,7 @@
     "category": "イベント",
     "period": "2020-tourⅥ",
     "eventName": "WINTER TOUR『You all are \"My ideal\"』",
-    "work": "3周年コンサート衣装②",
+    "work": "3周年記念コンサート衣装②",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=33693",
     "addedDate": "2026-07-14"
   },
@@ -1732,25 +1732,25 @@
     "addedDate": "2022-09-01"
   },
   {
+    "officialName": "2022 September-Ⅱ 生写真セット（「Be Selfish」歌唱衣装）",
+    "id": "2022-09-02",
+    "sort": 150,
+    "category": "通常",
+    "period": "2022.September-II",
+    "work": "「Be Selfish」歌唱衣装",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=52059",
+    "addedDate": "2022-09-02"
+  },
+  {
     "officialName": "5周年コンサート限定生写真セット（「=LOVE 5th ANNIVERSARY PHOTO BOOK」）",
     "id": "2022-anniversary-05-photo-book",
-    "sort": 150,
+    "sort": 151,
     "category": "イベント",
     "period": "2022-tour",
     "eventName": "5th ANNIVERSARY PREMIUM CONCERT",
     "work": "「=LOVE 5th ANNIVERSARY PHOTO BOOK」",
     "officialUrl": "https://equal-love.jp/feature/specialsite_5thconcert",
     "addedDate": "2026-07-14"
-  },
-  {
-    "officialName": "2022 September-Ⅱ 生写真セット（「Be Selfish」歌唱衣装）",
-    "id": "2022-09-02",
-    "sort": 151,
-    "category": "通常",
-    "period": "2022.September-II",
-    "work": "「Be Selfish」歌唱衣装",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=52059",
-    "addedDate": "2022-09-02"
   },
   {
     "officialName": "2022 October 生写真セット（「Be Selfish」MV衣装）",
@@ -2012,7 +2012,7 @@
     "sort": 177,
     "category": "通常",
     "period": "2023.August-II",
-    "work": "「ナツマトペ」ジャケット衣装②",
+    "work": "「ナツマトペ」MV衣装③",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=63971",
     "addedDate": "2023-08-02"
   },
@@ -2424,23 +2424,23 @@
     "addedDate": "2025-02-01"
   },
   {
-    "officialName": "2025 February-Ⅱ 生写真セット(「とくべちゅ、して/恋人以上、好き未満」ジャケット衣装)",
+    "officialName": "2025 February-Ⅱ 生写真セット(「とくべチュ、して／恋人以上、好き未満」ジャケット衣装)",
     "id": "2025-02-02",
     "sort": 218,
     "category": "通常",
     "period": "2025.February-Ⅱ",
-    "work": "「とくべちゅ、して/恋人以上、好き未満」ジャケット衣装",
+    "work": "「とくべチュ、して／恋人以上、好き未満」ジャケット衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=85192",
     "addedDate": "2025-02-02"
   },
   {
-    "officialName": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」",
+    "officialName": "アリーナツアー2025 生写真セット(7周年コンサート衣装②)",
     "id": "2025-tour-01",
     "sort": 219,
     "category": "イベント",
     "period": "2025.tour",
     "eventName": "ARENA TOUR 2025「～Timeless Tales～」",
-    "work": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」",
+    "work": "7周年コンサート衣装②",
     "officialUrl": "https://sp.equal-love.jp/news/detail/9629",
     "addedDate": "2026-07-16"
   },
@@ -2455,12 +2455,12 @@
     "addedDate": "2025-03-01"
   },
   {
-    "officialName": "2025 March-Ⅱ 生写真セット(「とくべちゅ、して/恋人以上、好き未満」ジャケット衣装②)",
+    "officialName": "2025 March-Ⅱ 生写真セット(「とくべチュ、して／恋人以上、好き未満」ジャケット衣装②)",
     "id": "2025-03-02",
     "sort": 221,
     "category": "通常",
     "period": "2025.March-Ⅱ",
-    "work": "「とくべちゅ、して/恋人以上、好き未満」ジャケット衣装②",
+    "work": "「とくべチュ、して／恋人以上、好き未満」ジャケット衣装②",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=85760",
     "addedDate": "2025-03-02"
   },
@@ -2485,13 +2485,13 @@
     "addedDate": "2026-07-14"
   },
   {
-    "officialName": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」②",
+    "officialName": "アリーナツアー2025 生写真セット(アリーナツアー2025衣装)",
     "id": "2025-tour-02",
     "sort": 224,
     "category": "イベント",
     "period": "2025.tour",
     "eventName": "ARENA TOUR 2025「～Timeless Tales～」",
-    "work": "＝LOVE ARENA TOUR 2025「～Timeless Tales～」②",
+    "work": "アリーナツアー2025衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/9909",
     "addedDate": "2026-07-16"
   },
@@ -2506,55 +2506,55 @@
     "addedDate": "2025-05-01"
   },
   {
-    "officialName": "2025 May-Ⅱ 生写真セット(「とくべちゅ、して」歌唱衣装)",
+    "officialName": "2025 May-Ⅱ 生写真セット(「とくべチュ、して」歌唱衣装)",
     "id": "2025-05-02",
     "sort": 226,
     "category": "通常",
     "period": "2025.May-Ⅱ",
-    "work": "「とくべちゅ、して」歌唱衣装",
+    "work": "「とくべチュ、して」歌唱衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=89570",
     "addedDate": "2025-05-02"
   },
   {
-    "officialName": "2025 June 生写真セット(「とくべちゅ、して」MV衣装)",
+    "officialName": "2025 June 生写真セット(「とくべチュ、して」MV衣装)",
     "id": "2025-06-01",
     "sort": 227,
     "category": "通常",
     "period": "2025.June",
-    "work": "「とくべちゅ、して」MV衣装",
+    "work": "「とくべチュ、して」MV衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=90767",
     "addedDate": "2025-06-01"
   },
   {
-    "officialName": "2025 June-Ⅱ 生写真セット(「とくべちゅ、して」歌唱衣装②)",
+    "officialName": "2025 June-Ⅱ 生写真セット(「とくべチュ、して」歌唱衣装②)",
     "id": "2025-06-02",
     "sort": 228,
     "category": "通常",
     "period": "2025.June-Ⅱ",
-    "work": "「とくべちゅ、して」歌唱衣装②",
+    "work": "「とくべチュ、して」歌唱衣装②",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=90770",
     "addedDate": "2025-06-02"
   },
   {
-    "officialName": "アリーナツアー2025 生写真セット(アリーナツアー2025衣装)",
-    "id": "2025.tour",
-    "sort": 229,
-    "category": "イベント",
-    "period": "2025.tour",
-    "eventName": "ARENA TOUR 2025「～Timeless Tales～」",
-    "work": "アリーナツアー2025衣装",
-    "officialUrl": "https://sp.equal-love.jp/news/detail/10040",
-    "addedDate": "2026-07-16"
-  },
-  {
-    "officialName": "2025 July 生写真セット(「とくべちゅ、して」MV衣装②)",
+    "officialName": "2025 July 生写真セット(「とくべチュ、して」MV衣装②)",
     "id": "2025-07-01",
-    "sort": 230,
+    "sort": 229,
     "category": "通常",
     "period": "2025.July",
-    "work": "「とくべちゅ、して」MV衣装②",
+    "work": "「とくべチュ、して」MV衣装②",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=92076",
     "addedDate": "2025-07-01"
+  },
+  {
+    "officialName": "アリーナツアー2025追加公演 生写真セット(「恋人以上、好き未満」歌唱衣装)",
+    "id": "2025.tour",
+    "sort": 230,
+    "category": "イベント",
+    "period": "2025.tour",
+    "eventName": "ARENA TOUR 2025「～Timeless Tales～」追加公演",
+    "work": "「恋人以上、好き未満」歌唱衣装",
+    "officialUrl": "https://sp.equal-love.jp/news/detail/10040",
+    "addedDate": "2026-07-16"
   },
   {
     "officialName": "2025 July-Ⅱ 生写真セット(「恋人以上、好き未満」MV衣装)",
@@ -2587,12 +2587,12 @@
     "addedDate": "2025-08-02"
   },
   {
-    "officialName": "アリーナツアー2025 生写真セット(アリーナツアー2025衣装②)",
+    "officialName": "8周年ツアー生写真セット(アリーナツアー2025衣装②)",
     "id": "2025-tour-03",
     "sort": 234,
     "category": "イベント",
     "period": "2025.tour",
-    "eventName": "ARENA TOUR 2025「～Timeless Tales～」",
+    "eventName": "8th ANNIVERSARY PREMIUM TOUR",
     "work": "アリーナツアー2025衣装②",
     "officialUrl": "https://sp.equal-love.jp/news/detail/10297",
     "addedDate": "2026-07-16"
@@ -2618,23 +2618,23 @@
     "addedDate": "2026-07-14"
   },
   {
-    "officialName": "2025 October 生写真セット(「ラブソングに襲われる」MV衣装)",
-    "id": "2025-10-01",
+    "officialName": "2025 October 生写真セット(「ラブソングに襲われる」歌唱衣装)",
+    "id": "2025-10-02",
     "sort": 237,
     "category": "通常",
     "period": "2025.October",
-    "work": "「ラブソングに襲われる」MV衣装",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=99516",
+    "work": "「ラブソングに襲われる」歌唱衣装",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=99515",
     "addedDate": "2025-10-01"
   },
   {
-    "officialName": "2025 October-Ⅱ 生写真セット(「ラブソングに襲われる」歌唱衣装)",
-    "id": "2025-10-02",
+    "officialName": "2025 October-Ⅱ 生写真セット(「ラブソングに襲われる」MV衣装)",
+    "id": "2025-10-01",
     "sort": 238,
     "category": "通常",
     "period": "2025.October-Ⅱ",
-    "work": "「ラブソングに襲われる」歌唱衣装",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=99515",
+    "work": "「ラブソングに襲われる」MV衣装",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=99516",
     "addedDate": "2025-10-02"
   },
   {
@@ -2779,25 +2779,25 @@
     "addedDate": "2026-05-02"
   },
   {
+    "officialName": "2026 June 生写真セット(20thcw「モラトリアム」)",
+    "id": "2026-06-01",
+    "sort": 253,
+    "category": "通常",
+    "period": "2026.June",
+    "work": "20thcw「モラトリアム」",
+    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=109480",
+    "addedDate": "2026-06-01"
+  },
+  {
     "officialName": "=LOVE STADIUM LIVE生写真セット(キービジュアル衣装)",
     "id": "2026-kokuritsu",
-    "sort": 253,
+    "sort": 254,
     "category": "イベント",
     "period": "2026.kokuritsu",
     "eventName": "STADIUM LIVE「Beyond \"KYUN\"♡」",
     "work": "キービジュアル衣装",
     "officialUrl": "https://sp.equal-love.jp/news/detail/11551",
     "addedDate": "2026-07-14"
-  },
-  {
-    "officialName": "2026 June 生写真セット(20thcw「モラトリアム」)",
-    "id": "2026-06-01",
-    "sort": 254,
-    "category": "通常",
-    "period": "2026.June",
-    "work": "20thcw「モラトリアム」",
-    "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=109480",
-    "addedDate": "2026-06-01"
   },
   {
     "officialName": "2026 June-Ⅱ 生写真セット(年末歌番組2025衣装)",
@@ -2830,12 +2830,12 @@
     "addedDate": "2026-07-02"
   },
   {
-    "officialName": "2026 August 生写真セット(｢Poison Girl｣リメイク衣装)",
+    "officialName": "2026 August 生写真セット(「Poison Girl」リメイク衣装)",
     "id": "2026-08-01",
     "sort": 258,
     "category": "通常",
     "period": "2026.August",
-    "work": "｢Poison Girl｣リメイク衣装",
+    "work": "「Poison Girl」リメイク衣装",
     "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=112505",
     "addedDate": "2026-08-01"
   },
