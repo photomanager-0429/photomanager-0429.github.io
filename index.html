@@ -12,8 +12,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="非公式 生写真管理">
-<link rel="manifest" href="./manifest.webmanifest?v=1.01.12">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.01.12">
+<link rel="manifest" href="./manifest.webmanifest?v=1.01.13">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=1.01.13">
 <title>【非公式】＝LOVE 生写真管理</title>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-385XD642LL"></script>
@@ -24,7 +24,7 @@
 
   gtag('config', 'G-385XD642LL');
 </script>
-<link rel="stylesheet" href="./css/style.css?v=1.01.12">
+<link rel="stylesheet" href="./css/style.css?v=1.01.13">
 </head>
 <body>
 <section id="homeScreen" class="home dashboard-home">
@@ -67,8 +67,6 @@
     </div>
     <div class="dashboard-grid">
       <button class="dashboard-card" data-home-page="stats"><span>📊</span><b>統計</b></button>
-      <button class="dashboard-card" data-home-page="wishlist"><span>♡</span><b>欲しい一覧</b></button>
-      <button class="dashboard-card" data-home-page="trade"><span>🔄</span><b>提供可能</b></button>
       <button class="dashboard-card" data-home-page="missing"><span>🔎</span><b>未所持一覧</b></button>
       <button class="dashboard-card dashboard-card-wide" data-home-page="enclosed"><span>📷</span><b>封入生写真</b><small>CDの封入などを写真で記録</small></button>
     </div>
@@ -91,7 +89,7 @@
   </section>
 
   <div id="dataUpdateLabel" class="data-update-label dashboard-update-label">データ更新日：読み込み中</div>
-  <div id="versionLabel" class="version-label">Ver 1.01.12</div>
+  <div id="versionLabel" class="version-label">Ver 1.01.13</div>
 </div>
 
 </section>
@@ -108,7 +106,6 @@
       <div class="settings-menu-list">
         <button data-settings-page="memberImages"><span>🖼️</span><div><b>メンバー画像設定</b><small>端末内だけで好きな画像を表示</small></div><i>›</i></button>
         <button data-settings-page="oshi"><span>👑</span><div><b>推し設定</b><small>最推し・推し・気になるを設定</small></div><i>›</i></button>
-        <button data-settings-page="bulkManage"><span>♡</span><div><b>未所持・欲しい一括操作</b><small>未所持一覧の表示や欲しいへの一括追加</small></div><i>›</i></button>
         <button data-settings-page="backup"><span>💾</span><div><b>バックアップ・データ管理</b><small>保存・復元・端末内データ管理</small></div><i>›</i></button>
         <button data-settings-page="help"><span>📖</span><div><b>使い方</b><small>操作方法とデータ保護の案内</small></div><i>›</i></button>
         <button data-settings-page="legal"><span>🛡️</span><div><b>本サイトについて・利用上の注意</b><small>非公式表記・画像・プライバシー・免責</small></div><i>›</i></button>
@@ -153,7 +150,7 @@
 </div></div>
 <main class="wrap">
 <section id="collectionPage">
-<div class="summary"><div class="summary-card"><b id="ownedTotal">0</b><span>所持枚数</span></div><div class="summary-card"><b id="ownedTypes">0</b><span>所持種類</span></div><div class="summary-card"><b id="signedTotal">0</b><span>直筆あり</span></div></div>
+<div class="summary"><div class="summary-card"><b id="ownedTotal">0</b><span>所持枚数</span></div><div class="summary-card"><b id="ownedTypes">0</b><span>所持種類</span></div><div class="summary-card"><b id="completeSets">0</b><span>コンプセット</span></div></div>
 <div class="summary-progress"><div class="summary-progress-line"><span>コンプ率</span><b id="compRateText">0%</b><small id="compRateDetail"></small></div><div class="bar"><span id="compRateBar"></span></div></div>
 <div class="collection-mode-actions">
   <button id="openQuickInputButton"><span>⚡</span>クイック入力</button>
@@ -165,12 +162,9 @@
 <section id="quickPage" class="hidden"></section>
 <section id="matrixPage" class="hidden"></section>
 <section id="statsPage" class="hidden"></section>
-<section id="wishlistPage" class="hidden"></section>
-<section id="tradePage" class="hidden"></section>
 <section id="missingPage" class="hidden"></section>
 <section id="oshiPage" class="hidden"></section>
 <section id="memberImagesPage" class="hidden"></section>
-<section id="bulkManagePage" class="hidden"></section>
 <section id="backupPage" class="hidden"></section>
 <section id="helpPage" class="hidden"></section>
 <section id="aboutPage" class="hidden"></section>
@@ -179,10 +173,8 @@
 </main>
 <nav class="bottom-nav">
 <button data-page="collection" class="active"><span>📚</span>一覧</button>
-<button data-page="stats"><span>📊</span>統計</button>
 <button data-page="home" class="nav-home" aria-label="ホームへ戻る"><span>🏠</span>ホーム</button>
-<button data-page="wishlist"><span>♡</span>欲しい</button>
-<button data-page="trade"><span>🔄</span>提供</button>
+<button data-page="stats"><span>📊</span>統計</button>
 </nav>
 </section>
 
@@ -332,7 +324,7 @@
   <button id="applyUpdateButton">更新する</button>
 </div>
 <div id="offlineBanner" class="offline-banner hidden">オフラインで表示しています</div>
-<script src="./js/app.js?v=1.01.12"></script>
-<script src="./js/bootstrap.js?v=1.01.12"></script>
+<script src="./js/app.js?v=1.01.13"></script>
+<script src="./js/bootstrap.js?v=1.01.13"></script>
 </body>
 </html>
