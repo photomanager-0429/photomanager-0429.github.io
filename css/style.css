@@ -15,7 +15,7 @@ button,input,select{font:inherit}.hidden{display:none!important}.wrap{width:min(
 select{min-height:42px;border:1px solid var(--line);border-radius:13px;padding:8px 11px;background:white;color:var(--text)}
 .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0}.summary-card{text-align:center;padding:12px 7px;border:1px solid var(--line);border-radius:16px;background:white}.summary-card b{display:block;font-size:20px}.summary-card span{font-size:11px;color:var(--muted)}
 .notice{margin-bottom:13px;padding:11px 13px;border-radius:14px;background:#fffaf0;color:#75623c;border:1px solid #f6e8c3;font-size:11px;line-height:1.5}
-.event-list,.list-page{display:grid;gap:13px;padding-bottom:90px}.event-card,.panel{overflow:hidden;border:1px solid var(--line);border-radius:20px;background:white;box-shadow:var(--shadow)}
+.event-list{display:grid;gap:13px;padding-bottom:90px}.event-card,.panel{overflow:hidden;border:1px solid var(--line);border-radius:20px;background:white;box-shadow:var(--shadow)}
 .event-head{padding:15px;border-bottom:1px solid var(--line)}.event-topline{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .period{font-size:14px;font-weight:900}.work{margin-top:3px;font-size:16px;font-weight:900;line-height:1.35}.badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .badge{flex:none;border-radius:999px;padding:5px 9px;background:white;border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:900}.badge.complete{background:#effaf2;border-color:#71b982;color:#3b8a50}
@@ -25,7 +25,7 @@ select{min-height:42px;border:1px solid var(--line);border-radius:13px;padding:8
 .event-footer{display:flex;justify-content:space-between;align-items:center;padding:0 15px 14px}.event-footer a{text-decoration:none;border:1px solid var(--accent);color:var(--accent);border-radius:11px;padding:8px 11px;font-size:12px;font-weight:900}
 .expand-btn{border:0;border-radius:12px;background:var(--accent);color:white;padding:9px 12px;font-size:12px;font-weight:900}
 .all-summary{font-size:12px;color:var(--muted);margin-top:7px}.all-members{padding:0 12px 14px}.all-row{border-top:1px solid #f1ebef;padding:12px 2px}.all-name{font-weight:900;margin-bottom:9px}
-.all-pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.mini-pos{border:1px solid var(--line);border-radius:13px;padding:8px;background:#fff}.mini-label{text-align:center;font-size:11px;font-weight:800;margin-bottom:7px}.mini-actions{display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap}.mini-actions button{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:white;padding:0}.mini-actions .plus{background:var(--accent);color:#fff;border-color:var(--accent)}.mini-actions .wide{border-radius:8px}.mini-actions .on{background:#ffe8f1;border-color:#ea8daf}
+.all-pos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .page-filter{margin:10px 0 14px}.page-filter select{width:100%}.page-head{padding:14px 0 5px}.page-head h2{margin:0;font-size:23px}.page-head p{margin:5px 0 0;color:var(--muted);font-size:13px}
 .stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.big-stat{padding:16px;border-radius:18px;background:white;border:1px solid var(--line);box-shadow:var(--shadow)}.big-stat b{display:block;font-size:26px}.big-stat span{font-size:12px;color:var(--muted)}
 .panel{padding:16px}.panel h3{margin:0 0 12px}.year-row{margin:12px 0}.year-line{display:flex;justify-content:space-between;font-size:13px;font-weight:800}.bar{height:10px;border-radius:999px;background:#f0e9ed;overflow:hidden;margin-top:6px}.bar span{display:block;height:100%;border-radius:999px}
@@ -33,7 +33,7 @@ select{min-height:42px;border:1px solid var(--line);border-radius:13px;padding:8
 .empty{text-align:center;color:var(--muted);padding:40px 10px}
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:grid;padding-bottom:env(safe-area-inset-bottom)}
 .bottom-nav button{border:0;background:transparent;padding:9px 4px 8px;color:var(--muted);font-size:11px}.bottom-nav span{display:block;font-size:19px;margin-bottom:2px}.bottom-nav button.active{color:var(--accent);font-weight:900}
-@media(max-width:520px){.wrap{padding:12px}.member-grid{gap:10px}.all-pos-grid{gap:5px}.mini-pos{padding:7px 4px}.quick{font-size:12px}}
+@media(max-width:520px){.wrap{padding:12px}.member-grid{gap:10px}.all-pos-grid{gap:5px}.quick{font-size:12px}}
 
 .version-label{
   right:10px;
@@ -226,7 +226,7 @@ select{min-height:42px;border:1px solid var(--line);border-radius:13px;padding:8
 .oshi-focus-head h3{margin:2px 0 0}.oshi-focus-head>b{font-size:25px;color:var(--member-accent)}
 .oshi-focus-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:13px}
 .oshi-focus-stats span{padding:8px 4px;border-radius:11px;background:rgba(255,255,255,.78);text-align:center;font-size:10px}.oshi-focus-stats b{display:block;margin-top:2px;font-size:13px}
-.oshi-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.oshi-actions{display:grid;gap:8px;margin-top:12px}
 .oshi-actions button{border:1px solid var(--member-accent);border-radius:12px;padding:9px;font-size:11px;font-weight:900}
 .oshi-celebrate{margin:-17px -17px 13px;padding:8px;background:linear-gradient(90deg,#fff1a8,#ffd3e5);text-align:center;font-size:12px;font-weight:900;color:#9a5c18}
 .oshi-empty{margin:14px 0;padding:22px;border:1px dashed #e1b7c9;border-radius:17px;background:#fff7fa;text-align:center;color:#b45d82;font-weight:800}
@@ -599,8 +599,8 @@ body.selector-open{overflow:hidden}
 .quick-event-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:16px;background:linear-gradient(135deg,var(--soft),#fff)}
 .quick-event-head span{color:#6b4e5b;font-size:12px;font-weight:950}.quick-event-head h3{margin:4px 0 0;font-size:17px}.quick-event-head small{display:block;margin-top:4px;color:#8c727d;font-size:9px}
 .card-bulk-button{border:1px solid rgba(217,91,145,.22);border-radius:10px;padding:8px 10px;background:#fff6fa;color:#a63e6a;font-size:9px;font-weight:900;white-space:nowrap}
-.quick-position-list{display:grid;gap:9px;padding:13px}.quick-position-row{display:grid;grid-template-columns:minmax(70px,1fr) 134px 43px 43px;align-items:center;gap:7px;padding:10px;border:1px solid #efdee6;border-radius:16px;background:#fff}
-.quick-position-title b,.quick-position-title small{display:block}.quick-position-title b{font-size:13px}.quick-position-title small{margin-top:2px;color:#927984;font-size:8px}.quick-stepper{display:grid;grid-template-columns:38px 1fr 38px;align-items:center;overflow:hidden;border:1px solid #ead9e1;border-radius:12px}.quick-stepper button{height:43px;border:0;background:#fff2f7;color:#b43d70;font-size:21px}.quick-stepper strong{text-align:center;font-size:19px}.quick-toggle{height:43px;border:1px solid #ead9e1;border-radius:12px;background:#fff;color:#a58c97;font-size:19px}.quick-toggle.on{border-color:#db6e9e;background:#fff0f6;color:#c5427a}
+.quick-position-list{display:grid;gap:9px;padding:13px}.quick-position-row{display:grid;align-items:center;gap:7px;padding:10px;border:1px solid #efdee6;border-radius:16px;background:#fff}
+.quick-position-title b,.quick-position-title small{display:block}.quick-position-title b{font-size:13px}.quick-position-title small{margin-top:2px;color:#927984;font-size:8px}.quick-stepper{display:grid;grid-template-columns:38px 1fr 38px;align-items:center;overflow:hidden;border:1px solid #ead9e1;border-radius:12px}.quick-stepper button{height:43px;border:0;background:#fff2f7;color:#b43d70;font-size:21px}.quick-stepper strong{text-align:center;font-size:19px}
 .quick-nav-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 13px 14px}.quick-nav-row button{min-height:43px;border:1px solid #ead8e1;border-radius:13px;background:#fff;color:#9d4268;font-size:10px;font-weight:900}.quick-nav-row button:disabled{opacity:.35}
 .matrix-event-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border:1px solid #ebd9e2;border-radius:15px;background:#fff;margin-bottom:8px}.matrix-event-summary b,.matrix-event-summary span{display:block}.matrix-event-summary b{font-size:12px}.matrix-event-summary span{margin-top:3px;color:#846b76;font-size:9px}
 .matrix-help{margin-bottom:8px;padding:9px 11px;border-radius:11px;background:#fff6e8;color:#796143;font-size:9px}
@@ -610,7 +610,7 @@ body.selector-open{overflow:hidden}
 .bulk-action-list{display:grid;gap:8px}.bulk-action-list>button{display:grid;grid-template-columns:38px 1fr auto;align-items:center;gap:10px;width:100%;min-height:66px;padding:10px 12px;border:1px solid #ead9e1;border-radius:15px;background:#fff;text-align:left;color:#604753}.bulk-action-list>button>span{font-size:22px}.bulk-action-list b,.bulk-action-list small{display:block}.bulk-action-list b{font-size:12px}.bulk-action-list small{margin-top:4px;color:#927883;font-size:8px;line-height:1.4}.bulk-action-list i{font-style:normal;color:#c27898;font-size:20px}.bulk-action-list .danger{border-color:#f1c8cd;background:#fff8f8;color:#a33a49}
 .action-toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));z-index:220;transform:translateX(-50%);min-width:190px;max-width:86%;padding:11px 15px;border-radius:999px;background:rgba(58,39,48,.94);color:#fff;text-align:center;font-size:10px;font-weight:900;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 .event-footer{gap:7px;flex-wrap:wrap}.event-footer .card-bulk-button{margin-right:auto}
-@media(max-width:390px){.quick-position-row{grid-template-columns:minmax(55px,1fr) 116px 39px 39px;gap:5px;padding:8px}.quick-stepper{grid-template-columns:34px 1fr 34px}.quick-toggle{height:41px}.mode-filter-grid{grid-template-columns:1fr}.matrix-table tbody th{width:94px}}
+@media(max-width:390px){.quick-position-row{gap:5px;padding:8px}.quick-stepper{grid-template-columns:34px 1fr 34px}.mode-filter-grid{grid-template-columns:1fr}.matrix-table tbody th{width:94px}}
 
 /* Ver1.04：設定メニュー・モード並び替え・五十音順推し表示 */
 .dashboard-wrap{position:relative}
@@ -1599,13 +1599,7 @@ body{
   min-height:auto!important;
   padding-bottom:0!important;
 }
-.event-list,
-.list-page,
-.missing-member-list,
-.guide-list,
-.legal-stack,
-.member-image-settings-list,
-.oshi-settings-list{
+.event-list,.missing-member-list,.guide-list,.legal-stack,.member-image-settings-list,.oshi-settings-list{
   padding-bottom:0!important;
 }
 .settings-page-bottom-space{
@@ -1759,12 +1753,6 @@ textarea,
 }
 
 /* Ver1.00.94：未所持・欲しい一括操作 */
-#addBulkMissingToWishlistButton:disabled{
-  opacity:.48;
-  cursor:not-allowed;
-  box-shadow:none;
-  transform:none;
-}
 
 /* Ver1.00.95：未所持一覧の検索入力フォーカス修正（JSのみ） */
 
@@ -1776,7 +1764,7 @@ textarea,
 /* Ver1.01.04：下部ナビ中央のホームボタン・一覧から公式サイトへ・操作の反応改善 */
 /* ＋を続けて押した時に、iPhoneがダブルタップと判断して画面を拡大するのを防ぐ */
 button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:manipulation}
-.bottom-nav{grid-template-columns:repeat(5,1fr)}
+
 .bottom-nav .nav-home span{
   display:grid;
   place-items:center;
@@ -1818,10 +1806,7 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
 .event-list{align-content:start}
 
 /* Ver1.01.04：一覧をテキストでコピー・バックアップのおすすめ */
-.copy-list-button{
-  grid-column:1 / -1;
-  min-height:38px;
-}
+
 .backup-reminder{
   margin:18px 0 0;
   padding:14px 15px;
@@ -2112,24 +2097,16 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
 /* ＋・−・♡・直筆のボタンを押しやすい大きさに */
 #collectionPage .pos-row{gap:6px;padding:9px 6px 8px}
 
-#collectionPage .mini-actions button{width:30px;height:30px}
 /* メモ：ボタンに position:relative を付けると、数千個のボタンすべてが別の描画単位になり、
    文字入力やスクロールのたびの画面更新が遅くなる（計測で確認）。付けないこと。 */
 
-@media(max-width:345px){
-  
-  
-  #collectionPage .mini-actions button{width:27px;height:27px}
-}
-
 /* 押した時の手ごたえ（少し縮む）。連打しても文字が選択されないようにする */
-#collectionPage .mini-actions button,.ownership-chip,.year-divider{-webkit-tap-highlight-color:transparent}
-#collectionPage .mini-actions button{transition:transform .08s ease-out}
-#collectionPage .mini-actions button:active{transform:scale(.88)}
+.ownership-chip,.year-divider{-webkit-tap-highlight-color:transparent}
+
 .ownership-chip:active{transform:scale(.96)}
-#collectionPage .mini-actions{-webkit-user-select:none;user-select:none}
+
 @media(prefers-reduced-motion:reduce){
-  #collectionPage .mini-actions button{transition:none}
+  
   .event-card.jump-highlight{animation-duration:.01s}
 }
 
@@ -2141,12 +2118,10 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
 }
 #collectionPage .pos-row.owned>span{color:var(--accent)}
 #collectionPage .pos-row.owned>span::before{content:"✓ "}
-#collectionPage .mini-pos.owned,
 .quick-position-row.owned{
   border-color:color-mix(in srgb,var(--accent) 45%,white);
   background:color-mix(in srgb,var(--soft) 34%,white);
 }
-#collectionPage .mini-pos.owned .mini-label::before{content:"✓ "}
 
 /* --- クイック入力：並び順と「未所持ありだけ」を横に並べる --- */
 #quickPage .mode-filter-grid-with-sort{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
@@ -2282,15 +2257,11 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
 .slot-label{flex:1;min-width:0;padding-left:4px;text-align:left;font-size:12px;font-weight:900;color:#8a7f89;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #collectionPage .slot-cell.owned .slot-label{color:var(--accent)}
 #collectionPage .slot-cell.owned .slot-label::before{content:"✓ "}
-.slot-more{flex:none;width:32px;height:28px;padding:0;border:0;border-radius:9px;background:transparent;color:#7f7480;font-size:17px;font-weight:900;line-height:1;-webkit-tap-highlight-color:transparent}
-.slot-more:active{background:rgba(45,39,48,.07)}
+
 .slot-count{height:34px;overflow:hidden;text-align:center}
 .slot-count .num{display:block;font-size:26px;line-height:34px;font-weight:900;color:#b3a8b1;font-variant-numeric:tabular-nums}
 #collectionPage .slot-cell.owned .slot-count .num{color:#2d2730}
-.slot-marks{display:flex;justify-content:center;gap:6px;min-height:16px;font-size:10px;font-weight:900;line-height:16px}
-.slot-marks [hidden]{display:none}
-.mk-sign{color:#8a5d07}
-.mk-want{color:#b8336c}
+
 #collectionPage .slot-cell .plus{
   width:100%;
   height:38px;
@@ -2390,11 +2361,6 @@ button,a,select,label,input[type="checkbox"],input[type="radio"]{touch-action:ma
 body.undo-open .back-to-top{bottom:calc(150px + env(safe-area-inset-bottom))}
 
 /* --- 長押し・⋯ のメニュー --- */
-.slot-menu-overlay{position:fixed;inset:0;z-index:100;background:rgba(45,25,35,.22)}
-.slot-petal{position:absolute;width:68px;height:68px;margin:-34px 0 0 -34px;padding:0;border:0;border-radius:50%;background:#fff;color:#2d2730;box-shadow:0 8px 22px rgba(94,61,79,.3);display:grid;place-content:center;gap:1px;font-size:11px;font-weight:900}
-.slot-petal i{font-style:normal;font-size:20px;line-height:1.1}
-.slot-petal.on{background:var(--soft,#ffe3ef);box-shadow:0 0 0 3px var(--accent,#ef7fad),0 8px 22px rgba(94,61,79,.3)}
-.slot-menu-caption{position:absolute;transform:translateX(-50%);padding:4px 10px;border-radius:999px;background:rgba(35,26,32,.85);color:#fff;font-size:12px;font-weight:900;white-space:nowrap;pointer-events:none}
 
 /* --- 写真の拡大表示 --- */
 .set-photo-viewer{position:fixed;inset:0;z-index:110;display:grid;place-items:center;padding:calc(20px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));background:rgba(25,18,22,.9)}
@@ -2475,3 +2441,41 @@ body.undo-open .back-to-top{bottom:calc(150px + env(safe-area-inset-bottom))}
 .item-photo:active{transform:scale(.96)}
 @media(max-width:360px){.item-photo{width:86px;height:58px}}
 @media(prefers-reduced-motion:reduce){.item-photo{transition:none}}
+
+/* =====================================================================
+   Ver1.01.13：下のメニューを3つに／マスは＋と−だけ／全メンバー表示も同じマス／セットごとの写真
+   ===================================================================== */
+/* 下のメニュー：一覧・ホーム・統計 */
+.bottom-nav{grid-template-columns:repeat(3,1fr)}
+
+/* マスの −（⋯ のメニューの代わり。長押しでも1枚減らす） */
+.slot-minus{flex:none;width:32px;height:28px;padding:0;border:0;border-radius:9px;background:rgba(45,39,48,.05);color:#5f5560;font-size:18px;font-weight:900;line-height:1;-webkit-tap-highlight-color:transparent}
+.slot-minus:active{background:rgba(45,39,48,.13)}
+
+/* クイック入力：♡・✍️ を外したので、枚数のボタンを広く */
+.quick-position-row{grid-template-columns:minmax(70px,1fr) 176px}
+@media(max-width:390px){.quick-position-row{grid-template-columns:minmax(55px,1fr) 156px}}
+
+/* 全メンバー表示：開いた中のマス（メンバーの一覧と同じマスを少し小さく。行ごとにメンバーの色） */
+.all-name{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.all-row-complete{margin-left:auto;padding:2px 8px;border:2px solid var(--accent);border-radius:7px;background:#fff;color:var(--accent);font-size:10px;font-weight:900;letter-spacing:.04em;transform:rotate(-8deg)}
+.all-row-complete[hidden]{display:none}
+#collectionPage .all-pos-grid .slot-cell{padding:5px 5px 7px}
+.all-pos-grid .slot-count{height:28px}
+.all-pos-grid .slot-count .num{font-size:22px;line-height:28px}
+#collectionPage .all-pos-grid .slot-cell .plus{height:32px;font-size:20px}
+
+/* 全メンバー表示のカードの上：セットの写真の小さい画像（押すと大きく） */
+.all-set-thumb{padding:0;-webkit-tap-highlight-color:transparent}
+.all-card .event-topline>div:not(.badges){flex:1;min-width:0}
+
+/* セットごとの写真の場所（全メンバー表示の開いた中・イベント表） */
+.set-photo-area-event{display:grid;gap:8px}
+.all-set-photo{margin:10px 0 4px}
+.matrix-set-photo{margin:0 0 8px}
+.set-photo-empty-event{aspect-ratio:auto;grid-template-columns:auto minmax(0,1fr);place-content:center start;justify-items:start;column-gap:12px;row-gap:1px;padding:11px 14px;text-align:left}
+.set-photo-empty-event b{grid-row:1/3;font-size:24px}
+.set-photo-area-event .set-photo img{max-height:240px}
+
+/* 推し設定：ボタンが「未所持を見る」1つになったので横いっぱいに */
+.oshi-actions{grid-template-columns:1fr}
