@@ -141,10 +141,10 @@ function skipOverflow(status, total) {
 
 async function loadAppData() {
   const [eventsResponse, membersResponse, positionsResponse, configResponse] = await Promise.all([
-    fetch("./data/events.json?v=1.01.12",{cache:"no-store"}),
-    fetch("./data/members.json?v=1.01.12",{cache:"no-store"}),
-    fetch("./data/positions.json?v=1.01.12",{cache:"no-store"}),
-    fetch("./data/config.json?v=1.01.12",{cache:"no-store"})
+    fetch("./data/events.json?v=1.01.13",{cache:"no-store"}),
+    fetch("./data/members.json?v=1.01.13",{cache:"no-store"}),
+    fetch("./data/positions.json?v=1.01.13",{cache:"no-store"}),
+    fetch("./data/config.json?v=1.01.13",{cache:"no-store"})
   ]);
 
   if (!eventsResponse.ok || !membersResponse.ok || !positionsResponse.ok || !configResponse.ok) {
@@ -232,10 +232,6 @@ function initializeApp() {
     newFilter:savedPrefs.newFilter||"",
     oshiOnly:savedPrefs.oshiOnly||false,
     pageMemberId:savedPrefs.pageMemberId||"",
-    wishlistYear:savedPrefs.wishlistYear||"",
-    tradeYear:savedPrefs.tradeYear||"",
-    wishlistOrder:savedPrefs.wishlistOrder||"desc",
-    tradeOrder:savedPrefs.tradeOrder||"desc",
     missingMemberId:savedPrefs.missingMemberId||"",
     missingPositionId:savedPrefs.missingPositionId||"",
     missingYear:savedPrefs.missingYear||"",
@@ -250,7 +246,6 @@ function initializeApp() {
     matrixSearch:savedPrefs.matrixSearch||"",
     matrixYear:savedPrefs.matrixYear||"",
     matrixOrder:savedPrefs.matrixOrder||"asc",
-    bulkMemberId:savedPrefs.bulkMemberId||"",
     quickMissingOnly:false, // クイック入力の「未所持ありだけ」。その場かぎりの切り替えで、保存はしない
     counts:safeStorageObject(COUNT_KEY),
     signs:safeStorageObject(SIGN_KEY),
@@ -270,10 +265,6 @@ function initializeApp() {
       newFilter:state.newFilter,
       oshiOnly:state.oshiOnly,
       pageMemberId:state.pageMemberId,
-      wishlistYear:state.wishlistYear,
-      tradeYear:state.tradeYear,
-      wishlistOrder:state.wishlistOrder,
-      tradeOrder:state.tradeOrder,
       missingMemberId:state.missingMemberId,
       missingPositionId:state.missingPositionId,
       missingYear:state.missingYear,
@@ -287,14 +278,15 @@ function initializeApp() {
       matrixEventId:state.matrixEventId,
       matrixSearch:state.matrixSearch,
       matrixYear:state.matrixYear,
-      matrixOrder:state.matrixOrder,
-      bulkMemberId:state.bulkMemberId
+      matrixOrder:state.matrixOrder
     },{silent:true});
   }
   const $=id=>document.getElementById(id);
 
   // ===== Ver1.01.10：カードのメモ・カードの裏の写真・操作の取り消し（ここでは入れ物だけを用意し、処理は後ろの方にまとめてある） =====
-  const SLOT_HINT_KEY="equal-love-photo-manager-slot-hint-v110"; // 長押しの案内を1回だけ出したかどうか
+  const SLOT_HINT_KEY="equal-love-photo-manager-slot-hint-v113"; // − と長押しの案内を1回だけ出したかどうか（Ver1.01.13で案内の中身が変わったので出し直す）
+  const SIGN_NOTE_DONE_KEY="equal-love-photo-manager-sign-notes-v113"; // 直筆をメモへ書き写したかどうか
+  const SET_PHOTO_ALL="all"; // セットごとの写真（全員分で1枚）は、メンバーの代わりに "all" で保存する
   const NOTE_MAX=200;
   const UNDO_SNACK_MS=6000;
   const SET_PHOTO_DB_NAME="equal-love-photo-manager-set-photos";
@@ -307,7 +299,6 @@ function initializeApp() {
   let setPhotoDbPromise=null;
   let setPhotoBusy=false;
   let undoSnackBox=null,undoSnackTimer=0,undoSnackAction=null;
-  let slotMenuOverlay=null,slotMenuOpenedAt=0,slotMenuReturn=null;
   let setPhotoViewer=null;
   let fxLayer=null;
   let setCardSeq=0;
@@ -913,8 +904,6 @@ function initializeApp() {
   }
   function k(e,m,p){return `${e}__${m}__${p}`} function getCount(e,m,p){return Number(state.counts[k(e,m,p)]||0)}
   function setCount(e,m,p,n){const x=k(e,m,p);if(n<=0)delete state.counts[x];else state.counts[x]=n;writeStorage(COUNT_KEY,state.counts)}
-  function isSigned(e,m,p){return !!state.signs[k(e,m,p)]} function toggleSign(e,m,p){const x=k(e,m,p);state.signs[x]?delete state.signs[x]:state.signs[x]=true;writeStorage(SIGN_KEY,state.signs)}
-  function isWanted(e,m,p){return !!state.wants[k(e,m,p)]} function toggleWant(e,m,p){const x=k(e,m,p);state.wants[x]?delete state.wants[x]:state.wants[x]=true;writeStorage(WANT_KEY,state.wants)}
   const OSHI_RANKS={favorite:{label:"最推し",icon:"👑",weight:3},oshi:{label:"推し",icon:"⭐",weight:2},interest:{label:"気になる",icon:"♡",weight:1}};
   function oshiRank(id){return state.oshis[id]||""}
   function isOshi(id){return !!oshiRank(id)}
@@ -985,7 +974,7 @@ function initializeApp() {
   }
   function bindPageMemberFilter(){
     const el=document.getElementById("pageMemberFilter");
-    if(el)el.onchange=e=>{state.pageMemberId=e.target.value;if(state.page==="stats")renderStats();if(state.page==="wishlist")renderWishlist();if(state.page==="trade")renderTrade()};
+    if(el)el.onchange=e=>{state.pageMemberId=e.target.value;if(state.page==="stats")renderStats()};
   }
   // ===== Ver1.01.07：所持状況の絞り込み =====
   // 「未所持あり」は、ヨリ・チュウ・ヒキなどのうち1種でも持っていないセット（以前は全部持っていないセットだけだった）
@@ -1076,18 +1065,6 @@ function initializeApp() {
     return entries;
   }
   function listFilterEntries(page){
-    if(page==="wishlist"){
-      const entries=[];
-      if(state.pageMemberId){const m=MEMBERS.find(x=>x.id===state.pageMemberId);if(m)entries.push({key:"member",label:`${m.emoji} ${m.name}`})}
-      if(state.wishlistYear)entries.push({key:"year",label:`${state.wishlistYear}年`});
-      return entries;
-    }
-    if(page==="trade"){
-      const entries=[];
-      if(state.pageMemberId){const m=MEMBERS.find(x=>x.id===state.pageMemberId);if(m)entries.push({key:"member",label:`${m.emoji} ${m.name}`})}
-      if(state.tradeYear)entries.push({key:"year",label:`${state.tradeYear}年`});
-      return entries;
-    }
     if(page==="missing"){
       const entries=[];
       if(state.missingMemberId){const m=MEMBERS.find(x=>x.id===state.missingMemberId);if(m)entries.push({key:"member",label:`${m.emoji} ${m.name}`})}
@@ -1101,8 +1078,6 @@ function initializeApp() {
   }
   function sortLabel(page){
     const order=page==="collection"?state.sort:
-      page==="wishlist"?state.wishlistOrder:
-      page==="trade"?state.tradeOrder:
       page==="quick"?state.quickOrder:
       page==="matrix"?state.matrixOrder:
       state.missingEventOrder;
@@ -1119,7 +1094,6 @@ function initializeApp() {
       <div class="unified-filter-toolbar">
         <button class="filter-action-button" data-open-filter="${page}"><span>⚙️</span><b>絞り込み</b>${entries.length?`<i class="filter-count">${entries.length}</i>`:""}</button>
         <button class="filter-action-button" data-open-sort="${page}"><span>↕</span><b>${sortLabel(page)}</b></button>
-        ${page==="wishlist"||page==="trade"?`<button class="filter-action-button copy-list-button" data-copy-list="${page}"><span>📋</span><b>この一覧をテキストでコピー</b></button>`:""}
       </div>
       <div class="active-filter-chips">${filterChipsHtml(entries,page)}</div>
     </div>`;
@@ -1171,42 +1145,7 @@ function initializeApp() {
   function bindListToolbar(page){
     document.querySelectorAll(`[data-open-filter="${page}"]`).forEach(button=>button.onclick=()=>openFilterSheet(page));
     document.querySelectorAll(`[data-open-sort="${page}"]`).forEach(button=>button.onclick=()=>openSortSheet(page));
-    document.querySelectorAll(`[data-copy-list="${page}"]`).forEach(button=>button.onclick=()=>copyListText(page));
     bindFilterChipButtons();
-  }
-  // Ver1.01.04：いま表示している欲しい一覧・提供可能一覧を、メンバーごとの文章にしてコピーする
-  function listCopyText(page){
-    const groups=page==="wishlist"?groupedWantedItems():groupedTradeItems();
-    const byMember=new Map();
-    groups.forEach(x=>{
-      if(!byMember.has(x.m.id))byMember.set(x.m.id,{m:x.m,lines:[]});
-      const detail=page==="wishlist"
-        ?x.positions.map(v=>v.p.name).join("・")
-        :x.positions.map(v=>`${v.p.name}×${v.extra}`).join("・");
-      const label=eventLabel(x.e);
-      const title=String(label).includes(x.e.work)?label:`${label} ${x.e.work}`;
-      byMember.get(x.m.id).lines.push(`・${title}：${detail}`);
-    });
-    const head=page==="wishlist"?"【欲しい】":"【提供できます】";
-    const text=[...byMember.values()].map(group=>`${head}${group.m.name}\n${group.lines.join("\n")}`).join("\n\n");
-    return {text,count:groups.length};
-  }
-  async function copyListText(page){
-    const {text,count}=listCopyText(page);
-    if(!count){showActionToast("コピーする項目がありません");return}
-    let copied=false;
-    try{await navigator.clipboard.writeText(text);copied=true}
-    catch(error){
-      // 古い端末向け：見えない入力欄に入れて選択し、コピーする
-      const area=document.createElement("textarea");
-      area.value=text;area.setAttribute("readonly","");
-      area.style.position="fixed";area.style.left="-9999px";area.style.top="0";
-      document.body.appendChild(area);
-      area.select();area.setSelectionRange(0,text.length);
-      try{copied=document.execCommand("copy")}catch(fallbackError){copied=false}
-      area.remove();
-    }
-    showActionToast(copied?`${count}件をコピーしました`:"コピーできませんでした");
   }
   function bindFilterChipButtons(){
     document.querySelectorAll("[data-filter-page][data-filter-key]").forEach(button=>{
@@ -1221,16 +1160,6 @@ function initializeApp() {
       if(key==="new")state.newFilter="";
       if(key==="oshi")state.oshiOnly=false;
       savePreferences();renderCollection();return;
-    }
-    if(page==="wishlist"){
-      if(key==="member")state.pageMemberId="";
-      if(key==="year")state.wishlistYear="";
-      savePreferences();renderWishlist();return;
-    }
-    if(page==="trade"){
-      if(key==="member")state.pageMemberId="";
-      if(key==="year")state.tradeYear="";
-      savePreferences();renderTrade();return;
     }
     if(page==="missing"){
       if(key==="member")state.missingMemberId="";
@@ -1261,17 +1190,12 @@ function initializeApp() {
   function openFilterSheet(page="collection"){
     activeFilterPage=page;
     const body=$("filterSheetBody");
-    $("filterSheetTitle").textContent=page==="collection"?"生写真一覧の絞り込み":page==="wishlist"?"欲しい一覧の絞り込み":page==="trade"?"提供可能一覧の絞り込み":"未所持一覧の絞り込み";
+    $("filterSheetTitle").textContent=page==="collection"?"生写真一覧の絞り込み":"未所持一覧の絞り込み";
     if(page==="collection"){
       body.innerHTML=`
         ${filterSheetField("年代",`<select id="sheetYear">${yearOptions(state.yearFilter)}</select>`)}
         <div class="sheet-toggle-group">${filterSheetToggle("sheetNew","NEWのみ",state.newFilter==="new")}${state.mode==="all"?filterSheetToggle("sheetOshi","推しだけ表示",state.oshiOnly):""}</div>
         ${state.mode!=="all"?'<p class="sheet-note">所持状況（未所持あり・あと1種・コンプ など）は、一覧の上に並んでいるボタンで切り替えられます。</p>':""}`;
-    }else if(page==="wishlist"||page==="trade"){
-      const selectedYear=page==="wishlist"?state.wishlistYear:state.tradeYear;
-      body.innerHTML=`
-        ${filterSheetField("メンバー",`<select id="sheetMember">${pageMemberOptions()}</select>`)}
-        ${filterSheetField("年代",`<select id="sheetYear">${yearOptions(selectedYear)}</select>`)}`;
     }else{
       body.innerHTML=`
         ${filterSheetField("メンバー",`<select id="sheetMissingMember">${missingMemberOptions()}</select>`)}
@@ -1286,8 +1210,6 @@ function initializeApp() {
     if(activeFilterPage==="collection"){
       ["sheetYear","sheetCategory","sheetOwnership"].forEach(id=>{const el=$(id);if(el)el.value=""});
       ["sheetNew","sheetOshi"].forEach(id=>{const el=$(id);if(el)el.checked=false});
-    }else if(activeFilterPage==="wishlist"||activeFilterPage==="trade"){
-      const member=$("sheetMember"),year=$("sheetYear");if(member)member.value="";if(year)year.value="";
     }else{
       const member=$("sheetMissingMember"),position=$("sheetPosition"),year=$("sheetYear"),oshi=$("sheetOshi"),category=$("sheetMissingCategory");
       if(member)member.value="";if(position)position.value="";if(year)year.value="";if(oshi)oshi.checked=false;if(category)category.value="";
@@ -1299,14 +1221,6 @@ function initializeApp() {
       state.newFilter=$("sheetNew")?.checked?"new":"";
       if($("sheetOshi"))state.oshiOnly=$("sheetOshi").checked;
       savePreferences();closeUtilitySheet("filterSheetOverlay");renderCollection();
-    }else if(activeFilterPage==="wishlist"){
-      state.pageMemberId=$("sheetMember")?.value||"";
-      state.wishlistYear=$("sheetYear")?.value||"";
-      savePreferences();closeUtilitySheet("filterSheetOverlay");renderWishlist();
-    }else if(activeFilterPage==="trade"){
-      state.pageMemberId=$("sheetMember")?.value||"";
-      state.tradeYear=$("sheetYear")?.value||"";
-      savePreferences();closeUtilitySheet("filterSheetOverlay");renderTrade();
     }else{
       state.missingMemberId=$("sheetMissingMember")?.value||"";
       state.missingPositionId=$("sheetPosition")?.value||"";
@@ -1320,8 +1234,6 @@ function initializeApp() {
   function openSortSheet(page="collection"){
     activeSortPage=page;
     const current=page==="collection"?state.sort:
-      page==="wishlist"?state.wishlistOrder:
-      page==="trade"?state.tradeOrder:
       page==="quick"?state.quickOrder:
       page==="matrix"?state.matrixOrder:
       state.missingEventOrder;
@@ -1333,8 +1245,6 @@ function initializeApp() {
   }
   function applySortChoice(value){
     if(activeSortPage==="collection"){state.sort=value;savePreferences();renderCollection()}
-    if(activeSortPage==="wishlist"){state.wishlistOrder=value;savePreferences();renderWishlist()}
-    if(activeSortPage==="trade"){state.tradeOrder=value;savePreferences();renderTrade()}
     if(activeSortPage==="quick"){state.quickOrder=value;savePreferences();renderQuick()}
     if(activeSortPage==="matrix"){state.matrixOrder=value;savePreferences();renderMatrix()}
     if(activeSortPage==="missing"){state.missingEventOrder=value;savePreferences();renderMissing()}
@@ -1468,7 +1378,7 @@ function openMember(id,preset=null){
   function updateHeader(){
     const m=MEMBERS.find(x=>x.id===state.memberId);
     $("memberTitle").textContent=state.mode==="all"?"🌈 全メンバー":m?`${m.emoji} ${m.name}`:"生写真管理";
-    const labels={collection:"生写真コレクション",quick:"クイック入力",matrix:"イベント別チェック表",stats:"統計・年代別コンプ率",wishlist:"欲しい生写真一覧",trade:"ダブり・提供可能一覧",missing:"未所持一覧",oshi:"推しカスタマイズ",memberImages:"メンバー画像設定",bulkManage:"未所持・欲しい一括操作",help:"使い方",about:"バージョン情報",legal:"本サイトについて・利用上の注意",backup:"バックアップ・復元",enclosed:"封入生写真"};
+    const labels={collection:"生写真コレクション",quick:"クイック入力",matrix:"イベント別チェック表",stats:"統計・年代別コンプ率",missing:"未所持一覧",oshi:"推しカスタマイズ",memberImages:"メンバー画像設定",help:"使い方",about:"バージョン情報",legal:"本サイトについて・利用上の注意",backup:"バックアップ・復元",enclosed:"封入生写真"};
     const pageLabel=labels[state.page]||"生写真管理";
     $("memberSub").textContent=state.mode==="member"&&m&&isGraduated(m)?`${m.graduation}｜${pageLabel}`:pageLabel;
     const heading=$("memberTitle")?.parentElement;
@@ -1479,12 +1389,12 @@ function openMember(id,preset=null){
     }
   }
   function showPage(page,skipScrollSave=false){
-    hideUndoSnack();closeSlotMenu(false);closeSetPhotoViewer();
+    hideUndoSnack();closeSetPhotoViewer();
     if(!skipScrollSave)saveScrollPosition();
     if($("homeScreen").classList.contains("hidden")===false){state.mode="all";state.memberId=null;theme(null);$("homeScreen").classList.add("hidden");$("managerScreen").classList.remove("hidden")}
     pushManagerHistory();
     state.page=page;
-    ["collection","quick","matrix","stats","wishlist","trade","missing","oshi","memberImages","bulkManage","backup","help","legal","about","enclosed"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
+    ["collection","quick","matrix","stats","missing","oshi","memberImages","backup","help","legal","about","enclosed"].forEach(p=>$(p+"Page").classList.toggle("hidden",p!==page));
     $("managerTools").classList.toggle("hidden",page!=="collection");
     const stickyTools=$("collectionStickyTools"); // 古いindex.htmlと組み合わさった時（アップロードの途中など）でも止まらないようにする
     if(stickyTools)stickyTools.classList.toggle("hidden",page!=="collection");
@@ -1494,12 +1404,9 @@ function openMember(id,preset=null){
     if(page==="quick")renderQuick();
     if(page==="matrix")renderMatrix();
     if(page==="stats")renderStats();
-    if(page==="wishlist")renderWishlist();
-    if(page==="trade")renderTrade();
     if(page==="missing")renderMissing();
     if(page==="oshi")renderOshi();
     if(page==="memberImages")renderMemberImages();
-    if(page==="bulkManage")renderBulkManage();
     if(page==="backup")renderBackup();
     if(page==="help")renderHelp();
     if(page==="legal")renderLegal();
@@ -1588,11 +1495,9 @@ function openMember(id,preset=null){
     positionList.innerHTML="";
     eventPositions(event).forEach(p=>{
       const row=document.createElement("div");row.className=`quick-position-row${getCount(event.id,member.id,p.id)>0?" owned":""}`;
-      row.innerHTML=`<div class="quick-position-title"><b>${esc(p.name)}</b><small>${getCount(event.id,member.id,p.id)>0?"所持済み":"未所持"}</small></div><div class="quick-stepper"><button class="minus" aria-label="${esc(p.name)}を1枚減らす">−</button><strong>${getCount(event.id,member.id,p.id)}</strong><button class="plus" aria-label="${esc(p.name)}を1枚増やす">＋</button></div><button class="quick-toggle want ${isWanted(event.id,member.id,p.id)?"on":""}" aria-label="${esc(p.name)}を欲しいに登録" aria-pressed="${isWanted(event.id,member.id,p.id)}">♡</button><button class="quick-toggle sign ${isSigned(event.id,member.id,p.id)?"on":""}" aria-label="${esc(p.name)}を直筆ありにする" aria-pressed="${isSigned(event.id,member.id,p.id)}">✍️</button>`;
+      row.innerHTML=`<div class="quick-position-title"><b>${esc(p.name)}</b><small>${getCount(event.id,member.id,p.id)>0?"所持済み":"未所持"}</small></div><div class="quick-stepper"><button class="minus" aria-label="${esc(p.name)}を1枚減らす">−</button><strong>${getCount(event.id,member.id,p.id)}</strong><button class="plus" aria-label="${esc(p.name)}を1枚増やす">＋</button></div>`;
       row.querySelector(".minus").onclick=()=>{setCount(event.id,member.id,p.id,Math.max(0,getCount(event.id,member.id,p.id)-1));fillQuickPositions(event,member)};
       row.querySelector(".plus").onclick=()=>{setCount(event.id,member.id,p.id,getCount(event.id,member.id,p.id)+1);fillQuickPositions(event,member)};
-      row.querySelector(".want").onclick=()=>{toggleWant(event.id,member.id,p.id);fillQuickPositions(event,member)};
-      row.querySelector(".sign").onclick=()=>{toggleSign(event.id,member.id,p.id);fillQuickPositions(event,member)};
       positionList.appendChild(row);
     });
   }
@@ -1615,11 +1520,13 @@ function openMember(id,preset=null){
     const positions=event?eventPositions(event):[];
     body.innerHTML=list.length?`<select id="matrixEventSelect" class="mode-event-select">${eventSelectOptions(list,event.id)}</select>
       <div class="matrix-event-summary"><div><b>${esc(eventLabel(event))}</b><span>${esc(event.work||event.officialName)}</span></div><button id="matrixBulkButton" class="card-bulk-button">⋯ イベント一括操作</button></div>
+      <div class="set-photo-area set-photo-area-event matrix-set-photo"></div>
       <div class="matrix-help">＋／−で枚数を変更。「${positions.length}種」はそのメンバーの未所持だけを1枚にします。</div>
       <div class="matrix-table-wrap"><table class="matrix-table"${positions.length>3?` style="min-width:${104+positions.length*86}px"`:""}><thead><tr><th>メンバー</th>${positions.map(p=>`<th>${esc(p.name)}</th>`).join("")}</tr></thead><tbody>${members.map(m=>`<tr><th><span>${m.emoji} ${esc(m.name)}</span>${isGraduated(m)?'<small>卒業</small>':''}<button data-matrix-complete="${esc(m.id)}">${positions.length}種</button></th>${positions.map(p=>`<td><div class="matrix-stepper count-${Math.min(2,getCount(event.id,m.id,p.id))}"><button class="matrix-minus" data-member="${esc(m.id)}" data-position="${esc(p.id)}">−</button><b>${getCount(event.id,m.id,p.id)}</b><button class="matrix-plus" data-member="${esc(m.id)}" data-position="${esc(p.id)}">＋</button></div></td>`).join("")}</tr>`).join("")}</tbody></table></div>`:'<div class="empty-state"><span>🔍</span><h3>該当するイベントがありません</h3><p>検索語または年代を変更してください。</p></div>';
     if(!event)return;
     $("matrixEventSelect").onchange=e=>{state.matrixEventId=e.target.value;savePreferences();renderMatrixBody()};
     $("matrixBulkButton").onclick=()=>openBulkSheet(event.id,"");
+    renderPhotoArea(body.querySelector(".matrix-set-photo"),event,null);
     body.querySelectorAll(".matrix-minus").forEach(button=>button.onclick=()=>{setCount(event.id,button.dataset.member,button.dataset.position,Math.max(0,getCount(event.id,button.dataset.member,button.dataset.position)-1));refreshMatrixStepper(button,event.id)});
     body.querySelectorAll(".matrix-plus").forEach(button=>button.onclick=()=>{setCount(event.id,button.dataset.member,button.dataset.position,getCount(event.id,button.dataset.member,button.dataset.position)+1);refreshMatrixStepper(button,event.id)});
     body.querySelectorAll("[data-matrix-complete]").forEach(button=>button.onclick=()=>applyBulkAction("complete",event.id,button.dataset.matrixComplete,true));
@@ -1642,8 +1549,6 @@ function openMember(id,preset=null){
     const scope=member?"このメンバー":"対象メンバー全員";
     $("bulkSheetBody").innerHTML=`<div class="bulk-action-list">
       <button data-bulk-action="complete"><span>✅</span><div><b>${eventPositions(event).length}種を所持済みにする</b><small>${scope}の未所持だけを1枚にします</small></div><i>›</i></button>
-      <button data-bulk-action="wantMissing"><span>♡</span><div><b>未所持を欲しいへ追加</b><small>${scope}の未所持だけを欲しい登録します</small></div><i>›</i></button>
-      <button data-bulk-action="clearWants"><span>◇</span><div><b>欲しいをすべて解除</b><small>${scope}の欲しい登録を解除します</small></div><i>›</i></button>
       <button data-bulk-action="resetCounts" class="danger"><span>🗑️</span><div><b>所持数をすべて0にする</b><small>${scope}の枚数をリセットします</small></div><i>›</i></button>
     </div>`;
     document.querySelectorAll("[data-bulk-action]").forEach(button=>button.onclick=()=>applyBulkAction(button.dataset.bulkAction,eventId,memberId));
@@ -1652,7 +1557,7 @@ function openMember(id,preset=null){
   function applyBulkAction(action,eventId=bulkTarget.eventId,memberId=bulkTarget.memberId,skipSheet=false){
     const event=EVENTS.find(e=>e.id===eventId);if(!event)return;
     const members=memberId?MEMBERS.filter(m=>m.id===memberId):matrixMembersForEvent(event);
-    const destructive=action==="clearWants"||action==="resetCounts";
+    const destructive=action==="resetCounts";
     const broad=!memberId;
     if((destructive||broad)&&!confirm(`${broad?"対象メンバー全員":"このメンバー"}へ一括操作を実行しますか？`))return;
     if(!ensureAutoBackup(`一括操作の直前：${event.period}`))return;
@@ -1661,12 +1566,10 @@ function openMember(id,preset=null){
       eventPositions(event).forEach(position=>{
         const key=k(event.id,member.id,position.id),count=getCount(event.id,member.id,position.id);
         if(action==="complete"&&count===0){state.counts[key]=1;changed++}
-        if(action==="wantMissing"&&count===0&&!state.wants[key]){state.wants[key]=true;changed++}
-        if(action==="clearWants"&&state.wants[key]){delete state.wants[key];changed++}
         if(action==="resetCounts"&&count>0){delete state.counts[key];changed++}
       });
     });
-    writeStorage(COUNT_KEY,state.counts);writeStorage(WANT_KEY,state.wants);
+    writeStorage(COUNT_KEY,state.counts);
     if(!skipSheet)closeUtilitySheet("bulkSheetOverlay");
     showActionToast(changed?`${changed}件を更新しました`:`変更対象はありませんでした`);
     if(state.page==="quick")renderQuick();else if(state.page==="matrix")renderMatrix();else renderCollection();
@@ -1674,23 +1577,23 @@ function openMember(id,preset=null){
   let toastTimer=0;
   function showActionToast(message){const toast=$("actionToast");toast.textContent=message;toast.classList.remove("hidden");clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.add("hidden"),2400)}
   function statsFor(ms,evs=EVENTS){
-    let total=0,types=0,signed=0,wanted=0,possible=0;
+    let total=0,types=0,possible=0,completeSets=0;
     ms.forEach(m=>evs.forEach(e=>{
       if(!eventAvailableForMember(e,m))return;
+      let all=true;
       eventPositions(e).forEach(p=>{
         possible++;
-        const key=k(e.id,m.id,p.id),n=Number(state.counts[key]||0);
+        const n=Number(state.counts[k(e.id,m.id,p.id)]||0);
         total+=n;
-        if(n>0)types++;
-        if(state.signs[key])signed++;
-        if(state.wants[key])wanted++;
+        if(n>0)types++;else all=false;
       });
+      if(all)completeSets++; // Ver1.01.13：直筆の数の代わりに、全種類そろったセットの数を数える
     }));
-    return{total,types,signed,wanted,possible,rate:possible?Math.round(types/possible*100):0};
+    return{total,types,possible,completeSets,rate:possible?Math.round(types/possible*100):0};
   }
   function updateSummary(list){
     const s=statsFor(scopeMembers());
-    $("ownedTotal").textContent=s.total;$("ownedTypes").textContent=s.types;$("signedTotal").textContent=s.signed;
+    $("ownedTotal").textContent=s.total;$("ownedTypes").textContent=s.types;$("completeSets").textContent=s.completeSets;
     // Ver1.01.07：コンプ率を一覧の上にも出す
     const rate=$("compRateText"),detail=$("compRateDetail"),bar=$("compRateBar");
     if(rate)rate.textContent=`${s.rate}%`;
@@ -1701,18 +1604,17 @@ function openMember(id,preset=null){
   // ===== Ver1.01.04：1枚の変更で一覧全体を作り直さず、変わった所だけを書き換える =====
   function allCardSummaryText(e,eligible=eligibleMembersForEvent(e)){
     const positions=eventPositions(e);
-    let owned=0,want=0,comp=0;
+    let owned=0,comp=0;
     eligible.forEach(m=>{
       let all=true;
       positions.forEach(p=>{
         const n=getCount(e.id,m.id,p.id);
         owned+=n;
         if(n===0)all=false;
-        if(isWanted(e.id,m.id,p.id))want++;
       });
       if(all)comp++;
     });
-    return `所持 ${owned}枚 ／ 欲しい ${want}種 ／ コンプ ${comp}/${eligible.length}人`;
+    return `所持 ${owned}枚 ／ コンプ ${comp}/${eligible.length}人`;
   }
   function syncCompleteBadge(card,e,m){
     const badges=card.querySelector(".card-front .badges")||card.querySelector(".badges");
@@ -1734,56 +1636,35 @@ function openMember(id,preset=null){
     if(num)num.textContent=count;
     // Ver1.01.07：持っている種類は色を付けて、ひと目で分かるようにする
     row.classList.toggle("owned",count>0);
-    if(row.classList.contains("slot-cell")){
-      // Ver1.01.10：メンバーの一覧のマスは、直筆・欲しいをボタンではなく印で出す
-      const signedNow=isSigned(e.id,m.id,p.id);
-      row.classList.toggle("signed",count>0&&signedNow);
-      const signMark=row.querySelector(".mk-sign"),wantMark=row.querySelector(".mk-want");
-      if(signMark)signMark.hidden=!signedNow;
-      if(wantMark)wantMark.hidden=!isWanted(e.id,m.id,p.id);
-    }
     if(countChanged&&num&&num.animate&&!(prefersReducedMotion&&prefersReducedMotion.matches)){
       // Ver1.01.10：増えた時は下から、減った時は上から、数字がくるっと入れ替わる
       if(delta)num.animate([{transform:`translateY(${delta>0?75:-75}%)`,opacity:0},{transform:"translateY(0)",opacity:1}],{duration:320,easing:"cubic-bezier(.2,1.4,.4,1)"});
       else num.animate([{transform:"scale(1.4)"},{transform:"scale(1)"}],{duration:170,easing:"ease-out"});
     }
-    const sign=row.querySelector(".sign"),want=row.querySelector(".want");
-    if(sign){sign.classList.toggle("on",isSigned(e.id,m.id,p.id));sign.setAttribute("aria-pressed",String(isSigned(e.id,m.id,p.id)))}
-    if(want){want.classList.toggle("on",isWanted(e.id,m.id,p.id));want.setAttribute("aria-pressed",String(isWanted(e.id,m.id,p.id)))}
     if(countChanged)updateOwnershipChipCounts();
     const card=row.closest(".event-card");
     if(card){
       if(state.mode==="all"){
         const summary=card.querySelector(".all-summary");
         if(summary)summary.textContent=allCardSummaryText(e);
+        syncAllRowComplete(row.closest(".all-row"),e,m);
       }else{
         syncCompleteBadge(card,e,m);
       }
     }
     updateSummary();
   }
-  function renderPositionRow(e,m,p,compact=false){
+  // Ver1.01.13：マス＝名前と − ／ 枚数 ／ ＋。− か長押しで1枚減らす（すぐ下の「↶ 取り消す」で戻せる）。
+  // メンバーの一覧と、全メンバー表示の開いた中で、同じマスを使う
+  function renderPositionRow(e,m,p){
     const row=document.createElement("div");
-    const count=getCount(e.id,m.id,p.id),signed=isSigned(e.id,m.id,p.id),wanted=isWanted(e.id,m.id,p.id),name=esc(p.name);
-    row.className=(compact?"mini-pos":"pos-row slot-cell")+(count>0?" owned":"")+(!compact&&count>0&&signed?" signed":"");
+    const count=getCount(e.id,m.id,p.id),name=esc(p.name);
+    row.className="pos-row slot-cell"+(count>0?" owned":"");
     row.dataset.pos=p.id;
     row.dataset.member=m.id;
     // Ver1.01.07：読み上げ（VoiceOver）で、どのボタンか分かるように名前を付ける
-    const plus=`<button class="plus" aria-label="${name}を1枚増やす">＋</button>`;
-    if(compact){
-      const minus=`<button class="minus" aria-label="${name}を1枚減らす">−</button>`;
-      row.innerHTML=`<div class="mini-label">${name}</div><div class="mini-actions">${minus}<b class="num">${count}</b>${plus}<button class="wide sign ${signed?"on":""}" aria-label="${name}を直筆ありにする" aria-pressed="${signed}">✍️</button><button class="wide want ${wanted?"on":""}" aria-label="${name}を欲しいに登録" aria-pressed="${wanted}">♡</button></div>`;
-      row.querySelector(".minus").onclick=()=>changeSlotCount(row,e,m,p,-1);
-      row.querySelector(".sign").onclick=()=>toggleSlotFlag(row,e,m,p,"sign");
-      row.querySelector(".want").onclick=()=>toggleSlotFlag(row,e,m,p,"want");
-    }else{
-      // Ver1.01.10：メンバーの一覧のマス。減らす・直筆・欲しいは、長押しか ⋯ のメニューから
-      row.innerHTML=`<div class="slot-top"><span class="slot-label">${name}</span><button type="button" class="slot-more" aria-label="${name}のメニュー（1枚減らす・直筆・欲しい）" aria-haspopup="dialog">⋯</button></div><div class="slot-count"><b class="num">${count}</b></div><div class="slot-marks"><span class="mk-sign"${signed?"":" hidden"}>✍️直筆</span><span class="mk-want"${wanted?"":" hidden"}>♡欲しい</span></div>${plus}`;
-      row.querySelector(".slot-more").onclick=event=>{
-        const r=event.currentTarget.getBoundingClientRect();
-        openSlotMenu(row,e,m,p,r.left+r.width/2,r.top+r.height/2,event.currentTarget);
-      };
-    }
+    row.innerHTML=`<div class="slot-top"><span class="slot-label">${name}</span><button type="button" class="slot-minus" aria-label="${name}を1枚減らす">−</button></div><div class="slot-count"><b class="num">${count}</b></div><button class="plus" aria-label="${name}を1枚増やす">＋</button>`;
+    row.querySelector(".slot-minus").onclick=()=>changeSlotCount(row,e,m,p,-1);
     row.querySelector(".plus").onclick=event=>changeSlotCount(row,e,m,p,1,event.currentTarget);
     return row;
   }
@@ -1799,7 +1680,60 @@ function openMember(id,preset=null){
     bindFlipHead(card.querySelector(".card-flip-head"),card,e,m,true);
     return card;
   }
-  function renderAllCard(e){const card=document.createElement("article");card.className="event-card";card.dataset.eventId=e.id;const eligible=eligibleMembersForEvent(e);card.innerHTML=`<div class="event-head"><div class="event-topline"><div>${periodLineHtml(e)}<div class="work">${esc(e.work)}</div><div class="all-summary">${allCardSummaryText(e,eligible)}</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];card.replaceWith(renderAllCard(e))};card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");if(state.expanded[e.id]){const box=document.createElement("div");box.className="all-members";eligible.forEach(m=>{const r=document.createElement("div");r.className="all-row";r.innerHTML=`<div class="all-name">${m.emoji} ${m.name}${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}</div><div class="all-pos-grid"></div>`;eventPositions(e).forEach(p=>r.querySelector(".all-pos-grid").appendChild(renderPositionRow(e,m,p,true)));box.appendChild(r)});card.insertBefore(box,card.querySelector(".event-footer"))}return card}
+  // Ver1.01.13：全メンバー表示のカード。上の部分にセットごとの写真（あれば小さく）。
+  // 開いた中は、いちばん上にセットの写真の場所、その下にメンバーごとのマス（メンバーの一覧と同じマス。行ごとにメンバーの色）
+  function renderAllCard(e){
+    const card=document.createElement("article");
+    card.className="event-card all-card";
+    card.dataset.eventId=e.id;
+    const eligible=eligibleMembersForEvent(e);
+    const photoKey=setKey(e.id,SET_PHOTO_ALL),hasPhoto=setPhotoThumbs.has(photoKey);
+    card.innerHTML=`<div class="event-head"><div class="event-topline">${hasPhoto?'<button type="button" class="set-thumb all-set-thumb" aria-label="セットの写真を大きく表示"><img alt=""></button>':""}<div>${periodLineHtml(e)}<div class="work">${esc(e.work)}</div><div class="all-summary">${allCardSummaryText(e,eligible)}</div></div><div class="badges">${isNewEvent(e)?'<span class="badge new-badge">NEW</span>':''}<span class="badge">${esc(e.category)}</span></div></div></div><div class="event-footer"><button class="expand-btn">${state.expanded[e.id]?"閉じる":`${eligible.length}人分を開く`}</button><button class="card-bulk-button">⋯ 一括操作</button>${eventOfficialUrl(e)?`<a href="${esc(eventOfficialUrl(e))}" target="_blank" rel="noopener noreferrer">公式サイト ↗</a>`:""}</div>`;
+    if(hasPhoto){
+      const thumb=card.querySelector(".all-set-thumb");
+      thumb.querySelector("img").src=setPhotoThumbs.get(photoKey);
+      thumb.onclick=()=>openEventPhotoViewer(e);
+    }
+    card.querySelector(".expand-btn").onclick=()=>{state.expanded[e.id]=!state.expanded[e.id];card.replaceWith(renderAllCard(e))};
+    card.querySelector(".card-bulk-button").onclick=()=>openBulkSheet(e.id,"");
+    if(state.expanded[e.id]){
+      const box=document.createElement("div");
+      box.className="all-members";
+      const photoArea=document.createElement("div");
+      photoArea.className="set-photo-area set-photo-area-event all-set-photo";
+      box.appendChild(photoArea);
+      renderPhotoArea(photoArea,e,null);
+      eligible.forEach(m=>{
+        const r=document.createElement("div");
+        r.className="all-row";
+        r.dataset.member=m.id;
+        // 行ごとに、そのメンバーの色でマスを塗る
+        r.style.setProperty("--accent",readableAccent(m.accent||"#ef7fad"));
+        r.style.setProperty("--soft",m.soft||"#fff0f6");
+        r.innerHTML=`<div class="all-name"><span>${m.emoji} ${esc(m.name)}</span>${isGraduated(m)?'<span class="mini-graduated">卒業</span>':''}<span class="all-row-complete"${complete(e,m)?"":" hidden"}>${esc(`${m.emoji||""} COMPLETE`.trim())}</span></div><div class="all-pos-grid"></div>`;
+        const grid=r.querySelector(".all-pos-grid");
+        eventPositions(e).forEach(p=>grid.appendChild(renderPositionRow(e,m,p)));
+        box.appendChild(r);
+      });
+      card.insertBefore(box,card.querySelector(".event-footer"));
+    }
+    return card;
+  }
+  // 全メンバー表示：メンバーの行の COMPLETE（3種そろった時だけ出す）
+  function syncAllRowComplete(row,e,m){
+    const mark=row?row.querySelector(".all-row-complete"):null;
+    if(mark)mark.hidden=!complete(e,m);
+  }
+  function playRowComplete(row,m){
+    const mark=row?row.querySelector(".all-row-complete"):null;
+    if(!mark||motionReduced()||!mark.animate)return;
+    mark.animate([{transform:"rotate(-8deg) scale(2.2)",opacity:0},{transform:"rotate(-8deg) scale(.95)",opacity:1,offset:.6},{transform:"rotate(-8deg) scale(1)",opacity:1}],{duration:520,easing:"cubic-bezier(.3,.7,.3,1)"});
+    setTimeout(()=>{
+      if(!mark.isConnected)return;
+      const r=mark.getBoundingClientRect();
+      confettiBurst(r.left+r.width/2,r.top+r.height/2,m);
+    },300);
+  }
   // Ver1.01.04：画面に見える分（戻す予定のスクロール位置まで）を先に描き、残りは少しずつ足す
   let collectionRenderToken=0;
   let collectionEntering=false; // ほかの画面から一覧へ入った直後かどうか（showPageが立てる）
@@ -1980,7 +1914,7 @@ function openMember(id,preset=null){
       openMember(singleMember.id,{ownership:button.dataset.setStatus});
     });
   }
-  // ===== Ver1.01.07：欲しい一覧・提供可能一覧・未所持一覧から、一覧のそのセットへ移動する =====
+  // ===== Ver1.01.07：未所持一覧から、一覧のそのセットへ移動する =====
   function jumpButtonHtml(m,e){
     return `<button type="button" class="item-jump-button" data-jump-member="${esc(m.id)}" data-jump-event="${esc(e.id)}">一覧で開く ›</button>`;
   }
@@ -1997,35 +1931,17 @@ function openMember(id,preset=null){
     pendingScrollTarget=eventId;
     showPage("collection",true);
   }
-  function groupedWantedItems(){
-    const map=new Map();
-    scopeMembers().forEach(m=>eligibleEventsForMember(m).forEach(e=>eventPositions(e).forEach(p=>{
-      if(!isWanted(e.id,m.id,p.id))return;
-      const key=`${m.id}__${e.id}`;
-      if(!map.has(key))map.set(key,{m,e,positions:[]});
-      map.get(key).positions.push({p,count:getCount(e.id,m.id,p.id)});
-    })));
-    return [...map.values()]
-      .filter(x=>!state.wishlistYear||yearOf(x.e)===state.wishlistYear)
-      .sort((a,b)=>state.wishlistOrder==="asc"?a.e.sort-b.e.sort:b.e.sort-a.e.sort);
-  }
-  function groupedTradeItems(){
-    const map=new Map();
-    scopeMembers().forEach(m=>eligibleEventsForMember(m).forEach(e=>eventPositions(e).forEach(p=>{
-      const n=getCount(e.id,m.id,p.id);
-      if(n<2)return;
-      const key=`${m.id}__${e.id}`;
-      if(!map.has(key))map.set(key,{m,e,positions:[]});
-      map.get(key).positions.push({p,extra:n-1,total:n});
-    })));
-    return [...map.values()]
-      .filter(x=>!state.tradeYear||yearOf(x.e)===state.tradeYear)
-      .sort((a,b)=>state.tradeOrder==="asc"?a.e.sort-b.e.sort:b.e.sort-a.e.sort);
-  }
-  // Ver1.01.12：カードの裏に写真を付けたセットは、欲しい一覧・未所持一覧の右側に小窓で出す。
+  // Ver1.01.12：カードの裏に写真を付けたセットは、未所持一覧の右側に小窓で出す。
+  // Ver1.01.13：メンバーの写真が無い時は、セットごとの写真（全員分）を代わりに出す。
   // 画像そのものは、一覧を描いた後に1枚ずつ入れる（大きな文字列をHTMLに混ぜると、描くのが遅くなるため）
+  function itemPhotoKey(m,e){
+    const own=setKey(e.id,m.id);
+    if(setPhotoThumbs.has(own))return own;
+    const all=setKey(e.id,SET_PHOTO_ALL);
+    return setPhotoThumbs.has(all)?all:"";
+  }
   function itemPhotoHtml(m,e){
-    if(!setPhotoThumbs.has(setKey(e.id,m.id)))return "";
+    if(!itemPhotoKey(m,e))return "";
     return `<button type="button" class="item-photo" data-photo-member="${esc(m.id)}" data-photo-event="${esc(e.id)}" aria-label="${esc(e.work)}の写真を大きく表示"><img alt=""><i aria-hidden="true">🔍</i></button>`;
   }
   function bindItemPhotos(root){
@@ -2033,7 +1949,7 @@ function openMember(id,preset=null){
     // 未所持一覧は少しずつ描き足すので、まだ画像を入れていない小窓だけを扱う
     root.querySelectorAll(".item-photo:not([data-ready])").forEach(button=>{
       const m=MEMBERS.find(x=>x.id===button.dataset.photoMember),e=eventById(button.dataset.photoEvent);
-      const thumb=m&&e?setPhotoThumbs.get(setKey(e.id,m.id)):"";
+      const key=m&&e?itemPhotoKey(m,e):"",thumb=key?setPhotoThumbs.get(key):"";
       if(!thumb){
         const item=button.closest(".item");
         if(item)item.classList.remove("has-set-photo");
@@ -2042,38 +1958,8 @@ function openMember(id,preset=null){
       }
       button.dataset.ready="1";
       button.querySelector("img").src=thumb;
-      button.onclick=()=>openSetPhotoViewer(e,m);
+      button.onclick=()=>key===setKey(e.id,m.id)?openSetPhotoViewer(e,m):openEventPhotoViewer(e);
     });
-  }
-  function renderGroupedWantItem(x){
-    const tags=x.positions.map(v=>`<span class="pill">♡ ${v.p.name}${v.count>0?`（所持 ${v.count}枚）`:""}</span>`).join("");
-    const photo=itemPhotoHtml(x.m,x.e);
-    return `<div class="item${photo?" has-set-photo":""}">
-      <div class="item-title">${jumpButtonHtml(x.m,x.e)}${x.m.emoji} ${x.m.name}</div>
-      <div class="item-meta">${esc(eventLabel(x.e))}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
-      <div class="item-tags">${tags}${officialLinkHtml(x.e)}</div>${photo}
-    </div>`;
-  }
-  function renderGroupedTradeItem(x){
-    const tags=x.positions.map(v=>`<span class="pill">${v.p.name}：提供 ${v.extra}枚（所持 ${v.total}枚）</span>`).join("");
-    return `<div class="item">
-      <div class="item-title">${jumpButtonHtml(x.m,x.e)}${x.m.emoji} ${x.m.name}</div>
-      <div class="item-meta">${esc(eventLabel(x.e))}｜${esc(x.e.work)}｜${esc(x.e.category)}</div>
-      <div class="item-tags">${tags}</div>
-    </div>`;
-  }
-  function renderWishlist(){
-    const groups=groupedWantedItems();
-    const typeCount=groups.reduce((sum,g)=>sum+g.positions.length,0);
-    $("wishlistPage").innerHTML=`<div class="page-head"><h2>♡ 欲しい生写真一覧</h2><p>${groups.length}イベント・${typeCount}種類を登録中</p></div>${listToolbarHtml("wishlist")}<div class="list-page">${groups.length?groups.map(renderGroupedWantItem).join(""):'<div class="empty">条件に該当する欲しい生写真はありません。</div>'}</div>`;
-    bindListToolbar("wishlist");
-    bindItemPhotos($("wishlistPage"));
-  }
-  function renderTrade(){
-    const groups=groupedTradeItems();
-    const typeCount=groups.reduce((sum,g)=>sum+g.positions.length,0);
-    $("tradePage").innerHTML=`<div class="page-head"><h2>🔄 ダブり・提供可能一覧</h2><p>${groups.length}イベント・${typeCount}種類を表示中</p></div>${listToolbarHtml("trade")}<div class="list-page">${groups.length?groups.map(renderGroupedTradeItem).join(""):'<div class="empty">条件に該当する提供可能データはありません。</div>'}</div>`;
-    bindListToolbar("trade");
   }
 
 
@@ -2160,85 +2046,6 @@ function openMember(id,preset=null){
   }
 
 
-  function bulkManageMembers(){
-    const members=state.bulkMemberId?MEMBERS.filter(m=>m.id===state.bulkMemberId):MEMBERS;
-    return rankedMembers(members);
-  }
-  function bulkManageSummary(){
-    let missing=0,alreadyWanted=0;
-    bulkManageMembers().forEach(member=>eligibleEventsForMember(member).forEach(event=>eventPositions(event).forEach(position=>{
-      if(getCount(event.id,member.id,position.id)!==0)return;
-      missing++;
-      if(isWanted(event.id,member.id,position.id))alreadyWanted++;
-    })));
-    return {missing,alreadyWanted,addable:Math.max(0,missing-alreadyWanted)};
-  }
-  function bulkManageMemberOptions(){
-    const active=MEMBERS.filter(m=>!isGraduated(m)).map(m=>`<option value="${m.id}" ${state.bulkMemberId===m.id?"selected":""}>${m.emoji} ${m.name}</option>`).join("");
-    const graduated=MEMBERS.filter(isGraduated).map(m=>`<option value="${m.id}" ${state.bulkMemberId===m.id?"selected":""}>${m.emoji} ${m.name}</option>`).join("");
-    return `<option value="">全メンバー横断</option><optgroup label="現役メンバー">${active}</optgroup><optgroup label="卒業メンバー">${graduated}</optgroup>`;
-  }
-  function openBulkMissingList(){
-    state.missingMemberId=state.bulkMemberId;
-    state.missingPositionId="";
-    state.missingYear="";
-    state.missingCategory="";
-    state.missingSearch="";
-    state.missingEventOrder="desc";
-    state.oshiOnly=false;
-    savePreferences();
-    showPage("missing");
-  }
-  function addBulkMissingToWishlist(){
-    const summary=bulkManageSummary();
-    const member=MEMBERS.find(m=>m.id===state.bulkMemberId);
-    const scopeLabel=member?`${member.emoji} ${member.name}`:"全メンバー";
-    if(summary.addable===0){showActionToast(summary.missing?"未所持はすべて欲しい登録済みです":"未所持データはありません");return}
-    if(!confirm(`${scopeLabel}の未所持 ${summary.missing}種類のうち、未登録の${summary.addable}種類を欲しいリストへ追加しますか？`))return;
-    if(!ensureAutoBackup(`未所持の欲しい一括追加直前：${scopeLabel}`))return;
-    let changed=0;
-    bulkManageMembers().forEach(memberItem=>eligibleEventsForMember(memberItem).forEach(event=>eventPositions(event).forEach(position=>{
-      const key=k(event.id,memberItem.id,position.id);
-      if(getCount(event.id,memberItem.id,position.id)===0&&!state.wants[key]){state.wants[key]=true;changed++}
-    })));
-    writeStorage(WANT_KEY,state.wants);
-    showActionToast(`${changed}種類を欲しいリストへ追加しました`);
-    renderBulkManage();
-  }
-  function renderBulkManage(){
-    const summary=bulkManageSummary();
-    const member=MEMBERS.find(m=>m.id===state.bulkMemberId);
-    const scopeLabel=member?`${member.emoji} ${member.name}`:"全メンバー横断";
-    $("bulkManagePage").innerHTML=`
-      <div class="page-head"><h2>♡ 未所持・欲しい一括操作</h2><p>対象を選んで、未所持の確認や欲しい登録をまとめて行えます</p></div>
-      <div class="panel backup-panel">
-        <div class="backup-icon">👥</div>
-        <h3>対象メンバー</h3>
-        <p>全メンバー横断、または1人を選択してください。卒業メンバーは在籍期間の登録対象だけを集計します。</p>
-        <select id="bulkManageMemberSelect" class="mode-event-select">${bulkManageMemberOptions()}</select>
-      </div>
-      <div class="backup-summary">
-        <div><b>${summary.missing}</b><span>未所持</span></div>
-        <div><b>${summary.alreadyWanted}</b><span>欲しい登録済み</span></div>
-        <div><b>${summary.addable}</b><span>一括追加対象</span></div>
-      </div>
-      <div class="panel backup-panel">
-        <div class="backup-icon">🔎</div>
-        <h3>未所持を一括表示</h3>
-        <p>${esc(scopeLabel)}の未所持を、イベント・ポジション別の一覧で表示します。</p>
-        <button id="openBulkMissingListButton" class="secondary-action">未所持一覧を表示</button>
-      </div>
-      <div class="panel backup-panel">
-        <div class="backup-icon">♡</div>
-        <h3>未所持を欲しいへ一括追加</h3>
-        <p>所持数が0の種類だけを追加します。すでに欲しい登録済みの項目は重複しません。実行前に自動バックアップを保存します。</p>
-        <button id="addBulkMissingToWishlistButton" class="primary-action" ${summary.addable?"":"disabled"}>${summary.addable?`${summary.addable}種類を欲しいへ追加`:"追加対象はありません"}</button>
-      </div>
-      <div class="settings-page-bottom-space" aria-hidden="true"></div>`;
-    $("bulkManageMemberSelect").onchange=e=>{state.bulkMemberId=e.target.value;savePreferences();renderBulkManage()};
-    $("openBulkMissingListButton").onclick=openBulkMissingList;
-    $("addBulkMissingToWishlistButton").onclick=addBulkMissingToWishlist;
-  }
 
   function memberOshiStats(m){
     const s=statsFor([m]);
@@ -2249,12 +2056,6 @@ function openMember(id,preset=null){
     state.oshiOnly=false;
     savePreferences();
     showPage("missing");
-  }
-  function openOshiWishlist(id){
-    state.pageMemberId=id;
-    state.oshiOnly=false;
-    savePreferences();
-    showPage("wishlist");
   }
   function renderOshi(){
     const ordered=rankedMembers(MEMBERS);
@@ -2271,7 +2072,7 @@ function openMember(id,preset=null){
             <option value="interest" ${rank==="interest"?"selected":""}>♡ 気になる</option>
           </select>
         </div>
-        <div class="oshi-mini-stats"><span><b>${s.rate}%</b>コンプ率</span><span><b>${s.missing}</b>未所持</span><span><b>${s.signed}</b>直筆</span></div>
+        <div class="oshi-mini-stats"><span><b>${s.rate}%</b>コンプ率</span><span><b>${s.missing}</b>未所持</span><span><b>${s.completeSets}</b>コンプセット</span></div>
         <div class="member-rate-bar"><i style="width:${s.rate}%"></i></div>
       </div>`;
     }).join("");
@@ -2280,8 +2081,8 @@ function openMember(id,preset=null){
       return `<article class="oshi-focus-card ${s.rate===100?"complete-oshi":""}" style="${memberCssVars(m)}">
         ${s.rate===100?'<div class="oshi-celebrate">🎉 推しメンコンプリート！</div>':""}
         <div class="oshi-focus-head">${memberAvatarMarkup(m,"oshi-focus-avatar")}<div><span>${rank.icon} ${rank.label}</span><h3>${m.name}</h3></div><b>${s.rate}%</b></div>
-        <div class="oshi-focus-stats"><span>所持 <b>${s.total}枚</b></span><span>未所持 <b>${s.missing}種</b></span><span>直筆 <b>${s.signed}種</b></span></div>
-        <div class="oshi-actions"><button data-missing="${m.id}">未所持を見る</button><button data-wishlist="${m.id}">欲しい一覧</button></div>
+        <div class="oshi-focus-stats"><span>所持 <b>${s.total}枚</b></span><span>未所持 <b>${s.missing}種</b></span><span>コンプ <b>${s.completeSets}セット</b></span></div>
+        <div class="oshi-actions"><button data-missing="${m.id}">未所持を見る</button></div>
       </article>`;
     }).join("");
     $("oshiPage").innerHTML=`
@@ -2291,7 +2092,6 @@ function openMember(id,preset=null){
       <div class="settings-page-bottom-space" aria-hidden="true"></div>`;
     document.querySelectorAll(".oshi-rank-select").forEach(select=>select.onchange=e=>{setOshiRank(e.target.dataset.member,e.target.value);renderOshi();renderHomeMembers()});
     document.querySelectorAll("[data-missing]").forEach(b=>b.onclick=()=>openOshiMissing(b.dataset.missing));
-    document.querySelectorAll("[data-wishlist]").forEach(b=>b.onclick=()=>openOshiWishlist(b.dataset.wishlist));
   }
 
 
@@ -2300,13 +2100,14 @@ function openMember(id,preset=null){
       <div class="page-head"><h2>📖 使い方</h2><p>基本操作とデータを安全に使うための案内です</p></div>
       <div class="guide-list">
         <section class="panel guide-card"><span>1</span><div><h3>メンバーを選ぶ</h3><p>TOPからメンバーを選択します。「全メンバー」ではイベント単位でまとめて確認できます。</p></div></section>
-        <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>メンバーの一覧では、マスの「＋」で1枚増やします。マスを長押し（または「⋯」）すると「1枚減らす・直筆・欲しい」を選べます。押したあと画面の下に出る「↶ 取り消す」で、すぐ元に戻せます。カードの上の部分をタップすると裏返り、写真1枚・メモ・一括操作（コンプ登録や欲しい一括追加）・公式サイトがあります。裏に付けた写真は、欲しい一覧・未所持一覧にも小窓で出ます（押すと大きく見られます）。クイック入力とイベント別チェック表も使えます。</p></div></section>
+        <section class="panel guide-card"><span>2</span><div><h3>生写真を登録する</h3><p>マスの「＋」で1枚増やし、「−」か長押しで1枚減らします。押したあと画面の下に出る「↶ 取り消す」で、すぐ元に戻せます。全メンバー表示の「○人分を開く」の中も同じマスです。メンバーの一覧では、カードの上の部分をタップすると裏返り、写真1枚・メモ・一括操作（コンプ登録など）・公式サイトがあります。直筆など、枚数以外のことはメモに書いておけます。裏に付けた写真は、未所持一覧にも小窓で出ます（押すと大きく見られます）。クイック入力とイベント別チェック表も使えます。</p></div></section>
         <section class="panel guide-card"><span>3</span><div><h3>一覧を絞り込む</h3><p>検索欄と「絞り込み」「並び順」を使います。選択中の条件はチップで表示され、個別に解除できます。一覧の上の「全カテゴリ ▾」を押すと、カテゴリ（通常・イベント・コラボ）を選べます。メンバーごとの一覧では、その右に並ぶ「未所持あり・あと1種・全部未所持・所持あり・コンプ」のボタンで所持状況を切り替えられます。「未所持あり」は、ヨリ・チュウ・ヒキのうち1種でも持っていないセットです。年の見出しを押すと、別の年へ移動できます。</p></div></section>
-        <section class="panel guide-card"><span>4</span><div><h3>未所持・提供可能を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。設定の「未所持・欲しい一括操作」から、未所持の一括表示や欲しいへの一括追加もできます。2枚目以降は提供可能として表示されます。欲しい一覧・提供可能一覧・未所持一覧の「一覧で開く」を押すと、そのセットの登録画面へ移動します。</p></div></section>
+        <section class="panel guide-card"><span>4</span><div><h3>未所持を確認する</h3><p>未所持一覧はメンバーの五十音順、各メンバー内はイベント順です。「一覧で開く」を押すと、そのセットの登録画面へ移動します。</p></div></section>
         <section class="panel guide-card"><span>5</span><div><h3>推しを設定する</h3><p>最推し・推し・気になるの3段階です。メンバーカードの推しバッジや、推しだけの統計・未所持確認に使えます。設定したメンバーはTOPに近道が出て、1タップで一覧や「未所持あり」を開けます。</p></div></section>
         <section class="panel guide-card"><span>6</span><div><h3>メンバー画像を設定する</h3><p>TOP右上の設定から、端末内の好きな画像をメンバーごとに登録できます。画像は編集画面で表示範囲を確認しながら位置調整でき、外部送信もされません。</p></div></section>
         <section class="panel guide-card important"><span>7</span><div><h3>定期的にバックアップする</h3><p>端末変更、Safariのデータ削除、ブラウザ変更に備えてJSONを保存してください。復元前には日時と件数を確認できます。</p></div></section>
         <section class="panel guide-card"><span>8</span><div><h3>iPhoneでアプリ化する</h3><p>Safariの共有ボタンから「ホーム画面に追加」を選択します。一度読み込めばオフラインでも閲覧できます。</p></div></section>
+        <section class="panel guide-card"><span>＋</span><div><h3>セットごとの写真を付ける</h3><p>全メンバー表示で「○人分を開く」を押した中や、イベント別チェック表から、そのセットの写真（商品ページのスクショなど）を全員分で1枚付けられます。メンバーのカードに写真が無い時は、未所持一覧の小窓にこの写真が出ます。写真は端末内だけに保存されます。</p></div></section>
         <section class="panel guide-card"><span>＋</span><div><h3>封入生写真を写真で記録する</h3><p>TOPの「封入生写真」から、メンバーと何の生写真かを入れて記録を作り、枠の分け方（ヨリ・チュウ・ヒキ／A・B・C…／1・2・3…）を選んでから、枠をタップして写真を入れます。写真は端末内だけに保存されるので、「写真つきバックアップ」を定期的に保存してください。</p></div></section>
         <section class="panel guide-card important"><span>9</span><div><h3>利用上の注意を確認する</h3><p>本サイトは非公式です。画像の利用、端末内保存、免責事項について、設定内の「本サイトについて・利用上の注意」を確認してください。</p></div></section>
       </div>`;
@@ -2381,7 +2182,9 @@ function openMember(id,preset=null){
         <div class="panel"><b>${graduated}</b><span>卒業メンバー</span></div>
       </div>
       <div class="panel about-notes">
-        <h3>公開版Ver1.01.12</h3>
+        <h3>公開版Ver1.01.13</h3>
+        <p>使っていなかった「欲しい」「直筆」「提供可能」を画面から外し、下のメニューを「一覧・ホーム・統計」の3つにしました。マスは「＋」と「−」（長押しでも1枚減らす）だけになり、全メンバー表示の中も同じマスにそろえました。今まで付けていた直筆は、そのセットのメモに「✍️直筆：ヨリ」のように書き写しています。全メンバー表示とイベント別チェック表から、セットごとの写真（全員分で1枚）を付けられるようにしました。</p>
+        <h3>Ver1.01.12</h3>
         <p>欲しい生写真一覧と未所持一覧で、カードの裏に写真を付けたセットは、右側に写真を小窓で表示するようにしました。押すと大きく見られます。「ツアー生写真セット(8thCW「しゅきぴ」衣装①)」に公式通販のURLを登録しました。</p>
         <h3>Ver1.01.11</h3>
         <p>TOPの推しの近道を、横いっぱいの1行にしました。一覧の上で2行に分かれていたカテゴリと所持状況のボタンを1行にまとめ、カテゴリは左端の「全カテゴリ ▾」から選ぶようにしました。あわせて、使われなくなった見た目の指定などを整理しました（見た目は変わりません）。</p>
@@ -2415,8 +2218,8 @@ function openMember(id,preset=null){
   function backupStats(){
     return {
       counts:Object.keys(state.counts).length,
-      signs:Object.keys(state.signs).length,
-      wants:Object.keys(state.wants).length
+      notes:Object.keys(state.notes).length,
+      oshis:Object.keys(state.oshis).length
     };
   }
   function backupFileName(){
@@ -2427,7 +2230,6 @@ function openMember(id,preset=null){
     return {
       memberId:state.memberId,category:state.category,yearFilter:state.yearFilter,sort:state.sort,search:state.search,
       ownership:state.ownership,newFilter:state.newFilter,oshiOnly:state.oshiOnly,pageMemberId:state.pageMemberId,
-      wishlistYear:state.wishlistYear,tradeYear:state.tradeYear,wishlistOrder:state.wishlistOrder,tradeOrder:state.tradeOrder,
       missingMemberId:state.missingMemberId,missingPositionId:state.missingPositionId,missingYear:state.missingYear,missingCategory:state.missingCategory,
       missingEventOrder:state.missingEventOrder,missingSearch:state.missingSearch,
       quickEventId:state.quickEventId,quickSearch:state.quickSearch,quickYear:state.quickYear,quickOrder:state.quickOrder,
@@ -2527,6 +2329,7 @@ function openMember(id,preset=null){
     return {data:migrated,migrationCount};
   }
   function applyBackupData(backup){
+    try{localStorage.removeItem(SIGN_NOTE_DONE_KEY)}catch(error){}
     const counts=migrateStorageMap(backup.counts);
     const signs=migrateStorageMap(backup.signs);
     const wants=migrateStorageMap(backup.wants);
@@ -2622,10 +2425,10 @@ function openMember(id,preset=null){
     out.missingPositionId=positionIds.has(String(value.missingPositionId||""))?String(value.missingPositionId):"";
     out.category=categories.has(String(value.category||""))?String(value.category):"";
     out.missingCategory=categories.has(String(value.missingCategory||""))?String(value.missingCategory):"";
-    ["yearFilter","wishlistYear","tradeYear","missingYear","quickYear","matrixYear"].forEach(key=>{
+    ["yearFilter","missingYear","quickYear","matrixYear"].forEach(key=>{
       const v=String(value[key]||"");out[key]=/^20\d{2}$/.test(v)?v:"";
     });
-    ["sort","wishlistOrder","tradeOrder","missingEventOrder","quickOrder","matrixOrder"].forEach(key=>{
+    ["sort","missingEventOrder","quickOrder","matrixOrder"].forEach(key=>{
       out[key]=value[key]==="asc"?"asc":"desc";
     });
     ["search","missingSearch","quickSearch","matrixSearch"].forEach(key=>{out[key]=cleanShortText(value[key]||"","").slice(0,200)});
@@ -2750,13 +2553,13 @@ function openMember(id,preset=null){
       <div class="page-head"><h2>💾 バックアップ・復元</h2><p>端末変更やブラウザデータ消去に備えて、定期的に保存してください</p></div>
       <div class="backup-summary">
         <div><b>${s.counts}</b><span>所持データ</span></div>
-        <div><b>${s.signs}</b><span>直筆データ</span></div>
-        <div><b>${s.wants}</b><span>欲しいデータ</span></div>
+        <div><b>${s.notes}</b><span>カードのメモ</span></div>
+        <div><b>${s.oshis}</b><span>推し設定</span></div>
       </div>
       <div class="panel backup-panel">
         <div class="backup-icon">📤</div>
         <h3>バックアップを保存</h3>
-        <p>所持枚数・直筆・欲しい・カードのメモ・推し・フィルター設定を、1つのJSONファイルに保存します。端末内のメンバー画像・封入生写真・カードの裏の写真は含まれません（封入生写真はそのページの「写真つきバックアップ」、カードの裏の写真はこのページの下の「カードの裏の写真」で保存します）。</p>
+        <p>所持枚数・カードのメモ・推し・フィルター設定（前の版で付けた直筆・欲しいの記録も含む）を、1つのJSONファイルに保存します。端末内のメンバー画像・封入生写真・カードの裏の写真は含まれません（封入生写真はそのページの「写真つきバックアップ」、カードの裏の写真はこのページの下の「カードの裏の写真」で保存します）。</p>
         <button id="exportBackupButton" class="primary-action">バックアップファイルを保存</button>
       </div>
       <div class="panel backup-panel">
@@ -2770,14 +2573,14 @@ function openMember(id,preset=null){
       </div>
       <div class="panel backup-panel set-photo-backup-panel">
         <div class="backup-icon">📷</div>
-        <h3>カードの裏の写真</h3>
-        <p>カードの裏に登録した写真は、ファイルが大きくなるため、上のバックアップとは別のファイルに保存します（メモは上のバックアップに入ります）。</p>
+        <h3>カードの裏・セットごとの写真</h3>
+        <p>カードの裏とセットごとに登録した写真は、ファイルが大きくなるため、上のバックアップとは別のファイルに保存します（メモは上のバックアップに入ります）。</p>
         <p id="setPhotoBackupStatus" class="enclosed-backup-status">写真の枚数を確認しています…</p>
         <button type="button" id="setPhotoExportButton" class="primary-action">写真のバックアップを保存</button>
         <input id="setPhotoImportInput" class="file-input" type="file" accept=".json,application/json">
         <label for="setPhotoImportInput" class="secondary-action">写真のバックアップから読み込む</label>
         <div class="backup-warning">読み込みは「追加」です。同じセット・メンバーの写真は上書きします。ファイルには写真が入るので、SNSや公開の場所へ置かないでください。</div>
-        <button type="button" id="setPhotoDeleteAllButton" class="text-danger-button">カードの裏の写真をすべて削除</button>
+        <button type="button" id="setPhotoDeleteAllButton" class="text-danger-button">カードの裏・セットごとの写真をすべて削除</button>
       </div>
       <div class="panel backup-panel">
         <div class="backup-icon">🕘</div>
@@ -3670,7 +3473,7 @@ function openMember(id,preset=null){
   //   ・＋：数字がくるっと回り、そのメンバーのファンマークが飛ぶ
   //   ・3種そろった瞬間に COMPLETE のハンコ（ファンマーク入り）と紙吹雪
   //   ・操作のあと、画面の下に「取り消す」の帯を出す
-  //   ・マスの長押し（または ⋯ ボタン）で「1枚減らす・直筆・欲しい」
+  //   ・マスの − か長押しで1枚減らす（Ver1.01.13：直筆・欲しいは画面から外した）
   //   ・カードの上の部分をタップで裏返す（写真1枚・メモ・一括操作・公式サイト）。裏も同じ場所で表に戻る
   //   ・写真はこの端末の中（IndexedDB）だけに保存し、外部へは送らない
   // =====================================================================
@@ -3680,7 +3483,8 @@ function openMember(id,preset=null){
   function slotInfo(row){
     const card=row.closest(".event-card");
     if(!card)return null;
-    const e=eventById(card.dataset.eventId),m=currentCollectionMember();
+    // 全メンバー表示の中のマスは、行ごとにメンバーが違う
+    const e=eventById(card.dataset.eventId),m=currentCollectionMember()||MEMBERS.find(x=>x.id===row.dataset.member)||null;
     if(!e||!m)return null;
     const p=eventPositions(e).find(item=>item.id===row.dataset.pos);
     return p?{e,m,p}:null;
@@ -3704,7 +3508,7 @@ function openMember(id,preset=null){
     if(countChanged)updateOwnershipChipCounts();
   }
 
-  // ---------- 枚数・直筆・欲しいの変更（取り消しの帯つき） ----------
+  // ---------- 枚数の変更（取り消しの帯つき） ----------
   function changeSlotCount(row,e,m,p,delta,button){
     const before=getCount(e.id,m.id,p.id),after=Math.max(0,before+delta);
     if(after===before){
@@ -3715,7 +3519,10 @@ function openMember(id,preset=null){
     setCount(e.id,m.id,p.id,after);
     refreshCollectionCell(row,e,m,p,true,delta);
     if(delta>0&&button){pressBounce(button);fanBurst(m,button)}
-    if(!wasComplete&&row.classList.contains("slot-cell")&&complete(e,m))playCompleteStamp(row.closest(".event-card"),m);
+    if(!wasComplete&&complete(e,m)){
+      if(state.mode==="all")playRowComplete(row.closest(".all-row"),m);
+      else playCompleteStamp(row.closest(".event-card"),m);
+    }
     showUndoSnack({
       main:delta>0?`${p.name}を1枚追加しました`:`${p.name}を1枚減らしました`,
       sub:`${state.mode==="all"?`${m.name}｜`:""}${e.work}｜いま${after}枚`,
@@ -3725,19 +3532,6 @@ function openMember(id,preset=null){
         syncAfterUndo(row,e,m,p,-delta,true);
         return `${e.work}｜${p.name}は${before}枚に戻りました`;
       }
-    });
-  }
-  function toggleSlotFlag(row,e,m,p,kind){
-    const flip=()=>kind==="sign"?toggleSign(e.id,m.id,p.id):toggleWant(e.id,m.id,p.id);
-    flip();
-    refreshCollectionCell(row,e,m,p);
-    const on=kind==="sign"?isSigned(e.id,m.id,p.id):isWanted(e.id,m.id,p.id);
-    const what=kind==="sign"?"直筆":"欲しい";
-    showUndoSnack({
-      main:`${p.name}の${what}を${on?"付けました":"外しました"}`,
-      sub:`${state.mode==="all"?`${m.name}｜`:""}${e.work}`,
-      mark:m.emoji,
-      undo:()=>{flip();syncAfterUndo(row,e,m,p,0,false);return `${p.name}の${what}を元に戻しました`}
     });
   }
 
@@ -3864,63 +3658,7 @@ function openMember(id,preset=null){
     document.body.classList.remove("undo-open");
   }
 
-  // ---------- 長押し・⋯ のメニュー（1枚減らす・直筆・欲しい） ----------
-  function openSlotMenu(row,e,m,p,x,y,returnFocus){
-    closeSlotMenu(false);
-    const overlay=document.createElement("div");
-    overlay.className="slot-menu-overlay";
-    overlay.setAttribute("role","dialog");
-    overlay.setAttribute("aria-label",`${p.name}のメニュー`);
-    const items=[
-      {action:"minus",icon:"−",label:"1枚減らす",on:false,run:()=>changeSlotCount(row,e,m,p,-1)},
-      {action:"sign",icon:"✍️",label:"直筆",on:isSigned(e.id,m.id,p.id),run:()=>toggleSlotFlag(row,e,m,p,"sign")},
-      {action:"want",icon:"♡",label:"欲しい",on:isWanted(e.id,m.id,p.id),run:()=>toggleSlotFlag(row,e,m,p,"want")}
-    ];
-    // 花びらが画面の端で切れないよう、中心を少し内側へ寄せる（半径84px＋花びら34px＋余白）
-    const cx=Math.min(Math.max(x,118),window.innerWidth-118),cy=Math.min(Math.max(y,150),window.innerHeight-80);
-    const caption=document.createElement("div");
-    caption.className="slot-menu-caption";
-    caption.textContent=`${p.name}・いま${getCount(e.id,m.id,p.id)}枚`;
-    caption.style.left=`${Math.round(cx)}px`;caption.style.top=`${Math.round(cy+30)}px`;
-    overlay.appendChild(caption);
-    const angles=[-150,-90,-30],radius=84;
-    items.forEach((item,index)=>{
-      const b=document.createElement("button");
-      b.type="button";
-      b.className=`slot-petal${item.on?" on":""}`;
-      b.dataset.slotAction=item.action;
-      const icon=document.createElement("i");icon.textContent=item.icon;
-      const label=document.createElement("span");label.textContent=item.label;
-      b.append(icon,label);
-      if(item.action==="minus")b.setAttribute("aria-label",`${p.name}を1枚減らす`);
-      else{b.setAttribute("aria-label",`${p.name}の${item.label}`);b.setAttribute("aria-pressed",String(item.on))}
-      const a=angles[index]*Math.PI/180,px=cx+Math.cos(a)*radius,py=cy+Math.sin(a)*radius;
-      b.style.left=`${Math.round(px)}px`;b.style.top=`${Math.round(py)}px`;
-      b.onclick=event=>{
-        event.stopPropagation();
-        if(Date.now()-slotMenuOpenedAt<300)return; // 長押しを離した指で、そのまま押してしまわないように
-        closeSlotMenu();
-        item.run();
-      };
-      overlay.appendChild(b);
-      if(!motionReduced()&&b.animate)b.animate([{transform:`translate(${Math.round(cx-px)}px,${Math.round(cy-py)}px) scale(.2)`,opacity:0},{transform:"translate(0,0) scale(1)",opacity:1}],{duration:340,delay:index*40,easing:"cubic-bezier(.3,1.5,.5,1)",fill:"backwards"});
-    });
-    overlay.onclick=event=>{if(event.target===overlay&&Date.now()-slotMenuOpenedAt>400)closeSlotMenu()};
-    document.body.appendChild(overlay);
-    slotMenuOverlay=overlay;
-    slotMenuOpenedAt=Date.now();
-    slotMenuReturn=returnFocus||null;
-    const first=overlay.querySelector("button");
-    if(first)first.focus({preventScroll:true});
-  }
-  function closeSlotMenu(restoreFocus=true){
-    if(!slotMenuOverlay)return false;
-    slotMenuOverlay.remove();
-    slotMenuOverlay=null;
-    if(restoreFocus&&slotMenuReturn&&slotMenuReturn.isConnected)slotMenuReturn.focus({preventScroll:true});
-    slotMenuReturn=null;
-    return true;
-  }
+  // ---------- 長押しで1枚減らす ----------
   // 長押しは一覧全体で1回だけ受け付ける（マスごとに登録すると、何百個もの登録になって重くなるため）
   function setupSlotLongPress(){
     const list=$("eventList");
@@ -3940,7 +3678,9 @@ function openMember(id,preset=null){
         cancel();
         if(!r||!r.isConnected||!point)return;
         const info=slotInfo(r);
-        if(info)openSlotMenu(r,info.e,info.m,info.p,point[0],point[1],r.querySelector(".slot-more"));
+        if(!info)return;
+        if(!motionReduced()&&r.animate)r.animate([{transform:"scale(1)"},{transform:"scale(.94)"},{transform:"scale(1)"}],{duration:220,easing:"ease-out"});
+        changeSlotCount(r,info.e,info.m,info.p,-1);
       },450);
     },{passive:true});
     list.addEventListener("pointermove",event=>{if(start&&Math.hypot(event.clientX-start[0],event.clientY-start[1])>10)cancel()},{passive:true});
@@ -3948,7 +3688,7 @@ function openMember(id,preset=null){
     window.addEventListener("scroll",()=>{if(target)cancel()},{passive:true});
     list.addEventListener("contextmenu",event=>{if(event.target.closest(".slot-cell"))event.preventDefault()});
   }
-  // 1回だけ、長押しと裏返しの使い方を知らせる
+  // 1回だけ、− と長押しと裏返しの使い方を知らせる
   function maybeShowSlotHint(){
     if(state.mode!=="member"||state.page!=="collection")return;
     try{
@@ -3956,7 +3696,43 @@ function openMember(id,preset=null){
       localStorage.setItem(SLOT_HINT_KEY,new Date().toISOString());
     }catch(error){return}
     const m=currentCollectionMember();
-    showUndoSnack({main:"マスを長押し（または ⋯）で、減らす・直筆・欲しい",sub:"カードの上をタップすると裏返って、写真やメモを付けられます",mark:m?m.emoji:"💡",duration:7000});
+    showUndoSnack({main:"マスの − か長押しで、1枚減らせます",sub:"カードの上をタップすると裏返って、写真やメモ（直筆など）を付けられます",mark:m?m.emoji:"💡",duration:7000});
+  }
+
+  // ---------- Ver1.01.13：直筆の印を、そのセットのメモへ書き写す ----------
+  // 直筆の印は画面から外したので、記録が見えなくならないよう「✍️直筆：ヨリ・チュウ」の1行をメモの先頭に入れる。
+  // 印のデータそのものは消さずに残す（バックアップにも入る）。メモに「✍️直筆」がもうあるセットには書き足さない。
+  function migrateSignsToNotes(){
+    const groups=new Map();
+    Object.keys(state.signs).forEach(key=>{
+      if(!state.signs[key])return;
+      const parts=key.split("__");
+      if(parts.length!==3)return;
+      const e=eventById(parts[0]);
+      if(!e||!MEMBERS.some(m=>m.id===parts[1]))return;
+      const positions=eventPositions(e),index=positions.findIndex(p=>p.id===parts[2]);
+      if(index<0)return;
+      const noteKey=setKey(parts[0],parts[1]);
+      if(!groups.has(noteKey))groups.set(noteKey,[]);
+      groups.get(noteKey).push({index,name:positions[index].name});
+    });
+    let changed=0;
+    groups.forEach((items,noteKey)=>{
+      const note=String(state.notes[noteKey]||"");
+      if(note.includes("✍️直筆"))return;
+      const line=`✍️直筆：${items.sort((a,b)=>a.index-b.index).map(item=>item.name).join("・")}`;
+      const next=note?`${line}\n${note}`:line;
+      if(next.length>NOTE_MAX)return; // メモがいっぱいの時は書き足さない（印のデータは残っている）
+      state.notes[noteKey]=next;
+      changed++;
+    });
+    if(changed)writeStorage(NOTE_KEY,state.notes);
+    return changed;
+  }
+  function migrateSignsToNotesOnce(){
+    try{if(localStorage.getItem(SIGN_NOTE_DONE_KEY))return}catch(error){return}
+    migrateSignsToNotes();
+    try{localStorage.setItem(SIGN_NOTE_DONE_KEY,new Date().toISOString())}catch(error){}
   }
 
   // ---------- カードの裏返し ----------
@@ -4053,17 +3829,20 @@ function openMember(id,preset=null){
 
   // ---------- カードの裏の写真（1枚） ----------
   function renderSetPhotoArea(card,e,m){
-    const area=card.querySelector(".set-photo-area");
+    renderPhotoArea(card.querySelector(".set-photo-area"),e,m);
+  }
+  // m が null の時は、セットごとの写真（全員分で1枚。全メンバー表示・イベント表）
+  function renderPhotoArea(area,e,m){
     if(!area)return;
-    const key=setKey(e.id,m.id),thumb=setPhotoThumbs.get(key);
+    const key=setKey(e.id,m?m.id:SET_PHOTO_ALL),thumb=setPhotoThumbs.get(key);
     area.textContent="";
     if(!thumb){
       const button=document.createElement("button");
       button.type="button";
-      button.className="set-photo-empty";
-      const plus=document.createElement("b");plus.textContent="＋";
-      const title=document.createElement("span");title.textContent="写真を1枚登録";
-      const note=document.createElement("small");note.textContent="商品ページのスクショなど。横長でも全体が表示されます";
+      button.className=m?"set-photo-empty":"set-photo-empty set-photo-empty-event";
+      const plus=document.createElement("b");plus.textContent=m?"＋":"📷";
+      const title=document.createElement("span");title.textContent=m?"写真を1枚登録":"セットの写真を付ける";
+      const note=document.createElement("small");note.textContent=m?"商品ページのスクショなど。横長でも全体が表示されます":"商品ページのスクショなど、全員分で1枚。未所持一覧の小窓にも出ます";
       button.append(plus,title,note);
       button.onclick=()=>chooseSetPhoto(e,m);
       area.appendChild(button);
@@ -4077,7 +3856,7 @@ function openMember(id,preset=null){
     img.alt=`${e.work}の写真`;
     img.src=thumb;
     photo.appendChild(img);
-    photo.onclick=()=>openSetPhotoViewer(e,m);
+    photo.onclick=()=>m?openSetPhotoViewer(e,m):openEventPhotoViewer(e);
     const actions=document.createElement("div");
     actions.className="set-photo-actions";
     const change=document.createElement("button");change.type="button";change.textContent="写真を変える";change.onclick=()=>chooseSetPhoto(e,m);
@@ -4147,13 +3926,27 @@ function openMember(id,preset=null){
         if(record&&typeof record.key==="string"&&validSetPhotoKeyPart(record.eventId)&&validSetPhotoKeyPart(record.memberId)&&record.key===setKey(record.eventId,record.memberId)&&validEnclosedImage(record.thumb,ENCLOSED_THUMB_MAX_CHARS))setPhotoThumbs.set(record.key,record.thumb);
       });
     }catch(error){console.warn("カードの裏の写真を読み込めませんでした",error)}
-    if(setPhotoThumbs.size){
-      refreshAllSetCardThumbs();
-      if(!$("managerScreen").classList.contains("hidden")){
-        if(state.page==="wishlist")renderWishlist();
-        if(state.page==="missing")updateMissingResults();
-      }
+    if(setPhotoThumbs.size)refreshPhotoViews();
+  }
+  // 写真が増えた・減った時に、いま見えている画面の写真を合わせる
+  function refreshPhotoViews(){
+    refreshAllSetCardThumbs();
+    if($("managerScreen").classList.contains("hidden"))return;
+    if(state.page==="collection"&&state.mode==="all"){
+      const list=$("eventList");
+      // 写真のあり・なしが変わったカードと、開いているカードだけを描き直す
+      if(list)list.querySelectorAll(".all-card").forEach(card=>{
+        const e=eventById(card.dataset.eventId);
+        if(!e)return;
+        const has=setPhotoThumbs.has(setKey(e.id,SET_PHOTO_ALL)),shown=!!card.querySelector(".all-set-thumb");
+        if(has!==shown||state.expanded[e.id])card.replaceWith(renderAllCard(e));
+      });
     }
+    if(state.page==="matrix"){
+      const e=eventById(state.matrixEventId),area=document.querySelector("#matrixBody .matrix-set-photo");
+      if(e&&area)renderPhotoArea(area,e,null);
+    }
+    if(state.page==="missing")updateMissingResults();
   }
   function refreshAllSetCardThumbs(){
     const m=currentCollectionMember(),list=$("eventList");
@@ -4167,6 +3960,7 @@ function openMember(id,preset=null){
   }
   function chooseSetPhoto(e,m){
     if(setPhotoBusy)return;
+    const memberId=m?m.id:SET_PHOTO_ALL,mark=m?m.emoji:"📷";
     const input=document.createElement("input");
     input.type="file";
     input.accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp";
@@ -4174,16 +3968,16 @@ function openMember(id,preset=null){
       const file=input.files?.[0];
       if(!file)return;
       setPhotoBusy=true;
-      showUndoSnack({main:"写真を保存しています…",sub:e.work,mark:m.emoji});
+      showUndoSnack({main:"写真を保存しています…",sub:e.work,mark});
       try{
         const image=await loadCheckedImage(file);
         const full=scaledImageDataUrl(image,SET_PHOTO_FULL_SIDE,0.82),thumb=scaledImageDataUrl(image,SET_PHOTO_THUMB_SIDE,0.72);
         if(!validEnclosedImage(full,ENCLOSED_FULL_MAX_CHARS)||!validEnclosedImage(thumb,ENCLOSED_THUMB_MAX_CHARS))throw new Error("画像を保存用に変換できませんでした");
-        const key=setKey(e.id,m.id);
-        await writeSetPhotos([{key,eventId:e.id,memberId:m.id,thumb,full,updatedAt:new Date().toISOString()}]);
+        const key=setKey(e.id,memberId);
+        await writeSetPhotos([{key,eventId:e.id,memberId,thumb,full,updatedAt:new Date().toISOString()}]);
         setPhotoThumbs.set(key,thumb);
-        refreshSetCardPhoto(e,m);
-        showUndoSnack({main:"写真を登録しました",sub:e.work,mark:m.emoji});
+        refreshPhotoAfterChange(e,m);
+        showUndoSnack({main:m?"写真を登録しました":"セットの写真を登録しました",sub:e.work,mark});
       }catch(error){
         showUndoSnack({main:"写真を登録できませんでした",sub:error.message||"",mark:"⚠️",duration:5000});
       }finally{
@@ -4194,33 +3988,49 @@ function openMember(id,preset=null){
   }
   async function removeSetPhoto(e,m){
     if(setPhotoBusy)return;
-    const key=setKey(e.id,m.id);
+    const key=setKey(e.id,m?m.id:SET_PHOTO_ALL),mark=m?m.emoji:"📷";
     try{
       const saved=await readSetPhotoRecord(key);
       await deleteSetPhoto(key);
       setPhotoThumbs.delete(key);
-      refreshSetCardPhoto(e,m);
-      showUndoSnack({main:"写真を外しました",sub:e.work,mark:m.emoji,undo:saved?()=>{
-        writeSetPhotos([saved]).then(()=>{setPhotoThumbs.set(key,saved.thumb);refreshSetCardPhoto(e,m)}).catch(()=>showUndoSnack({main:"写真を戻せませんでした",mark:"⚠️"}));
+      refreshPhotoAfterChange(e,m);
+      showUndoSnack({main:"写真を外しました",sub:e.work,mark,undo:saved?()=>{
+        writeSetPhotos([saved]).then(()=>{setPhotoThumbs.set(key,saved.thumb);refreshPhotoAfterChange(e,m)}).catch(()=>showUndoSnack({main:"写真を戻せませんでした",mark:"⚠️"}));
         return `${e.work}の写真を元に戻しました`;
       }:null});
     }catch(error){
       showUndoSnack({main:"写真を外せませんでした",sub:error.message||"",mark:"⚠️",duration:5000});
     }
   }
+  function refreshPhotoAfterChange(e,m){
+    if(m){refreshSetCardPhoto(e,m);return}
+    // セットごとの写真：全メンバー表示のそのカード・イベント表の写真の場所
+    const list=$("eventList");
+    if(list&&state.mode==="all"){
+      const card=[...list.querySelectorAll(".all-card")].find(node=>node.dataset.eventId===e.id);
+      if(card)card.replaceWith(renderAllCard(e));
+    }
+    const matrixArea=document.querySelector("#matrixBody .matrix-set-photo");
+    if(matrixArea&&state.page==="matrix"&&state.matrixEventId===e.id)renderPhotoArea(matrixArea,e,null);
+  }
   function openSetPhotoViewer(e,m){
+    openPhotoViewer(setKey(e.id,m.id),`${e.work}の写真`,`${eventLabel(e)}｜${e.work}`);
+  }
+  function openEventPhotoViewer(e){
+    openPhotoViewer(setKey(e.id,SET_PHOTO_ALL),`${e.work}のセットの写真`,`${eventLabel(e)}｜${e.work}（セットの写真）`);
+  }
+  function openPhotoViewer(key,alt,captionText){
     closeSetPhotoViewer();
-    const key=setKey(e.id,m.id);
     const overlay=document.createElement("div");
     overlay.className="set-photo-viewer";
     overlay.setAttribute("role","dialog");
     overlay.setAttribute("aria-label","写真を大きく表示");
     const figure=document.createElement("figure");
     const img=document.createElement("img");
-    img.alt=`${e.work}の写真`;
+    img.alt=alt;
     img.src=setPhotoThumbs.get(key)||"";
     const caption=document.createElement("figcaption");
-    caption.textContent=`${eventLabel(e)}｜${e.work}`;
+    caption.textContent=captionText;
     const close=document.createElement("button");
     close.type="button";
     close.textContent="閉じる";
@@ -4246,7 +4056,7 @@ function openMember(id,preset=null){
     try{
       const records=await setPhotoTransaction("readonly",thumbs=>thumbs.getAll());
       const bytes=(records||[]).reduce((sum,record)=>sum+Math.round((Number(record.size)||0)*0.75)+Math.round(String(record.thumb||"").length*0.75),0);
-      status.textContent=records.length?`写真 ${records.length}枚・端末内使用量 ${formatImageBytes(bytes)}`:"カードの裏に登録した写真はまだありません。";
+      status.textContent=records.length?`写真 ${records.length}枚・端末内使用量 ${formatImageBytes(bytes)}`:"カードの裏・セットごとに登録した写真はまだありません。";
     }catch(error){
       status.textContent=`写真の保存領域を読み込めませんでした：${error.message||""}`;
     }
@@ -4303,7 +4113,7 @@ function openMember(id,preset=null){
       const key=setKey(raw.eventId,raw.memberId);
       if(seen.has(key))return;
       seen.add(key);
-      if(!eventById(raw.eventId)||!MEMBERS.some(member=>member.id===raw.memberId))unknown++;
+      if(!eventById(raw.eventId)||!(raw.memberId===SET_PHOTO_ALL||MEMBERS.some(member=>member.id===raw.memberId)))unknown++;
       records.push({key,eventId:raw.eventId,memberId:raw.memberId,thumb:raw.thumb,full:raw.full,updatedAt:validDateString(raw.updatedAt)?raw.updatedAt:new Date().toISOString()});
     });
     return {records,unknown,exportedAt:validDateString(payload.exportedAt)?new Date(payload.exportedAt):null};
@@ -4320,10 +4130,9 @@ function openMember(id,preset=null){
       const existing=new Set(await setPhotoTransaction("readonly",thumbs=>thumbs.getAllKeys()));
       const overwrite=backup.records.filter(record=>existing.has(record.key)).length;
       const summary=`${backup.exportedAt?`作成日時：${formatBackupDate(backup.exportedAt)}\n`:""}写真 ${backup.records.length}枚（新しく追加 ${backup.records.length-overwrite}枚／上書き ${overwrite}枚）${backup.unknown?`\n今のデータに無いセットの写真${backup.unknown}枚も、消さずに保持します`:""}`;
-      if(!confirm(`カードの裏の写真のバックアップを読み込みます。\n\n${summary}\n\n読み込みますか？`))return;
+      if(!confirm(`写真のバックアップを読み込みます。\n\n${summary}\n\n読み込みますか？`))return;
       for(let start=0;start<backup.records.length;start+=20)await writeSetPhotos(backup.records.slice(start,start+20));
       await loadSetPhotoThumbs();
-      refreshAllSetCardThumbs();
       updateSetPhotoBackupStatus();
       showActionToast(`写真${backup.records.length}枚を読み込みました`);
     }catch(error){
@@ -4337,14 +4146,14 @@ function openMember(id,preset=null){
     let count=0;
     try{count=(await setPhotoTransaction("readonly",thumbs=>thumbs.getAllKeys())).length}catch(error){}
     if(!count){showActionToast("削除する写真がありません");return}
-    if(!confirm(`カードの裏に登録した写真${count}枚を、この端末からすべて削除します。\n所持枚数やメモは削除されません。\n\n続けますか？`))return;
+    if(!confirm(`カードの裏・セットごとに登録した写真${count}枚を、この端末からすべて削除します。\n所持枚数やメモは削除されません。\n\n続けますか？`))return;
     if(prompt("最終確認です。\n削除する場合は「全削除」と入力してください。")!=="全削除"){showActionToast("入力が一致しなかったため、削除を中止しました");return}
     try{
       await setPhotoTransaction("readwrite",(thumbs,fulls)=>{thumbs.clear();fulls.clear()});
       setPhotoThumbs.clear();
-      refreshAllSetCardThumbs();
+      refreshPhotoViews();
       updateSetPhotoBackupStatus();
-      showActionToast("カードの裏の写真をすべて削除しました");
+      showActionToast("写真をすべて削除しました");
     }catch(error){
       alert(`削除できませんでした：${error.message}`);
     }
@@ -4375,8 +4184,8 @@ function openMember(id,preset=null){
 
   // ===== Ver1.01.07：開いているシートをまとめて閉じる（Escキーと、端末の「戻る」操作で使う） =====
   function closeAllSheets(){
-    const menuOpen=closeSlotMenu(),viewerOpen=closeSetPhotoViewer(); // Ver1.01.10：長押しメニュー・写真の拡大表示
-    const wasOpen=menuOpen||viewerOpen||[...document.querySelectorAll(".utility-sheet-overlay,.member-selector-overlay")].some(node=>!node.classList.contains("hidden"));
+    const viewerOpen=closeSetPhotoViewer(); // Ver1.01.10：写真の拡大表示
+    const wasOpen=viewerOpen||[...document.querySelectorAll(".utility-sheet-overlay,.member-selector-overlay")].some(node=>!node.classList.contains("hidden"));
     closeMemberSelector();closeUtilitySheet("filterSheetOverlay");closeUtilitySheet("sortSheetOverlay");closeUtilitySheet("bulkSheetOverlay");closeUtilitySheet("settingsSheetOverlay");closeImageAdjustSheet();closeUtilitySheet("enclosedEditSheetOverlay");closeEnclosedViewer();
     return wasOpen;
   }
@@ -4440,7 +4249,7 @@ function openMember(id,preset=null){
   $("searchInput").value=state.search;
   // Ver1.01.04：「← 戻る」と下部ナビ中央のホームボタンで同じ処理を使う
   function goHome(fromHistory=false){
-    hideUndoSnack();closeSlotMenu(false);closeSetPhotoViewer();
+    hideUndoSnack();closeSetPhotoViewer();
     saveScrollPosition();
     $("managerScreen").classList.add("hidden");
     $("homeScreen").classList.remove("hidden");
@@ -4494,8 +4303,8 @@ function openMember(id,preset=null){
   setupUtilitySheetSwipe("imageAdjustSheetOverlay");
   setupEnclosedSheets();
   document.querySelectorAll("[data-home-page]").forEach(button=>button.onclick=()=>showPage(button.dataset.homePage));
-  // Ver1.01.07：欲しい一覧・提供可能一覧・未所持一覧の「一覧で開く」
-  ["wishlistPage","tradePage","missingPage"].forEach(id=>$(id).addEventListener("click",event=>{
+  // Ver1.01.07：未所持一覧の「一覧で開く」
+  ["missingPage"].forEach(id=>$(id).addEventListener("click",event=>{
     const button=event.target instanceof Element?event.target.closest("[data-jump-event]"):null;
     if(button)openEventInCollection(button.dataset.jumpMember,button.dataset.jumpEvent);
   }));
@@ -4545,6 +4354,7 @@ function openMember(id,preset=null){
   toggleTopButton();
   // Ver1.01.10：マスの長押し・カードの裏の写真（写真の読み込みは、最初の画面を出した後に回す）
   setupSlotLongPress();
+  migrateSignsToNotesOnce(); // Ver1.01.13：直筆をメモへ書き写す（1回だけ）
   setTimeout(loadSetPhotoThumbs,300);
 }
 
