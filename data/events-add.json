@@ -20,6 +20,28 @@
       "work": "「恋、はじめました。」歌唱衣装",
       "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=114809",
       "addedDate": "2026-10-09"
+    },
+    {
+      "officialName": "2026 生写真セット(8周年ツアー衣装③)",
+      "id": "2026-event",
+      "sort": 263,
+      "category": "イベント",
+      "period": "2026.October",
+      "eventName": "9th ANNIVERSARY PREMIUM CONCERT",
+      "work": "8周年ツアー衣装③",
+      "officialUrl": "https://store.plusmember.jp/equallove/products/detail.php?product_id=115052",
+      "addedDate": "2026-10-14"
+    },
+    {
+      "officialName": "2026 生写真セット(8周年ツアー衣装④)",
+      "id": "2026-event-02",
+      "sort": 264,
+      "category": "イベント",
+      "period": "2026.October",
+      "eventName": "9th ANNIVERSARY PREMIUM CONCERT",
+      "work": "8周年ツアー衣装④",
+      "officialUrl": "https://sp.equal-love.jp/news/detail/12174",
+      "addedDate": "2026-10-14"
     }
   ]
 }
